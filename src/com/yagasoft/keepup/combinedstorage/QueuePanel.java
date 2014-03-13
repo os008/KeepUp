@@ -24,11 +24,13 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
+import com.yagasoft.keepup.App;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.container.Folder;
 import com.yagasoft.overcast.container.transfer.DownloadJob;
 import com.yagasoft.overcast.container.transfer.ITransferProgressListener;
 import com.yagasoft.overcast.container.transfer.TransferEvent;
+import com.yagasoft.overcast.container.transfer.TransferState;
 import com.yagasoft.overcast.container.transfer.UploadJob;
 
 
@@ -54,7 +56,8 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		tableQueue = new JTable(new QueueTableModel(new String[] { "File", "Destination", "CSP", "Direction", "Progress" }, 0));
+		tableQueue = new JTable(new QueueTableModel(new String[] {
+				"File", "Destination", "CSP", "Direction", "Status", "Progress" }, 0));
 		scrollPaneQueue = new JScrollPane(tableQueue);
 		add(scrollPaneQueue);
 
@@ -75,7 +78,8 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	 */
 	private void addTransferJob(String path, String destination, String csp, String direction)
 	{
-		((QueueTableModel) tableQueue.getModel()).addRow(new Object[] { path, destination, csp, direction, new Float(0) });
+		((QueueTableModel) tableQueue.getModel()).addRow(new Object[] {
+				path, destination, csp, direction, "Queued ...", new Float(0) });
 	}
 
 	/**
@@ -113,12 +117,16 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		Logger.post("PROGRESS!: " + event.getState() + " => " + event.getProgress());
 
+		// get the data in the table.
+		Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
+
+		String statusString = null;
+
 		switch (event.getState())
 		{
 			case INITIALISED:
 			case IN_PROGRESS:
-				// get the data in the table.
-				Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
+				statusString = event.getState() == TransferState.IN_PROGRESS ? "In progress ..." : "Initialised ...";
 
 				// go through the rows searching for the matching row ...
 				for (int i = 0; i < rows.size(); i++)
@@ -128,24 +136,46 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					// if the file at that row has the same path ...
 					if (row.contains(event.getContainer().getPath()))
 					{
-						// update the progress.
+						// update the progress and status
 						setProgress(i, event.getProgress());
+						setStatus(i, statusString);
 						break;		// done!
 					}
 				}
 				break;
-			case FAILED:
-				break;
-			case COMPLETED:
-				Vector rows1 = ((QueueTableModel) tableQueue.getModel()).getDataVector();
 
-				for (int i = 0; i < rows1.size(); i++)
+			case FAILED:
+				statusString = "FAILED!";
+
+				for (int i = 0; i < rows.size(); i++)
 				{
-					Vector row = (Vector) rows1.get(i);
+					Vector row = (Vector) rows.get(i);
 
 					if (row.contains(event.getContainer().getPath()))
 					{
+						setStatus(i, statusString);
+						App.mainWindow.getBrowserPanel().updateTable();		// redraw the table after fetching file list.
+						break;
+					}
+				}
+
+				break;
+
+			case COMPLETED:
+				for (int i = 0; i < rows.size(); i++)
+				{
+					Vector row = (Vector) rows.get(i);
+
+					if (row.contains(event.getContainer().getPath()))
+					{
+						if (rows.size() == 1)
+						{
+							App.mainWindow.getStatusBar().updateFreeSpace();	// update free space display
+							App.mainWindow.getBrowserPanel().updateTable();
+						}
+
 						((QueueTableModel) tableQueue.getModel()).removeRow(i);
+
 						break;
 					}
 				}
@@ -167,7 +197,21 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	 */
 	private void setProgress(int row, float progress)
 	{
-		((QueueTableModel) tableQueue.getModel()).setValueAt(new Float(progress), row, tableQueue.getColumnModel().getColumnIndex("Progress"));
+		((QueueTableModel) tableQueue.getModel()).setValueAt(new Float(progress), row, tableQueue.getColumnModel()
+				.getColumnIndex("Progress"));
+	}
+
+	/**
+	 * Updates the status of the file in the queue.<br />
+	 *
+	 * @param row
+	 *            The row number.
+	 * @param progress
+	 *            The progress between 0 and 1.
+	 */
+	private void setStatus(int row, String status)
+	{
+		((QueueTableModel) tableQueue.getModel()).setValueAt(status, row, tableQueue.getColumnModel().getColumnIndex("Status"));
 	}
 }
 

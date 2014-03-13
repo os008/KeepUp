@@ -18,10 +18,10 @@ import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.BoxLayout;
 
 import com.yagasoft.keepup.combinedstorage.actions.ToolBar;
 
@@ -39,7 +39,7 @@ public class MainWindow extends JPanel
 	private JFrame				frame;
 
 	/** Tool bar. */
-	ToolBar toolBar;
+	ToolBar						toolBar;
 
 	/** Browser panel. */
 	BrowserPanel				browserPanel;
@@ -52,6 +52,9 @@ public class MainWindow extends JPanel
 
 	/** Log panel. */
 	LogPanel					logPanel;
+
+	/** Log panel. */
+	StatusBar					statusBar;
 
 	/**
 	 * Create the frame.
@@ -97,16 +100,28 @@ public class MainWindow extends JPanel
 	{
 		browserPanel = new BrowserPanel();
 
+
+		//--------------------------------------------------------------------------------------
+		// #region Lower panel.
+
 		lowerPanel = new JPanel();
+		lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.Y_AXIS));
 
 		queuePanel = new QueuePanel();
 		queuePanel.setPreferredSize(new Dimension(WIDTH, 100));
+		lowerPanel.add(queuePanel);
+
 		logPanel = new LogPanel();
 		logPanel.setPreferredSize(new Dimension(WIDTH, 100));
-		lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.Y_AXIS));
-		lowerPanel.add(queuePanel);
 		lowerPanel.add(logPanel);
-//		lowerPanel.setPreferredSize(new Dimension(WIDTH, 300));
+
+		statusBar = new StatusBar();
+		statusBar.setPreferredSize(new Dimension(WIDTH, 25));
+		lowerPanel.add(statusBar);
+		//		lowerPanel.setPreferredSize(new Dimension(WIDTH, 300));
+
+		// #endregion Lower panel.
+		//--------------------------------------------------------------------------------------
 
 		toolBar = new ToolBar();
 
@@ -138,6 +153,23 @@ public class MainWindow extends JPanel
 	public void setFrame(JFrame frame)
 	{
 		this.frame = frame;
+	}
+
+	/**
+	 * @return the toolBar
+	 */
+	public ToolBar getToolBar()
+	{
+		return toolBar;
+	}
+
+	/**
+	 * @param toolBar
+	 *            the toolBar to set
+	 */
+	public void setToolBar(ToolBar toolBar)
+	{
+		this.toolBar = toolBar;
 	}
 
 	/**
@@ -222,6 +254,24 @@ public class MainWindow extends JPanel
 	public void setLogPanel(LogPanel logPanel)
 	{
 		this.logPanel = logPanel;
+	}
+
+
+	/**
+	 * @return the statusBar
+	 */
+	public StatusBar getStatusBar()
+	{
+		return statusBar;
+	}
+
+
+	/**
+	 * @param statusBar the statusBar to set
+	 */
+	public void setStatusBar(StatusBar statusBar)
+	{
+		this.statusBar = statusBar;
 	}
 
 	/**

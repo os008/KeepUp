@@ -1,12 +1,12 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
+ * 
  *		Modified MIT License (GPL v3 compatible)
  * 			License terms are in a separate file (license.txt)
- *
+ * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/BrowserPanel.java
- *
- *			Modified: 11-Mar-2014 (21:13:09)
+ * 
+ *			Modified: 13-Mar-2014 (21:56:19)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -39,6 +39,7 @@ import com.yagasoft.keepup.App;
 import com.yagasoft.overcast.container.File;
 import com.yagasoft.overcast.container.Folder;
 import com.yagasoft.overcast.container.remote.RemoteFile;
+import com.yagasoft.overcast.container.remote.RemoteFolder;
 
 
 /**
@@ -136,10 +137,9 @@ public class BrowserPanel extends JPanel
 				
 				// if the selection is 'root' then combine files list at 'App', else, load files in the selected folder.
 				files = (node.getUserObject() instanceof String) ?
-						App.getRootFiles()
+						App.getRootFiles(true)
 						: ((Folder<?>) node.getUserObject()).getFilesArray();
 				
-				Arrays.sort(files);
 				updateTable(files);
 			}
 		});
@@ -284,12 +284,14 @@ public class BrowserPanel extends JPanel
 	 */
 	public void updateTable(File<?>[] fileArray)
 	{
+		Arrays.sort(fileArray);
+		
 		tableData = new Object[fileArray.length][3];
 		
 		for (int i = 0; i < fileArray.length; i++)
 		{
 			tableData[i][0] = fileArray[i];
-			tableData[i][1] = humanReadableSize(fileArray[i].getSize());
+			tableData[i][1] = App.humanReadableSize(fileArray[i].getSize());
 			tableData[i][2] = fileArray[i].getCsp().getName();
 		}
 		
@@ -299,39 +301,41 @@ public class BrowserPanel extends JPanel
 	}
 	
 	/**
-	 * Human readable size conversion.<br/>
-	 * <br />
-	 * Credit: 'aioobe' at 'StackOverFlow.com'
-	 * 
-	 * @param bytes
-	 *            Size in bytes.
-	 * @return Human readable size.
+	 * Updates the selected folder. It grabs the files in the folder, and then passes them to {@link #updateTable(File[])}.
 	 */
-	private String humanReadableSize(long bytes)
+	public void updateTable()
 	{
-		int unit = 1024;
+		Folder<?> folder = getSelectedFolder();
 		
-		if (bytes < unit)
+		if (folder != null)
 		{
-			return bytes + " B";
+			folder.updateFromSource(true, false);
+			updateTable(folder.getFilesArray());
 		}
-		
-		int exp = (int) (Math.log(bytes) / Math.log(unit));
-		String pre = ("KMGTPE").charAt(exp - 1) + ("i");
-		
-		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+		else
+		{
+			updateTable(App.getRootFiles(true));
+		}
 	}
 	
+	/**
+	 * Gets the selected files.
+	 * 
+	 * @return the selected files
+	 */
 	@SuppressWarnings("rawtypes")
 	public RemoteFile<?>[] getSelectedFiles()
 	{
 		// get the data in the table.
 		Vector rows = ((DefaultTableModel) tableFiles.getModel()).getDataVector();
+		// get selected rows.
 		int[] selectedRows = tableFiles.getSelectedRows();
 		
+		// files to be returned.
 		RemoteFile<?>[] files = new RemoteFile<?>[selectedRows.length];
 		int index = 0;
 		
+		// go through the rows' numbers, fetch them, fetch the file stored there, and put it in the returned list.
 		for (int rowIndex : selectedRows)
 		{
 			files[index] = (RemoteFile<?>) ((Vector) rows.get(rowIndex)).get(0);
@@ -339,5 +343,35 @@ public class BrowserPanel extends JPanel
 		}
 		
 		return files;
+	}
+	
+	/**
+	 * Gets the selected folder.
+	 * 
+	 * @return the selected folder
+	 */
+	public RemoteFolder<?> getSelectedFolder()
+	{
+		// get the selected folder as a path object.
+		Object selectedPath = treeFolders.getLastSelectedPathComponent();
+		
+		// if there's something selected ...
+		if (selectedPath != null)
+		{
+			// get the folder stored there ...
+			Object userObject = ((DefaultMutableTreeNode) selectedPath).getUserObject();
+			
+			// oops, not a folder.
+			if (userObject instanceof String)
+			{
+				return null;
+			}
+			
+			// good, return the folder.
+			return (RemoteFolder<?>) userObject;
+		}
+		
+		// nothing is selected.
+		return null;
 	}
 }
