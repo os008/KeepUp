@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.actions/ToolBar.java
  *
- *			Modified: 13-Mar-2014 (13:46:05)
+ *			Modified: 18-Mar-2014 (17:36:44)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -20,22 +20,23 @@ import java.net.URL;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
+import com.yagasoft.keepup.dialogues.Browse;
+import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.container.local.LocalFile;
+import com.yagasoft.overcast.container.local.LocalFolder;
 import com.yagasoft.overcast.container.remote.RemoteFolder;
 
 
 /**
  * Tool bar at the top of the main window. It has file operations.
  */
-public class ToolBar extends JToolBar implements ActionListener
+public class FileToolBar extends JToolBar implements ActionListener
 {
 	
 	private JTextField	textFieldDestination;
@@ -53,7 +54,10 @@ public class ToolBar extends JToolBar implements ActionListener
 		UPLOAD,
 		
 		/** Choose folder. */
-		CHOOSE_FOLDER
+		CHOOSE_FOLDER,
+		
+		/** Delete file. */
+		DELETE
 	}
 	
 	/** Constant: SerialVersionUID. */
@@ -62,7 +66,7 @@ public class ToolBar extends JToolBar implements ActionListener
 	/**
 	 * Instantiates a new tool bar.
 	 */
-	public ToolBar()
+	public FileToolBar()
 	{
 		initBar();
 	}
@@ -96,6 +100,9 @@ public class ToolBar extends JToolBar implements ActionListener
 		add(button);
 		
 		button = createButton("upload", Actions.UPLOAD + "", "Upload files to selected folder.", "Upload");
+		add(button);
+		
+		button = createButton("delete", Actions.DELETE + "", "Delete selected file.", "Delete");
 		add(button);
 	}
 	
@@ -161,28 +168,31 @@ public class ToolBar extends JToolBar implements ActionListener
 			{
 				Logger.post("Nothing to upload to!");
 				
-				if (JOptionPane.showOptionDialog(this, "Upload to 'root'? This will choose the best fit from all CSPs."
-						, "Confirm root upload.", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null
-						, null, 1) == 0)
+				if (Msg.showQuestion("Upload to 'root'? This will choose the best fit from all CSPs.") == 0)
 				{
 					Logger.post("Uploading to root ...");
 					
-					LocalFile[] files = chooseFiles();
+					LocalFile[] files = Browse.chooseFiles();
 					
 					// get the best CSP to store those files, and initiate upload.
-					App.uploadFile(files, App.chooseCsp(files));
+					App.uploadFile(files, null);
 				}
 				
 				// done here.
 				return;
 			}
 			
-			App.uploadFile(chooseFiles(), remoteFolder);
+			App.uploadFile(Browse.chooseFiles(), remoteFolder);
 		}
 		
 		if (Actions.CHOOSE_FOLDER.toString().equals(cmd))
 		{
 			chooseAFolder();
+		}
+		
+		if (Actions.DELETE.toString().equals(cmd))
+		{
+			App.deleteFiles(App.mainWindow.getBrowserPanel().getSelectedFiles());
 		}
 	}
 	
@@ -191,17 +201,12 @@ public class ToolBar extends JToolBar implements ActionListener
 	 */
 	private void chooseAFolder()
 	{
-		// only choose directories.
-		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
-		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		
-		int result = chooser.showOpenDialog(this);
-		java.io.File selectedFolder = chooser.getSelectedFile();
+		LocalFolder selectedFolder = Browse.chooseFolder();
 		
 		// if a folder was chosen ...
-		if ((result == JFileChooser.APPROVE_OPTION) && (selectedFolder != null))
+		if (selectedFolder != null)
 		{
-			App.setLastDirectory(selectedFolder.getAbsolutePath());
+			App.setLastDirectory(selectedFolder.getPath());
 			updateDestinationFolder();
 		}
 	}
@@ -212,31 +217,6 @@ public class ToolBar extends JToolBar implements ActionListener
 	public void updateDestinationFolder()
 	{
 		textFieldDestination.setText(App.getLastDirectory());
-	}
-	
-	/**
-	 * Pops up a windows to choose files.
-	 * 
-	 * @return the local files list.
-	 */
-	private LocalFile[] chooseFiles()
-	{
-		// only choose directories.
-		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
-		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		chooser.setMultiSelectionEnabled(true);
-		
-		chooser.showOpenDialog(this);
-		java.io.File[] selectedFiles = chooser.getSelectedFiles();
-		
-		LocalFile[] files = new LocalFile[selectedFiles.length];
-		
-		for (int i = 0; i < files.length; i++)
-		{
-			files[i] = new LocalFile(selectedFiles[i].getAbsolutePath());
-		}
-		
-		return files;
 	}
 	
 }

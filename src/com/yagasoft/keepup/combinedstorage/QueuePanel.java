@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/QueuePanel.java
  *
- *			Modified: 12-Mar-2014 (21:45:54)
+ *			Modified: 18-Mar-2014 (16:32:25)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -14,9 +14,13 @@ package com.yagasoft.keepup.combinedstorage;
 
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
 import java.util.Vector;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -25,13 +29,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.App;
+import com.yagasoft.keepup._keepup;
 import com.yagasoft.logger.Logger;
-import com.yagasoft.overcast.container.Folder;
-import com.yagasoft.overcast.container.transfer.DownloadJob;
 import com.yagasoft.overcast.container.transfer.ITransferProgressListener;
 import com.yagasoft.overcast.container.transfer.TransferEvent;
+import com.yagasoft.overcast.container.transfer.TransferJob;
 import com.yagasoft.overcast.container.transfer.TransferState;
-import com.yagasoft.overcast.container.transfer.UploadJob;
 
 
 /**
@@ -56,64 +59,107 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		tableQueue = new JTable(new QueueTableModel(new String[] {
-				"File", "Destination", "CSP", "Direction", "Status", "Progress" }, 0));
+		tableQueue = new JTable(new QueueTableModel(
+				new String[] { "File", "Destination", "CSP", "Direction", "Status", "Progress", "Cancel" }, 0));
 		scrollPaneQueue = new JScrollPane(tableQueue);
 		add(scrollPaneQueue);
 
 		tableQueue.setDefaultRenderer(Float.class, new ProgressRenderer());
+		// tableQueue.setDefaultRenderer(CancelButton.class, new CancelButtonRenderer());
+
+
+		//--------------------------------------------------------------------------------------
+		// #region Cancel button.
+
+		Action action = new AbstractAction()
+		{
+
+			private static final long	serialVersionUID	= 5104056154903292487L;
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JTable table = (JTable) e.getSource();
+				int modelRow = Integer.valueOf(e.getActionCommand());
+
+				String status = (String) ((QueueTableModel) tableQueue.getModel()).getValueAt(
+						modelRow, tableQueue.getColumnModel().getColumnIndex("Status"));
+
+				if ( !(status.toLowerCase().indexOf("failed") >= 0))
+				{
+					TransferJob<?> job = (TransferJob<?>) ((QueueTableModel) tableQueue.getModel()).getValueAt(
+							modelRow, tableQueue.getColumnModel().getColumnIndex("File"));
+					cancelTransfer(job);
+				}
+//				else
+//				{
+					((DefaultTableModel) table.getModel()).removeRow(modelRow);
+//				}
+					
+				if (((QueueTableModel) tableQueue.getModel()).getDataVector().size() > 0)
+				{
+					App.mainWindow.getStatusBar().updateFreeSpace();	// update free space display
+					App.mainWindow.getBrowserPanel().updateTable();
+				}
+			}
+		};
+
+		ButtonColumn buttonColumn = new ButtonColumn(tableQueue, action, tableQueue.getColumnModel().getColumnIndex("Cancel"));
+		tableQueue.setCellEditor(buttonColumn);
+
+		// #endregion Cancel button.
+		//--------------------------------------------------------------------------------------
+
 	}
 
 	/**
 	 * Adds the transfer job.
 	 *
-	 * @param path
-	 *            Path.
-	 * @param destination
-	 *            Destination.
-	 * @param csp
-	 *            Csp.
+	 * @param job
+	 *            the job.
 	 * @param direction
-	 *            Direction.
+	 *            Direction of transfer as a string.
 	 */
-	private void addTransferJob(String path, String destination, String csp, String direction)
+	public void addTransferJob(TransferJob<?> job, String direction)
 	{
-		((QueueTableModel) tableQueue.getModel()).addRow(new Object[] {
-				path, destination, csp, direction, "Queued ...", new Float(0) });
+		((QueueTableModel) tableQueue.getModel())
+				.addRow(
+				new Object[] {
+						job, job.getParent().getPath(), job.getCsp(), direction, "Queued ...", new Float(0), new CancelButton() });
 	}
 
-	/**
-	 * Adds an upload job to the visual queue.
-	 *
-	 * @param job
-	 *            The job.
-	 * @param destination
-	 *            Destination.
-	 */
-	public void addTransferJob(UploadJob<?, ?> job, Folder<?> destination)
-	{
-		addTransferJob(job.getLocalFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Upload");
-	}
+//	/**
+//	 * Adds an upload job to the visual queue.
+//	 *
+//	 * @param job
+//	 *            The job.
+//	 * @param destination
+//	 *            Destination.
+//	 */
+//	public void addTransferJob(UploadJob<?, ?> job, Folder<?> destination)
+//	{
+//		addTransferJob(job.getLocalFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Upload");
+//	}
+//
+//	/**
+//	 * Adds a download job to the visual queue.
+//	 *
+//	 * @param job
+//	 *            The job.
+//	 * @param destination
+//	 *            Destination.
+//	 */
+//	public void addTransferJob(DownloadJob<?> job, Folder<?> destination)
+//	{
+//		addTransferJob(job.getRemoteFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Download");
+//	}
 
 	/**
-	 * Adds a download job to the visual queue.
-	 *
-	 * @param job
-	 *            The job.
-	 * @param destination
-	 *            Destination.
-	 */
-	public void addTransferJob(DownloadJob<?> job, Folder<?> destination)
-	{
-		addTransferJob(job.getRemoteFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Download");
-	}
-
-	/**
-	 * @see com.yagasoft.overcast.container.transfer.ITransferProgressListener#progressChanged(com.yagasoft.overcast.container.transfer.TransferEvent)
+	 * @see com.yagasoft.overcast.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.container.transfer.TransferEvent)
 	 */
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void progressChanged(TransferEvent event)
+	public void transferProgressChanged(TransferEvent event)
 	{
 		Logger.post("PROGRESS!: " + event.getState() + " => " + event.getProgress());
 
@@ -134,7 +180,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					Vector row = (Vector) rows.get(i);
 
 					// if the file at that row has the same path ...
-					if (row.contains(event.getContainer().getPath()))
+					if (row.contains(event.getJob()))
 					{
 						// update the progress and status
 						setProgress(i, event.getProgress());
@@ -151,7 +197,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				{
 					Vector row = (Vector) rows.get(i);
 
-					if (row.contains(event.getContainer().getPath()))
+					if (row.contains(event.getJob()))
 					{
 						setStatus(i, statusString);
 						App.mainWindow.getBrowserPanel().updateTable();		// redraw the table after fetching file list.
@@ -166,7 +212,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				{
 					Vector row = (Vector) rows.get(i);
 
-					if (row.contains(event.getContainer().getPath()))
+					if (row.contains(event.getJob()))
 					{
 						if (rows.size() == 1)
 						{
@@ -179,6 +225,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 						break;
 					}
 				}
+
 				break;
 			default:
 				break;
@@ -213,114 +260,161 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		((QueueTableModel) tableQueue.getModel()).setValueAt(status, row, tableQueue.getColumnModel().getColumnIndex("Status"));
 	}
-}
-
-
-/**
- * Defines how to handle the progress bar inside the table.
- */
-class ProgressRenderer extends JProgressBar implements TableCellRenderer
-{
-
-	/** Constant: SerialVersionUID. */
-	private static final long	serialVersionUID	= -4106456853733016017L;
-
-	@Override
-	public Component getTableCellRendererComponent(JTable table, Object value
-			, boolean isSelected, boolean hasFocus, int row, int col)
-	{
-		Float v = (Float) value;
-
-		// set the range.
-		setMinimum(0);
-		setMaximum(100);
-
-//		if (v > 0)
-//		{
-		// update progress bar's position.
-		setIndeterminate(false);
-		setStringPainted(true);
-		setValue((int) (v.floatValue() * 100));
-//		}
-//		else
-//		{
-//			setIndeterminate(true);
-//			setStringPainted(false);
-//		}
-
-		return this;
-	}
-}
-
-
-/**
- * An extension of {@link DefaultTableModel}, which is used to overcome the limitation of treating all cells as {@link String} --
- * for the progress bar problem.
- */
-@SuppressWarnings("rawtypes")
-class QueueTableModel extends DefaultTableModel
-{
-
-	/** Constant: SerialVersionUID. */
-	private static final long	serialVersionUID	= -4057598058867765548L;
 
 	/**
+	 * Cancel transfer related to the job passed.
 	 *
+	 * @param job
+	 *            the job.
 	 */
-	public QueueTableModel()
+	@SuppressWarnings("rawtypes")
+	public void cancelTransfer(TransferJob<?> job)
 	{
-		super();
+		// get the data in the table.
+		Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
+
+		for (int i = 0; i < rows.size(); i++)
+		{
+			Vector row = (Vector) rows.get(i);
+
+			if (row.contains(job))
+			{
+				job.getCsp().cancelUpload(job);
+//				((QueueTableModel) tableQueue.getModel()).removeRow(i);
+				break;
+			}
+		}
 	}
 
 	/**
-	 * @param rowCount
-	 * @param columnCount
+	 * Defines how to handle the progress bar inside the table.
 	 */
-	public QueueTableModel(int rowCount, int columnCount)
+	private class ProgressRenderer extends JProgressBar implements TableCellRenderer
 	{
-		super(rowCount, columnCount);
+
+		/** Constant: SerialVersionUID. */
+		private static final long	serialVersionUID	= -4106456853733016017L;
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value
+				, boolean isSelected, boolean hasFocus, int row, int col)
+		{
+			Float v = (Float) value;
+
+			// set the range.
+			setMinimum(0);
+			setMaximum(100);
+
+//			if (v > 0)
+			setIndeterminate(false);
+			setStringPainted(true);
+			setValue((int) (v.floatValue() * 100));
+//			}
+
+			return this;
+		}
 	}
+
+	private class CancelButton extends ImageIcon
+	{
+
+		private static final long	serialVersionUID	= 2710162133669731329L;
+
+		public CancelButton()
+		{
+			super(_keepup.class.getResource("images\\cancel.gif"));
+		}
+
+	}
+
+//	/**
+//	 * Defines how to handle the cancel button inside the table.
+//	 */
+//	private class CancelButtonRenderer extends JButton implements TableCellRenderer
+//	{
+//
+//		/** Constant: SerialVersionUID. */
+//		private static final long	serialVersionUID	= -4106456853733016017L;
+//
+//		@Override
+//		public Component getTableCellRendererComponent(JTable table, Object value
+//				, boolean isSelected, boolean hasFocus, int row, int col)
+//		{
+//			setIcon(new ImageIcon(_keepup.class.getResource("images\\cancel.gif")));
+//			return this;
+//		}
+//	}
 
 	/**
-	 * @param columnNames
-	 * @param rowCount
+	 * An extension of {@link DefaultTableModel}, which is used to overcome the limitation of treating all cells as {@link String}
+	 * --
+	 * for the progress bar problem.
 	 */
-	public QueueTableModel(Object[] columnNames, int rowCount)
+	@SuppressWarnings({ "rawtypes", "unused" })
+	private class QueueTableModel extends DefaultTableModel
 	{
-		super(columnNames, rowCount);
-	}
 
-	/**
-	 * @param data
-	 * @param columnNames
-	 */
-	public QueueTableModel(Object[][] data, Object[] columnNames)
-	{
-		super(data, columnNames);
-	}
+		/** Constant: SerialVersionUID. */
+		private static final long	serialVersionUID	= -4057598058867765548L;
 
-	/**
-	 * @param columnNames
-	 * @param rowCount
-	 */
-	public QueueTableModel(Vector columnNames, int rowCount)
-	{
-		super(columnNames, rowCount);
-	}
+		/**
+		 *
+		 */
+		public QueueTableModel()
+		{
+			super();
+		}
 
-	/**
-	 * @param data
-	 * @param columnNames
-	 */
-	public QueueTableModel(Vector data, Vector columnNames)
-	{
-		super(data, columnNames);
-	}
+		/**
+		 * @param rowCount
+		 * @param columnCount
+		 */
+		public QueueTableModel(int rowCount, int columnCount)
+		{
+			super(rowCount, columnCount);
+		}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public Class getColumnClass(int c)
-	{
-		return getValueAt(0, c).getClass();
+		/**
+		 * @param columnNames
+		 * @param rowCount
+		 */
+		public QueueTableModel(Object[] columnNames, int rowCount)
+		{
+			super(columnNames, rowCount);
+		}
+
+		/**
+		 * @param data
+		 * @param columnNames
+		 */
+		public QueueTableModel(Object[][] data, Object[] columnNames)
+		{
+			super(data, columnNames);
+		}
+
+		/**
+		 * @param columnNames
+		 * @param rowCount
+		 */
+		public QueueTableModel(Vector columnNames, int rowCount)
+		{
+			super(columnNames, rowCount);
+		}
+
+		/**
+		 * @param data
+		 * @param columnNames
+		 */
+		public QueueTableModel(Vector data, Vector columnNames)
+		{
+			super(data, columnNames);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Class getColumnClass(int c)
+		{
+			return getValueAt(0, c).getClass();
+		}
 	}
 }

@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/App.java
  *
- *			Modified: 13-Mar-2014 (19:21:04)
+ *			Modified: 18-Mar-2014 (17:46:45)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -19,24 +19,28 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
-import javax.swing.JOptionPane;
-
 import com.yagasoft.keepup.combinedstorage.MainWindow;
+import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.CSP;
 import com.yagasoft.overcast.container.File;
 import com.yagasoft.overcast.container.Folder;
 import com.yagasoft.overcast.container.local.LocalFile;
 import com.yagasoft.overcast.container.local.LocalFolder;
+import com.yagasoft.overcast.container.operation.IOperationListener;
+import com.yagasoft.overcast.container.operation.OperationEvent;
+import com.yagasoft.overcast.container.operation.OperationState;
 import com.yagasoft.overcast.container.remote.RemoteFile;
 import com.yagasoft.overcast.container.remote.RemoteFolder;
+import com.yagasoft.overcast.exception.CSPBuildException;
+import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
 import com.yagasoft.overcast.exception.TransferException;
 import com.yagasoft.overcast.google.Google;
 import com.yagasoft.overcast.ubuntu.Ubuntu;
 
 
-public abstract class App
+public final class App
 {
 	
 	/** Enable debug-related logging throughout the program. */
@@ -52,8 +56,10 @@ public abstract class App
 	
 	/**
 	 * Prepare the app for usage.
+	 * 
+	 * @throws CSPBuildException
 	 */
-	public static void initApp()
+	public static void initApp() throws CSPBuildException
 	{
 		initCSPs();
 		initGUI();
@@ -62,8 +68,10 @@ public abstract class App
 	
 	/**
 	 * Create, authenticate, and initialise the tree of each CSP.
+	 * 
+	 * @throws CSPBuildException
 	 */
-	private static void initCSPs()
+	private static void initCSPs() throws CSPBuildException
 	{
 		csps = new HashMap<String, CSP<?, ?, ?>>();
 		
@@ -124,7 +132,7 @@ public abstract class App
 	/**
 	 * Rebuild the folders tree.
 	 */
-	public static void refreshTree()
+	public static void initTree()
 	{
 		// combined root folders list.
 		ArrayList<Folder<?>> folders = new ArrayList<Folder<?>>();
@@ -140,6 +148,17 @@ public abstract class App
 		
 		// sent it to the GUI tree to be displayed.
 		mainWindow.getBrowserPanel().updateTree(folders.toArray(new Folder<?>[folders.size()]));
+	}
+	
+	public static void refreshTree()
+	{
+		// get each CSP list if available.
+		for (CSP<?, ?, ?> csp : csps.values())
+		{
+			csp.getRemoteFileTree().buildTree(1);
+		}
+		
+		initTree();
 	}
 	
 	/**
@@ -169,6 +188,66 @@ public abstract class App
 		return files.toArray(new File<?>[files.size()]);
 	}
 	
+	public static void createFolder(RemoteFolder<?> parent, String name)
+	{
+		// no folder, then choose best fitting to upload to its root.
+		if (parent == null)
+		{
+			try
+			{
+				parent = bestFit(0).getRemoteFileTree();
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+				Msg.showError(e.getMessage());
+				return;
+			}
+		}
+		
+		RemoteFolder<?> folder = parent.getCsp().getAbstractFactory().createFolder();
+		folder.setName(name);
+		
+		try
+		{
+			folder.create(parent, new IOperationListener()
+			{
+				
+				@Override
+				public void operationProgressChanged(OperationEvent event)
+				{
+					switch (event.getState())
+					{
+						case COMPLETED:
+							refreshTree();
+							break;
+						case FAILED:
+							Msg.showError("Failed to create: '" + event.getContainer().getPath() + "'.");
+							break;
+						default:
+							break;
+					}
+				}
+			});
+		}
+		catch (CreationException e)
+		{
+			e.printStackTrace();
+			Msg.showError(e.getMessage());
+		}
+		
+//		switch (parent.getCsp().getName())
+//		{
+//			case "Google Drive":
+//				((Google) parent.getCsp()).getFactory().crea
+//				break;
+//
+//			case "Ubuntu One":
+//				break;
+//		}
+		
+	}
+	
 	/**
 	 * Download selected files to the selected folder.
 	 * 
@@ -181,10 +260,7 @@ public abstract class App
 		if (files.length == 0)
 		{
 			Logger.post("Nothing to download!");
-			
-			JOptionPane.showMessageDialog(mainWindow.getToolBar(), "Please, choose a file first from the files list.", "ERROR!"
-					, JOptionPane.ERROR_MESSAGE);
-			
+			Msg.showError("Please, choose a file first from the files list.");
 			return;
 		}
 		
@@ -209,10 +285,7 @@ public abstract class App
 			if (parent.getLocalFreeSpace() <= filesSize)
 			{
 				Logger.post("Not enough space!");
-				
-				JOptionPane.showMessageDialog(mainWindow, "Please, free some space on local disk.", "ERROR!"
-						, JOptionPane.ERROR_MESSAGE);
-				
+				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
 			
@@ -225,7 +298,7 @@ public abstract class App
 				for (RemoteFile<?> file : files)
 				{
 					mainWindow.getQueuePanel().addTransferJob(
-							file.getCsp().download(file, parent, true, mainWindow.getQueuePanel(), null), parent);
+							file.getCsp().download(file, parent, true, mainWindow.getQueuePanel()), "Download");
 				}
 			}
 			catch (TransferException | OperationException e)
@@ -236,9 +309,7 @@ public abstract class App
 		else
 		{
 			Logger.post("No folder selected!");
-			
-			JOptionPane.showMessageDialog(mainWindow.getToolBar(), "Please, choose a folder first using the 'browse' button.",
-					"ERROR!", JOptionPane.ERROR_MESSAGE);
+			Msg.showError("Please, choose a folder first using the 'browse' button.");
 		}
 	}
 	
@@ -256,22 +327,23 @@ public abstract class App
 		if (files.length == 0)
 		{
 			Logger.post("Nothing to upload!");
-			
-			JOptionPane.showMessageDialog(mainWindow.getToolBar(), "Please, choose a file first.", "ERROR!"
-					, JOptionPane.ERROR_MESSAGE);
-			
+			Msg.showError("Please, choose a file first.");
 			return;
 		}
 		
-		// no folder, then no need to proceed.
+		// no folder, then choose best fitting to upload to its root.
 		if (parent == null)
 		{
-			Logger.post("Nothing to upload to!");
-			
-			JOptionPane.showMessageDialog(mainWindow.getToolBar(), "Please, choose a folder first.", "ERROR!"
-					, JOptionPane.ERROR_MESSAGE);
-			
-			return;
+			try
+			{
+				parent = chooseCsp(files);
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+				Msg.showError(e.getMessage());
+				return;
+			}
 		}
 		
 		// --------------------------------------------------------------------------------------
@@ -290,16 +362,14 @@ public abstract class App
 			if (parent.getCsp().calculateRemoteFreeSpace() <= filesSize)
 			{
 				Logger.post("Not enough space!");
-				
-				JOptionPane.showMessageDialog(mainWindow, "Please, free some space on local disk.", "ERROR!"
-						, JOptionPane.ERROR_MESSAGE);
-				
+				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
 		}
 		catch (HeadlessException | OperationException e1)
 		{
 			e1.printStackTrace();
+			return;
 		}
 		
 		// #endregion Make sure there's enough space.
@@ -310,13 +380,79 @@ public abstract class App
 			for (LocalFile file : files)
 			{
 				mainWindow.getQueuePanel().addTransferJob(
-						parent.getCsp().upload(file, parent, true, mainWindow.getQueuePanel(), null), parent);
+						parent.getCsp().upload(file, parent, true, mainWindow.getQueuePanel()), "Upload");
 			}
 		}
 		catch (TransferException | OperationException e)
 		{
 			e.printStackTrace();
 		}
+	}
+	
+	public static void deleteFolder(RemoteFolder<?> folder)
+	{
+		try
+		{
+			folder.delete(new IOperationListener()
+			{
+				
+				@Override
+				public void operationProgressChanged(OperationEvent event)
+				{
+					switch (event.getState())
+					{
+						case COMPLETED:
+							refreshTree();
+							break;
+						case FAILED:
+							Msg.showError("Failed to delete: '" + event.getContainer().getPath() + "'.");
+							break;
+						default:
+							break;
+					}
+				}
+			});
+		}
+		catch (OperationException e)
+		{
+			e.printStackTrace();
+			Msg.showError(e.getMessage());
+		}
+	}
+	
+	/**
+	 * Delete passed files.
+	 * 
+	 * @param files
+	 *            the files.
+	 */
+	public static void deleteFiles(RemoteFile<?>[] files)
+	{
+		for (RemoteFile<?> file : files)
+		{
+			try
+			{
+				file.delete(new IOperationListener()
+				{
+					
+					@Override
+					public void operationProgressChanged(OperationEvent event)
+					{
+						if (event.getState() == OperationState.FAILED)
+						{
+							Msg.showError("Failed to delete file: " + event.getContainer().getName());
+						}
+					}
+				});
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+				Msg.showError(e.getMessage());
+			}
+		}
+		
+		mainWindow.getBrowserPanel().updateTable();
 	}
 	
 	/**
@@ -334,7 +470,7 @@ public abstract class App
 	public static void setLastDirectory(String lastDirectory)
 	{
 		App.lastDirectory = lastDirectory;
-		mainWindow.getToolBar().updateDestinationFolder();
+		mainWindow.getBrowserPanel().getToolBarFiles().updateDestinationFolder();
 	}
 	
 	/**
@@ -344,11 +480,8 @@ public abstract class App
 	 * 
 	 * @return The root of the best fit CSP.
 	 */
-	public static RemoteFolder<?> chooseCsp(LocalFile[] files)
+	public static RemoteFolder<?> chooseCsp(LocalFile[] files) throws OperationException
 	{
-		// --------------------------------------------------------------------------------------
-		// #region Make sure there's enough space.
-		
 		long filesSize = 0L;
 		
 		for (LocalFile file : files)
@@ -357,32 +490,18 @@ public abstract class App
 		}
 		
 		// no space, then no need to proceed.
-		try
-		{
-			CSP<?, ?, ?> bestFit = bestFit(filesSize);
-			
-			if (bestFit == null)
-			{
-				Logger.post("Not enough space!");
-				
-				JOptionPane.showMessageDialog(mainWindow, "Please, free some space on any CSP.", "ERROR!"
-						, JOptionPane.ERROR_MESSAGE);
-				
-				return null;
-			}
-			else
-			{
-				return bestFit.getRemoteFileTree();
-			}
-		}
-		catch (HeadlessException | OperationException e1)
-		{
-			e1.printStackTrace();
-		}
+		CSP<?, ?, ?> bestFit = bestFit(filesSize);
 		
-		// #endregion Make sure there's enough space.
-		// --------------------------------------------------------------------------------------
-		return null;
+		if (bestFit == null)
+		{
+			Logger.post("Not enough space!");
+			Msg.showError("Please, free some space on any CSP.");
+			return null;
+		}
+		else
+		{
+			return bestFit.getRemoteFileTree();
+		}
 	}
 	
 	/**
@@ -394,7 +513,7 @@ public abstract class App
 	 *            Files size.
 	 * @return % of the fit.
 	 * @throws OperationException
-	 *             the operation exception
+	 *             the operation exception when free space can't be obtained.
 	 */
 	private static float fit(CSP<?, ?, ?> csp, long filesSize) throws OperationException
 	{
@@ -408,7 +527,7 @@ public abstract class App
 	 *            Files size.
 	 * @return Best fit CSP.
 	 * @throws OperationException
-	 *             the operation exception
+	 *             the operation exception when free space can't be obtained.
 	 */
 	private static CSP<?, ?, ?> bestFit(long filesSize) throws OperationException
 	{

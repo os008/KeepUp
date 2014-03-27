@@ -1,11 +1,11 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		Modified MIT License (GPL v3 compatible)
  * 			License terms are in a separate file (license.txt)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/BrowserPanel.java
- * 
+ *
  *			Modified: 13-Mar-2014 (21:56:19)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -32,10 +33,14 @@ import javax.swing.event.TreeWillExpandListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.ExpandVetoException;
 
 import com.yagasoft.keepup.App;
+import com.yagasoft.keepup._keepup;
+import com.yagasoft.keepup.combinedstorage.actions.FileToolBar;
+import com.yagasoft.keepup.combinedstorage.actions.FolderToolBar;
 import com.yagasoft.overcast.container.File;
 import com.yagasoft.overcast.container.Folder;
 import com.yagasoft.overcast.container.remote.RemoteFile;
@@ -54,11 +59,28 @@ public class BrowserPanel extends JPanel
 	/** Split pane. */
 	private JSplitPane				splitPane;
 	
+	/** Folders tool bar. */
+	FolderToolBar					toolBarFolders;
+	
 	/** Tree of the folders. */
 	private JTree					treeFolders;
 	
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Tree icons.
+	// ======================================================================================
+	
+	ImageIcon						openFolder			= new ImageIcon(_keepup.class.getResource("images/open_folder.gif"));
+	ImageIcon						closedFolder		= new ImageIcon(_keepup.class.getResource("images/closed_folder.gif"));
+	
+	// ======================================================================================
+	// #endregion Tree icons.
+	// //////////////////////////////////////////////////////////////////////////////////////
+	
 	/** Scroll pane folders. */
 	private JScrollPane				scrollPaneFolders;
+	
+	/** Files tool bar. */
+	FileToolBar						toolBarFiles;
 	
 	/** Root. */
 	private DefaultMutableTreeNode	root;
@@ -99,8 +121,18 @@ public class BrowserPanel extends JPanel
 		// --------------------------------------------------------------------------------------
 		// #region RemoteFolder tree.
 		
+		JPanel panelFolders = new JPanel(new BorderLayout());
+		
 		root = new DefaultMutableTreeNode("root");
 		treeFolders = new JTree(root);
+		
+		// set tree node icons.
+		DefaultTreeCellRenderer treeRenderer = new DefaultTreeCellRenderer();
+		treeRenderer.setLeafIcon(closedFolder);
+		treeRenderer.setClosedIcon(closedFolder);
+		treeRenderer.setOpenIcon(openFolder);
+		treeFolders.setCellRenderer(treeRenderer);
+		
 		scrollPaneFolders = new JScrollPane(treeFolders);
 		
 		// a listener to prepare a node for expansion. Also, it must be used to decide if the node needs a '+'.
@@ -144,13 +176,20 @@ public class BrowserPanel extends JPanel
 			}
 		});
 		
-		splitPane.setLeftComponent(scrollPaneFolders);
+		panelFolders.add(scrollPaneFolders, BorderLayout.CENTER);
+		
+		toolBarFolders = new FolderToolBar();
+		panelFolders.add(toolBarFolders, BorderLayout.NORTH);
+		
+		splitPane.setLeftComponent(panelFolders);
 		
 		// #endregion RemoteFolder tree.
 		// --------------------------------------------------------------------------------------
 		
 		// --------------------------------------------------------------------------------------
 		// #region RemoteFile table.
+		
+		JPanel panelFiles = new JPanel(new BorderLayout());
 		
 		columnNames = new String[] { "Name", "Size", "CSP" };
 		tableData = new String[0][3];
@@ -160,8 +199,12 @@ public class BrowserPanel extends JPanel
 		tableFiles = new JTable(tableModel);
 		scrollPaneFiles = new JScrollPane(tableFiles);
 		formatTable();
+		panelFiles.add(scrollPaneFiles, BorderLayout.CENTER);
 		
-		splitPane.setRightComponent(scrollPaneFiles);
+		toolBarFiles = new FileToolBar();
+		panelFiles.add(toolBarFiles, BorderLayout.NORTH);
+		
+		splitPane.setRightComponent(panelFiles);
 		
 		// #endregion RemoteFile table.
 		// --------------------------------------------------------------------------------------
@@ -373,5 +416,35 @@ public class BrowserPanel extends JPanel
 		
 		// nothing is selected.
 		return null;
+	}
+	
+	public JTree getTreeFolders()
+	{
+		return treeFolders;
+	}
+	
+	public void setTreeFolders(JTree treeFolders)
+	{
+		this.treeFolders = treeFolders;
+	}
+	
+	public FileToolBar getToolBarFiles()
+	{
+		return toolBarFiles;
+	}
+	
+	public void setToolBarFiles(FileToolBar toolBarFiles)
+	{
+		this.toolBarFiles = toolBarFiles;
+	}
+	
+	public JTable getTableFiles()
+	{
+		return tableFiles;
+	}
+	
+	public void setTableFiles(JTable tableFiles)
+	{
+		this.tableFiles = tableFiles;
 	}
 }
