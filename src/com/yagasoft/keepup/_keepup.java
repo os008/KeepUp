@@ -45,8 +45,6 @@ public class _keepup
 			e.printStackTrace();
 			return;
 		}
-		
-		App.initTree();
 	}
 	
 }

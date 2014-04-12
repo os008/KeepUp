@@ -1,12 +1,12 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
- *		Modified MIT License (GPL v3 compatible)
- * 			License terms are in a separate file (license.txt)
- *
+ * 
+ *		The Modified MIT Licence (GPL v3 compatible)
+ * 			Licence terms are in a separate file (LICENCE.md)
+ * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/BrowserPanel.java
- *
- *			Modified: 13-Mar-2014 (21:56:19)
+ * 
+ *			Modified: 13-Apr-2014 (00:02:12)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -14,15 +14,19 @@ package com.yagasoft.keepup.combinedstorage;
 
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -41,10 +45,13 @@ import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
 import com.yagasoft.keepup.combinedstorage.actions.FileToolBar;
 import com.yagasoft.keepup.combinedstorage.actions.FolderToolBar;
-import com.yagasoft.overcast.container.File;
-import com.yagasoft.overcast.container.Folder;
-import com.yagasoft.overcast.container.remote.RemoteFile;
-import com.yagasoft.overcast.container.remote.RemoteFolder;
+import com.yagasoft.keepup.dialogues.Browse;
+import com.yagasoft.overcast.base.container.File;
+import com.yagasoft.overcast.base.container.Folder;
+import com.yagasoft.overcast.base.container.local.LocalFolder;
+import com.yagasoft.overcast.base.container.remote.RemoteFile;
+import com.yagasoft.overcast.base.container.remote.RemoteFolder;
+import com.yagasoft.overcast.exception.OperationException;
 
 
 /**
@@ -59,8 +66,11 @@ public class BrowserPanel extends JPanel
 	/** Split pane. */
 	private JSplitPane				splitPane;
 	
+	/** The text field destination. */
+	private JTextField				textFieldWorkingFolder;
+	
 	/** Folders tool bar. */
-	FolderToolBar					toolBarFolders;
+	private FolderToolBar			toolBarFolders;
 	
 	/** Tree of the folders. */
 	private JTree					treeFolders;
@@ -80,7 +90,7 @@ public class BrowserPanel extends JPanel
 	private JScrollPane				scrollPaneFolders;
 	
 	/** Files tool bar. */
-	FileToolBar						toolBarFiles;
+	private FileToolBar				toolBarFiles;
 	
 	/** Root. */
 	private DefaultMutableTreeNode	root;
@@ -115,8 +125,36 @@ public class BrowserPanel extends JPanel
 	{
 		setLayout(new BorderLayout(0, 0));
 		
-		//
 		splitPane = new JSplitPane();
+		
+		// --------------------------------------------------------------------------------------
+		// #region Working folder.
+		
+		JPanel panelWorkingFolder = new JPanel(new BorderLayout());
+		
+		textFieldWorkingFolder = new JTextField();
+		textFieldWorkingFolder.setEditable(false);
+//		textFieldDestination.setMinimumSize(new Dimension(50, textFieldDestination.getMinimumSize().height));
+//		textFieldDestination.setPreferredSize(new Dimension(200, textFieldDestination.getPreferredSize().height));
+//		textFieldDestination.setMaximumSize(new Dimension(200, textFieldDestination.getMaximumSize().height));
+		panelWorkingFolder.add(textFieldWorkingFolder, BorderLayout.CENTER);
+		
+		JButton buttonBrowse = new JButton("Browse");
+		buttonBrowse.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				chooseAFolder();
+			}
+		});
+		panelWorkingFolder.add(buttonBrowse, BorderLayout.EAST);
+		
+		add(panelWorkingFolder, BorderLayout.NORTH);
+		
+		// #endregion Working folder.
+		// --------------------------------------------------------------------------------------
 		
 		// --------------------------------------------------------------------------------------
 		// #region RemoteFolder tree.
@@ -146,7 +184,14 @@ public class BrowserPanel extends JPanel
 				for (Folder<?> folder : ((Folder<?>) ((DefaultMutableTreeNode) event.getPath().getLastPathComponent())
 						.getUserObject()).getFoldersArray())
 				{
-					folder.buildTree(0);		// update its contents.
+					try
+					{
+						folder.buildTree(0);		// update its contents.
+					}
+					catch (OperationException e)
+					{
+						e.printStackTrace();
+					}
 				}
 				
 				updateTree();
@@ -169,7 +214,7 @@ public class BrowserPanel extends JPanel
 				
 				// if the selection is 'root' then combine files list at 'App', else, load files in the selected folder.
 				files = (node.getUserObject() instanceof String) ?
-						App.getRootFiles(true)
+						App.getRootFiles(false)
 						: ((Folder<?>) node.getUserObject()).getFilesArray();
 				
 				updateTable(files);
@@ -352,8 +397,15 @@ public class BrowserPanel extends JPanel
 		
 		if (folder != null)
 		{
-			folder.updateFromSource(true, false);
-			updateTable(folder.getFilesArray());
+			try
+			{
+				folder.updateFromSource(true, false);
+				updateTable(folder.getFilesArray());
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+			}
 		}
 		else
 		{
@@ -446,5 +498,27 @@ public class BrowserPanel extends JPanel
 	public void setTableFiles(JTable tableFiles)
 	{
 		this.tableFiles = tableFiles;
+	}
+	
+	/**
+	 * Pops up a windows to choose a folder, and then updates the chosen folder global var.
+	 */
+	public void chooseAFolder()
+	{
+		LocalFolder selectedFolder = Browse.chooseFolder();
+		
+		// if a folder was chosen ...
+		if (selectedFolder != null)
+		{
+			App.setLastDirectory(selectedFolder.getPath());
+		}
+	}
+	
+	/**
+	 * Update destination folder in the text field.
+	 */
+	public void updateDestinationFolder(String path)
+	{
+		textFieldWorkingFolder.setText(path);
 	}
 }

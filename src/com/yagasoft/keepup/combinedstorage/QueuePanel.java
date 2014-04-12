@@ -31,10 +31,10 @@ import javax.swing.table.TableCellRenderer;
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
 import com.yagasoft.logger.Logger;
-import com.yagasoft.overcast.container.transfer.ITransferProgressListener;
-import com.yagasoft.overcast.container.transfer.TransferEvent;
-import com.yagasoft.overcast.container.transfer.TransferJob;
-import com.yagasoft.overcast.container.transfer.TransferState;
+import com.yagasoft.overcast.base.container.transfer.ITransferProgressListener;
+import com.yagasoft.overcast.base.container.transfer.TransferEvent;
+import com.yagasoft.overcast.base.container.transfer.TransferJob;
+import com.yagasoft.overcast.base.container.transfer.TransferState;
 
 
 /**
@@ -98,7 +98,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					
 				if (((QueueTableModel) tableQueue.getModel()).getDataVector().size() > 0)
 				{
-					App.mainWindow.getStatusBar().updateFreeSpace();	// update free space display
+					App.updateFreeSpace();	// update free space display
 					App.mainWindow.getBrowserPanel().updateTable();
 				}
 			}
@@ -155,7 +155,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 //	}
 
 	/**
-	 * @see com.yagasoft.overcast.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.container.transfer.TransferEvent)
+	 * @see com.yagasoft.overcast.base.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.TransferEvent)
 	 */
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -216,7 +216,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					{
 						if (rows.size() == 1)
 						{
-							App.mainWindow.getStatusBar().updateFreeSpace();	// update free space display
+							App.updateFreeSpace();	// update free space display
 							App.mainWindow.getBrowserPanel().updateTable();
 						}
 
