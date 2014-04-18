@@ -389,31 +389,6 @@ public class BrowserPanel extends JPanel
 	}
 	
 	/**
-	 * Updates the selected folder. It grabs the files in the folder, and then passes them to {@link #updateTable(File[])}.
-	 */
-	public void updateTable()
-	{
-		Folder<?> folder = getSelectedFolder();
-		
-		if (folder != null)
-		{
-			try
-			{
-				folder.updateFromSource(true, false);
-				updateTable(folder.getFilesArray());
-			}
-			catch (OperationException e)
-			{
-				e.printStackTrace();
-			}
-		}
-		else
-		{
-			updateTable(App.getRootFiles(true));
-		}
-	}
-	
-	/**
 	 * Gets the selected files.
 	 * 
 	 * @return the selected files

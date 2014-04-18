@@ -48,6 +48,8 @@ public class FileToolBar extends JToolBar implements ActionListener
 		/** Upload. */
 		UPLOAD,
 
+		REFRESH,
+
 		COPY,
 
 		MOVE,
@@ -81,6 +83,9 @@ public class FileToolBar extends JToolBar implements ActionListener
 		add(button);
 
 		button = createButton("upload", Actions.UPLOAD + "", "Upload files to selected folder.", "Upload");
+		add(button);
+
+		button = createButton("refresh", Actions.REFRESH + "", "Refresh contents of selected folder.", "Refresh");
 		add(button);
 
 		button = createButton("copy", Actions.COPY + "", "copy selected file.", "Copy");
@@ -156,11 +161,11 @@ public class FileToolBar extends JToolBar implements ActionListener
 			// no folder, so let the user choose either 'root', or stop.
 			if (remoteFolder == null)
 			{
-				Logger.post("Nothing to upload to!");
+				Logger.error("Nothing to upload to!");
 
 				if (Msg.showQuestion("Upload to 'root'? This will choose the best fit from all CSPs.") == 0)
 				{
-					Logger.post("Uploading to root ...");
+					Logger.info("Uploading to root ...");
 
 					LocalFile[] files = Browse.chooseFiles();
 
@@ -173,6 +178,11 @@ public class FileToolBar extends JToolBar implements ActionListener
 			}
 
 			App.uploadFile(Browse.chooseFiles(), remoteFolder);
+		}
+
+		if (Actions.REFRESH.toString().equals(cmd))
+		{
+			App.updateTable();
 		}
 
 		if (Actions.COPY.toString().equals(cmd))

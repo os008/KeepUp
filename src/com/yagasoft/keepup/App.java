@@ -1,11 +1,11 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup/App.java
- * 
+ *
  *			Modified: 13-Apr-2014 (00:00:38)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
+import com.yagasoft.keepup.combinedstorage.BrowserPanel;
 import com.yagasoft.keepup.combinedstorage.MainWindow;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
@@ -42,45 +43,48 @@ import com.yagasoft.overcast.base.container.operation.OperationState;
 import com.yagasoft.overcast.base.container.remote.RemoteFile;
 import com.yagasoft.overcast.base.container.remote.RemoteFolder;
 import com.yagasoft.overcast.base.csp.CSP;
+import com.yagasoft.overcast.exception.AuthorisationException;
 import com.yagasoft.overcast.exception.CSPBuildException;
 import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
 import com.yagasoft.overcast.exception.TransferException;
+import com.yagasoft.overcast.implement.dropbox.Dropbox;
+import com.yagasoft.overcast.implement.google.Google;
 import com.yagasoft.overcast.implement.ubuntu.Ubuntu;
 
 
 public final class App
 {
-	
+
 	enum FileActions
 	{
 		COPY,
 		MOVE
 	}
-	
+
 	/** Enable debug-related logging throughout the program. */
 	public static final boolean					DEBUG		= true;
-	
-	private static Path							optionsFile	= Paths.get(System.getProperty("user.dir") + "/bin/options.ser");
+
+	private static Path							optionsFile	= Paths.get(System.getProperty("user.dir") + "/etc/options.ser");
 	private static HashMap<String, Object>		options		= null;
 	private static String						ubuntuUser;
 	private static String						ubuntuPass;
-	
+
 	/** CSPs. */
 	public static HashMap<String, CSP<?, ?, ?>>	csps;
-	
+
 	/** Main window. */
 	public static MainWindow					mainWindow;
-	
+
 	private static String						lastDirectory;
-	
+
 	private static RemoteFile<?>[]				filesInHand;
-	
+
 	private static FileActions					fileAction;
-	
+
 	/**
 	 * Prepare the app for usage.
-	 * 
+	 *
 	 * @throws CSPBuildException
 	 */
 	public static void initApp() throws CSPBuildException
@@ -89,7 +93,7 @@ public final class App
 		loadOptions();
 		initCSPs();
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static void loadOptions()
 	{
@@ -98,14 +102,14 @@ public final class App
 			ObjectInputStream in = new ObjectInputStream(new FileInputStream(optionsFile.toString()));
 			options = (HashMap<String, Object>) in.readObject();
 			in.close();
-			
+
 			for (String option : options.keySet())
 			{
 				switch (option)
 				{
 					case "lastDirectory":
 						String directory = (String) options.get("lastDirectory");
-						
+
 						if (Files.notExists(Paths.get(directory)))
 						{
 							setLastDirectory(System.getProperty("user.home"));
@@ -114,13 +118,13 @@ public final class App
 						{
 							setLastDirectory(directory);
 						}
-						
+
 						break;
-					
+
 					case "ubuntuUser":
 						ubuntuUser = (String) options.get("ubuntuUser");
 						break;
-					
+
 					case "ubuntuPass":
 						ubuntuPass = (String) options.get("ubuntuPass");
 						break;
@@ -134,7 +138,7 @@ public final class App
 			setLastDirectory(System.getProperty("user.home"));
 		}
 	}
-	
+
 	public static void saveOptions()
 	{
 		try
@@ -142,7 +146,7 @@ public final class App
 			options.put("lastDirectory", lastDirectory);
 			options.put("ubuntuUser", ubuntuUser);
 			options.put("ubuntuPass", ubuntuPass);
-			
+
 			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(optionsFile.toString()));
 			out.writeObject(options);
 			out.close();
@@ -152,32 +156,48 @@ public final class App
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Create, authenticate, and initialise the tree of each CSP.
-	 * 
+	 *
 	 * @throws CSPBuildException
 	 */
 	private static void initCSPs() throws CSPBuildException
 	{
 		csps = new HashMap<String, CSP<?, ?, ?>>();
-		
-//		addCSP(new Google());
-		
-		if ((ubuntuUser == null) || (ubuntuPass == null))
+
+		try
 		{
-			ubuntuUser = Msg.getInput("Please, enter Ubuntu One's username:");
-			ubuntuPass = Msg.getPassword("Please, enter Ubuntu One's password:");
+			addCSP(Google.getInstance("os1983@gmail.com"));
 		}
-		
-		addCSP(new Ubuntu(ubuntuUser, ubuntuPass));
+		catch (AuthorisationException e)
+		{
+			e.printStackTrace();
+		}
+
+		try
+		{
+			addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+		}
+		catch (AuthorisationException e)
+		{
+			e.printStackTrace();
+		}
+
+//		if ((ubuntuUser == null) || (ubuntuPass == null))
+//		{
+//			ubuntuUser = Msg.getInput("Please, enter Ubuntu One's username:");
+//			ubuntuPass = Msg.getPassword("Please, enter Ubuntu One's password:");
+//		}
+//
+//		addCSP(new Ubuntu(ubuntuUser, ubuntuPass));
 	}
-	
+
 	public static void addCSP(final CSP<?, ?, ?> csp)
 	{
 		new Thread(new Runnable()
 		{
-			
+
 			@Override
 			public void run()
 			{
@@ -196,11 +216,11 @@ public final class App
 			}
 		}).start();
 	}
-	
+
 	public static void updateFreeSpace()
 	{
 		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
-		
+
 		for (CSP<?, ?, ?> csp : App.getCspsArray())
 		{
 			try
@@ -212,10 +232,10 @@ public final class App
 				e.printStackTrace();
 			}
 		}
-		
+
 		mainWindow.getStatusBar().updateFreeSpace(freeSpace);
 	}
-	
+
 	/**
 	 * Constructs the main window of the combined storage app, and sets it to be displayed.
 	 */
@@ -223,21 +243,21 @@ public final class App
 	{
 		mainWindow = new MainWindow();
 		mainWindow.getBrowserPanel().resetDivider();
-		
+
 		mainWindow.getFrame().addWindowListener(new WindowAdapter()
 		{
-			
+
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				saveOptions();
 			}
 		});
-		
+
 //		Task task = new Task();
 //		task.addPropertyChangeListener(mainWindow.getQueuePanel());
 //		task.execute();
-		
+
 //		new Thread(new Runnable()
 //		{
 //
@@ -266,7 +286,7 @@ public final class App
 //			}
 //		}).start();
 	}
-	
+
 	/**
 	 * Rebuild the folders tree.
 	 */
@@ -274,20 +294,20 @@ public final class App
 	{
 		// combined root folders list.
 		ArrayList<Folder<?>> folders = new ArrayList<Folder<?>>();
-		
+
 		// get each CSP list if available.
 		for (CSP<?, ?, ?> csp : csps.values())
 		{
 			folders.addAll(csp.getRemoteFileTree().getFoldersList());
 		}
-		
+
 		// sort it to appear as contiguous space.
 		Collections.sort(folders);
-		
+
 		// sent it to the GUI tree to be displayed.
 		mainWindow.getBrowserPanel().updateTree(folders.toArray(new Folder<?>[folders.size()]));
 	}
-	
+
 	public static void refreshTree()
 	{
 		// get each CSP list if available.
@@ -295,7 +315,7 @@ public final class App
 		{
 			new Thread(new Runnable()
 			{
-				
+
 				@Override
 				public void run()
 				{
@@ -312,10 +332,10 @@ public final class App
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * Combine the files in all the available CSPs into a single array.
-	 * 
+	 *
 	 * @param update
 	 *            update from soure, or read from memory
 	 * @return the root files
@@ -324,7 +344,7 @@ public final class App
 	{
 		// combined root folders list.
 		ArrayList<File<?>> files = new ArrayList<File<?>>();
-		
+
 		// get each CSP list if available.
 		for (CSP<?, ?, ?> csp : csps.values())
 		{
@@ -339,16 +359,16 @@ public final class App
 					e.printStackTrace();
 				}
 			}
-			
+
 			files.addAll(csp.getRemoteFileTree().getFilesList());
 		}
-		
+
 		// sort it to appear as contiguous space.
 		Collections.sort(files);
-		
+
 		return files.toArray(new File<?>[files.size()]);
 	}
-	
+
 	public static void createFolder(RemoteFolder<?> parent, String name)
 	{
 		// no folder, then choose best fitting to upload to its root.
@@ -365,15 +385,15 @@ public final class App
 				return;
 			}
 		}
-		
+
 		final RemoteFolder<?> folder = parent.getCsp().getAbstractFactory().createFolder();
 		folder.setName(name);
-		
+
 		final RemoteFolder<?> threadedParent = parent;
-		
+
 		new Thread(new Runnable()
 		{
-			
+
 			@Override
 			public void run()
 			{
@@ -381,7 +401,7 @@ public final class App
 				{
 					folder.create(threadedParent, new IOperationListener()
 					{
-						
+
 						@Override
 						public void operationProgressChanged(OperationEvent event)
 						{
@@ -406,7 +426,7 @@ public final class App
 				}
 			}
 		}).start();
-		
+
 //		switch (parent.getCsp().getName())
 //		{
 //			case "Google Drive":
@@ -416,12 +436,12 @@ public final class App
 //			case "Ubuntu One":
 //				break;
 //		}
-		
+
 	}
-	
+
 	/**
 	 * Download selected files to the selected folder.
-	 * 
+	 *
 	 * @param files
 	 *            Files list.
 	 */
@@ -430,43 +450,43 @@ public final class App
 		// no files, then no need to proceed.
 		if (files.length == 0)
 		{
-			Logger.post("Nothing to download!");
+			Logger.error("Nothing to download!");
 			Msg.showError("Please, choose a file first from the files list.");
 			return;
 		}
-		
+
 		try
 		{
 			// prepare folder object ...
 			LocalFolder parent = new LocalFolder(getLastDirectory());
 			parent.buildTree(false);
-			
+
 			// --------------------------------------------------------------------------------------
 			// #region Make sure there's enough space.
-			
+
 			Long filesSize = 0L;
-			
+
 			for (RemoteFile<?> file : files)
 			{
 				filesSize += file.getSize();
 			}
-			
+
 			// no space, then no need to proceed.
 			if (parent.getLocalFreeSpace() <= filesSize)
 			{
-				Logger.post("Not enough space!");
+				Logger.error("Not enough space!");
 				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
-			
+
 			// #endregion Make sure there's enough space.
 			// --------------------------------------------------------------------------------------
-			
+
 			// ... download all files passed to that folder.
 			for (RemoteFile<?> file : files)
 			{
 				boolean overwrite = false;
-				
+
 				if (parent.searchByName(file.getName(), false) != null)
 				{
 					if (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") == 0)
@@ -474,7 +494,7 @@ public final class App
 						overwrite = true;
 					}
 				}
-				
+
 				mainWindow.getQueuePanel().addTransferJob(
 						file.getCsp().download(file, parent, overwrite, mainWindow.getQueuePanel()), "Download");
 			}
@@ -485,10 +505,10 @@ public final class App
 			Msg.showError(e.getMessage());
 		}
 	}
-	
+
 	/**
 	 * Upload selected file to the selected folder.
-	 * 
+	 *
 	 * @param file
 	 *            File.
 	 * @param parent
@@ -499,11 +519,11 @@ public final class App
 		// no file, then no need to proceed.
 		if (files.length == 0)
 		{
-			Logger.post("Nothing to upload!");
+			Logger.error("Nothing to upload!");
 			Msg.showError("Please, choose a file first.");
 			return;
 		}
-		
+
 		// no folder, then choose best fitting to upload to its root.
 		if (parent == null)
 		{
@@ -518,23 +538,23 @@ public final class App
 				return;
 			}
 		}
-		
+
 		// --------------------------------------------------------------------------------------
 		// #region Make sure there's enough space.
-		
+
 		long filesSize = 0L;
-		
+
 		for (LocalFile file : files)
 		{
 			filesSize += file.getSize();
 		}
-		
+
 		// no space, then no need to proceed.
 		try
 		{
 			if (parent.getCsp().calculateRemoteFreeSpace() <= filesSize)
 			{
-				Logger.post("Not enough space!");
+				Logger.error("Not enough space!");
 				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
@@ -544,16 +564,16 @@ public final class App
 			e1.printStackTrace();
 			return;
 		}
-		
+
 		// #endregion Make sure there's enough space.
 		// --------------------------------------------------------------------------------------
-		
+
 		try
 		{
 			for (LocalFile file : files)
 			{
 				boolean overwrite = false;
-				
+
 				if (parent.searchByName(file.getName(), false) != null)
 				{
 					if (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") == 0)
@@ -561,7 +581,7 @@ public final class App
 						overwrite = true;
 					}
 				}
-				
+
 				mainWindow.getQueuePanel().addTransferJob(
 						parent.getCsp().upload(file, parent, overwrite, mainWindow.getQueuePanel()), "Upload");
 			}
@@ -572,12 +592,12 @@ public final class App
 			Msg.showError(e.getMessage());
 		}
 	}
-	
+
 	public static void deleteFolder(final RemoteFolder<?> folder)
 	{
 		new Thread(new Runnable()
 		{
-			
+
 			@Override
 			public void run()
 			{
@@ -585,7 +605,7 @@ public final class App
 				{
 					folder.delete(new IOperationListener()
 					{
-						
+
 						@Override
 						public void operationProgressChanged(OperationEvent event)
 						{
@@ -608,14 +628,14 @@ public final class App
 					e.printStackTrace();
 					Msg.showError(e.getMessage());
 				}
-				
+
 			}
 		}).start();
 	}
-	
+
 	/**
 	 * Delete passed files.
-	 * 
+	 *
 	 * @param files
 	 *            the files.
 	 */
@@ -625,7 +645,7 @@ public final class App
 		{
 			new Thread(new Runnable()
 			{
-				
+
 				@Override
 				public void run()
 				{
@@ -633,7 +653,7 @@ public final class App
 					{
 						file.delete(new IOperationListener()
 						{
-							
+
 							@Override
 							public void operationProgressChanged(OperationEvent event)
 							{
@@ -643,8 +663,8 @@ public final class App
 								}
 							}
 						});
-						
-						mainWindow.getBrowserPanel().updateTable();
+
+						updateTable();
 					}
 					catch (OperationException e)
 					{
@@ -655,7 +675,7 @@ public final class App
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * @return the lastDirectory
 	 */
@@ -663,7 +683,7 @@ public final class App
 	{
 		return lastDirectory;
 	}
-	
+
 	/**
 	 * @param lastDirectory
 	 *            the lastDirectory to set
@@ -673,29 +693,29 @@ public final class App
 		App.lastDirectory = lastDirectory;
 		mainWindow.getBrowserPanel().updateDestinationFolder(lastDirectory);
 	}
-	
+
 	/**
 	 * Gets the CSP with the least space to fit the files passed.
-	 * 
+	 *
 	 * @param files
-	 * 
+	 *
 	 * @return The root of the best fit CSP.
 	 */
 	public static RemoteFolder<?> chooseCsp(LocalFile[] files) throws OperationException
 	{
 		long filesSize = 0L;
-		
+
 		for (LocalFile file : files)
 		{
 			filesSize += file.getSize();
 		}
-		
+
 		// no space, then no need to proceed.
 		CSP<?, ?, ?> bestFit = bestFit(filesSize);
-		
+
 		if (bestFit == null)
 		{
-			Logger.post("Not enough space!");
+			Logger.error("Not enough space!");
 			Msg.showError("Please, free some space on any CSP.");
 			return null;
 		}
@@ -704,10 +724,10 @@ public final class App
 			return bestFit.getRemoteFileTree();
 		}
 	}
-	
+
 	/**
 	 * Gets the % of the fit of the files inside the CSP's free space.
-	 * 
+	 *
 	 * @param csp
 	 *            CSP.
 	 * @param filesSize
@@ -720,10 +740,10 @@ public final class App
 	{
 		return filesSize / (float) csp.calculateRemoteFreeSpace();
 	}
-	
+
 	/**
 	 * Gets the smallest fit for the files among all the CSPs.
-	 * 
+	 *
 	 * @param filesSize
 	 *            Files size.
 	 * @return Best fit CSP.
@@ -733,15 +753,15 @@ public final class App
 	private static CSP<?, ?, ?> bestFit(long filesSize) throws OperationException
 	{
 		HashMap<Float, CSP<?, ?, ?>> fits = new HashMap<Float, CSP<?, ?, ?>>();
-		
+
 		for (CSP<?, ?, ?> csp : csps.values())
 		{
 			fits.put(fit(csp, filesSize), csp);
 		}
-		
+
 		Float[] fitsList = fits.keySet().toArray(new Float[fits.size()]);
 		Arrays.sort(fitsList);
-		
+
 		for (int i = (fitsList.length - 1); i >= 0; i--)
 		{
 			if (fitsList[i] < 0.99)
@@ -749,15 +769,15 @@ public final class App
 				return fits.get(fitsList[i]);
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Human readable size conversion.<br/>
 	 * <br />
 	 * Credit: 'aioobe' at 'StackOverFlow.com'
-	 * 
+	 *
 	 * @param bytes
 	 *            Size in bytes.
 	 * @return Human readable size.
@@ -765,33 +785,33 @@ public final class App
 	public static String humanReadableSize(long bytes)
 	{
 		int unit = 1024;
-		
+
 		if (bytes < unit)
 		{
 			return bytes + " B";
 		}
-		
+
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
 		String pre = ("KMGTPE").charAt(exp - 1) + ("i");
-		
+
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
-	
+
 	public static CSP<?, ?, ?>[] getCspsArray()
 	{
 		return csps.values().toArray(new CSP<?, ?, ?>[csps.values().size()]);
 	}
-	
+
 	public static RemoteFile<?>[] getSelectedFiles()
 	{
 		return mainWindow.getBrowserPanel().getSelectedFiles();
 	}
-	
+
 	public static void renameFolder(final RemoteFolder<?> folder, final String newName)
 	{
 		new Thread(new Runnable()
 		{
-			
+
 			@Override
 			public void run()
 			{
@@ -799,7 +819,7 @@ public final class App
 				{
 					folder.rename(newName, new IOperationListener()
 					{
-						
+
 						@Override
 						public void operationProgressChanged(OperationEvent event)
 						{
@@ -809,7 +829,7 @@ public final class App
 							}
 						}
 					});
-					
+
 					refreshTree();
 				}
 				catch (OperationException e)
@@ -820,12 +840,12 @@ public final class App
 			}
 		}).start();
 	}
-	
+
 	public static void renameFile(final RemoteFile<?>[] files, final String newName)
 	{
 		new Thread(new Runnable()
 		{
-			
+
 			@Override
 			public void run()
 			{
@@ -833,7 +853,7 @@ public final class App
 				{
 					files[0].rename(newName, new IOperationListener()
 					{
-						
+
 						@Override
 						public void operationProgressChanged(OperationEvent event)
 						{
@@ -843,7 +863,7 @@ public final class App
 							}
 						}
 					});
-					
+
 					updateTable();
 				}
 				catch (OperationException e)
@@ -854,35 +874,55 @@ public final class App
 			}
 		}).start();
 	}
-	
+
+	/**
+	 * Updates the selected folder. It grabs the files in the folder, and then passes them to {@link BrowserPanel#updateTable(File[])}.
+	 */
 	public static void updateTable()
 	{
-		mainWindow.getBrowserPanel().updateTable();
+		Folder<?> folder = getSelectedFolder();
+
+		if (folder != null)
+		{
+			try
+			{
+				folder.updateFromSource(true, false);
+				mainWindow.getBrowserPanel().updateTable(folder.getFilesArray());
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			mainWindow.getBrowserPanel().updateTable(App.getRootFiles(true));
+		}
 	}
-	
+
 	public static RemoteFolder<?> getSelectedFolder()
 	{
 		return mainWindow.getBrowserPanel().getSelectedFolder();
 	}
-	
+
 	public static void copyFiles(RemoteFile<?>[] files)
 	{
 		filesInHand = files;
 		fileAction = FileActions.COPY;
 	}
-	
+
 	public static void moveFiles(RemoteFile<?>[] files)
 	{
 		filesInHand = files;
 		fileAction = FileActions.MOVE;
 	}
-	
+
 	public static void pasteFiles(RemoteFolder<?> folder)
 	{
 		for (RemoteFile<?> file : filesInHand)
 		{
 			boolean overwrite = false;
-			
+
 			if (folder.searchByName(file, false) != null)
 			{
 				if (Msg.showQuestion("Overwrite: " + file.getName() + " in " + folder.getPath()) == 0)
@@ -890,7 +930,7 @@ public final class App
 					overwrite = true;
 				}
 			}
-			
+
 			try
 			{
 				switch (fileAction)
@@ -898,26 +938,26 @@ public final class App
 					case COPY:
 						file.copy(folder, overwrite, new IOperationListener()
 						{
-							
+
 							@Override
 							public void operationProgressChanged(OperationEvent event)
 							{}
 						});
 						break;
-					
+
 					case MOVE:
 						file.move(folder, overwrite, new IOperationListener()
 						{
-							
+
 							@Override
 							public void operationProgressChanged(OperationEvent event)
 							{}
 						});
 						break;
-					
+
 					default:
 						break;
-				
+
 				}
 			}
 			catch (OperationException e)

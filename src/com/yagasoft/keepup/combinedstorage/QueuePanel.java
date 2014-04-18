@@ -95,11 +95,11 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 //				{
 					((DefaultTableModel) table.getModel()).removeRow(modelRow);
 //				}
-					
+
 				if (((QueueTableModel) tableQueue.getModel()).getDataVector().size() > 0)
 				{
 					App.updateFreeSpace();	// update free space display
-					App.mainWindow.getBrowserPanel().updateTable();
+					App.updateTable();
 				}
 			}
 		};
@@ -161,7 +161,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	@Override
 	public void transferProgressChanged(TransferEvent event)
 	{
-		Logger.post("PROGRESS!: " + event.getState() + " => " + event.getProgress());
+		Logger.info("PROGRESS " + event.getContainer().getPath() + ": " + event.getState() + " => " + event.getProgress());
 
 		// get the data in the table.
 		Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
@@ -200,7 +200,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					if (row.contains(event.getJob()))
 					{
 						setStatus(i, statusString);
-						App.mainWindow.getBrowserPanel().updateTable();		// redraw the table after fetching file list.
+						App.updateTable();		// redraw the table after fetching file list.
 						break;
 					}
 				}
@@ -217,11 +217,10 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 						if (rows.size() == 1)
 						{
 							App.updateFreeSpace();	// update free space display
-							App.mainWindow.getBrowserPanel().updateTable();
+							App.updateTable();
 						}
 
 						((QueueTableModel) tableQueue.getModel()).removeRow(i);
-
 						break;
 					}
 				}
