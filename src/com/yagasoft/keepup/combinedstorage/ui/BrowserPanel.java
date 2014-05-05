@@ -1,16 +1,16 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
- * 			Licence terms are in a separate file (LICENCE.md)
- * 
- *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/BrowserPanel.java
- * 
- *			Modified: 13-Apr-2014 (00:02:12)
+ * 			License terms are in a separate file (LICENCE.md)
+ *
+ *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui/BrowserPanel.java
+ *
+ *			Modified: May 3, 2014 (3:02:20 PM)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage;
+package com.yagasoft.keepup.combinedstorage.ui;
 
 
 import java.awt.BorderLayout;
@@ -40,18 +40,17 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.TreePath;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
-import com.yagasoft.keepup.combinedstorage.actions.FileToolBar;
-import com.yagasoft.keepup.combinedstorage.actions.FolderToolBar;
+import com.yagasoft.keepup.combinedstorage.CombinedFolder;
+import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
+import com.yagasoft.keepup.combinedstorage.ui.actions.FolderToolBar;
 import com.yagasoft.keepup.dialogues.Browse;
 import com.yagasoft.overcast.base.container.File;
-import com.yagasoft.overcast.base.container.Folder;
 import com.yagasoft.overcast.base.container.local.LocalFolder;
 import com.yagasoft.overcast.base.container.remote.RemoteFile;
-import com.yagasoft.overcast.base.container.remote.RemoteFolder;
-import com.yagasoft.overcast.exception.OperationException;
 
 
 /**
@@ -63,43 +62,56 @@ public class BrowserPanel extends JPanel
 	/** Constant: SerialVersionUID. */
 	private static final long		serialVersionUID	= 1173503486389973440L;
 	
+	/** The text field destination. */
+	private JTextField				textFieldWorkingFolder;
+	
 	/** Split pane. */
 	private JSplitPane				splitPane;
 	
-	/** The text field destination. */
-	private JTextField				textFieldWorkingFolder;
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Folders tree fields.
+	// ======================================================================================
 	
 	/** Folders tool bar. */
 	private FolderToolBar			toolBarFolders;
 	
-	/** Tree of the folders. */
-	private JTree					treeFolders;
-	
-	// //////////////////////////////////////////////////////////////////////////////////////
-	// #region Tree icons.
-	// ======================================================================================
-	
-	ImageIcon						openFolder			= new ImageIcon(_keepup.class.getResource("images/open_folder.gif"));
-	ImageIcon						closedFolder		= new ImageIcon(_keepup.class.getResource("images/closed_folder.gif"));
-	
-	// ======================================================================================
-	// #endregion Tree icons.
-	// //////////////////////////////////////////////////////////////////////////////////////
-	
 	/** Scroll pane folders. */
 	private JScrollPane				scrollPaneFolders;
 	
-	/** Files tool bar. */
-	private FileToolBar				toolBarFiles;
+	/** Tree of the folders. */
+	private JTree					treeFolders;
 	
 	/** Root. */
 	private DefaultMutableTreeNode	root;
 	
-	/** Table of the files. */
-	private JTable					tableFiles;
+	// --------------------------------------------------------------------------------------
+	// #region Tree icons.
+	
+	ImageIcon						openFolder			= new ImageIcon(_keepup.class.getResource("images/open_folder.gif"));
+	ImageIcon						closedFolder		= new ImageIcon(_keepup.class.getResource("images/closed_folder.gif"));
+	
+	// #endregion Tree icons.
+	// --------------------------------------------------------------------------------------
+	
+	// ======================================================================================
+	// #endregion Folders tree fields.
+	// //////////////////////////////////////////////////////////////////////////////////////
+	
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Files table fields.
+	// ======================================================================================
+	
+	/** Files tool bar. */
+	private FileToolBar				toolBarFiles;
 	
 	/** Scroll pane files. */
 	private JScrollPane				scrollPaneFiles;
+	
+	/** Table of the files. */
+	private JTable					tableFiles;
+	
+	/** Table model. */
+	private DefaultTableModel		tableModel;
 	
 	/** Column names. */
 	private String[]				columnNames;
@@ -107,8 +119,9 @@ public class BrowserPanel extends JPanel
 	/** Table data. */
 	private Object[][]				tableData;
 	
-	/** Table model. */
-	private DefaultTableModel		tableModel;
+	// ======================================================================================
+	// #endregion Files table fields.
+	// //////////////////////////////////////////////////////////////////////////////////////
 	
 	/**
 	 * Create the panel.
@@ -161,7 +174,7 @@ public class BrowserPanel extends JPanel
 		
 		JPanel panelFolders = new JPanel(new BorderLayout());
 		
-		root = new DefaultMutableTreeNode("root");
+		root = App.root.getNode();
 		treeFolders = new JTree(root);
 		
 		// set tree node icons.
@@ -180,27 +193,33 @@ public class BrowserPanel extends JPanel
 			@Override
 			public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException
 			{
-				// get folders inside the expanding folder.
-				for (Folder<?> folder : ((Folder<?>) ((DefaultMutableTreeNode) event.getPath().getLastPathComponent())
-						.getUserObject()).getFoldersArray())
+				if ( !treeFolders.hasBeenExpanded(event.getPath()))
 				{
-					try
-					{
-						folder.buildTree(0);		// update its contents.
-					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-					}
+					expandingNode((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
 				}
-				
-				updateTree();
 			}
 			
 			@Override
 			public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException
 			{}
 		});
+		
+//		// a listener to prepare a node for expansion. Also, it must be used to decide if the node needs a '+'.
+//		treeFolders.addTreeExpansionListener(new TreeExpansionListener()
+//		{
+//			@Override
+//			public void treeExpanded(TreeExpansionEvent event)
+//			{
+//				if (!treeFolders.hasBeenExpanded(event.getPath()))
+//				{
+//					expandingNode((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
+//				}
+//			}
+//
+//			@Override
+//			public void treeCollapsed(TreeExpansionEvent event)
+//			{}
+//		});
 		
 		// when folder is selected, list its files.
 		treeFolders.addTreeSelectionListener(new TreeSelectionListener()
@@ -210,13 +229,7 @@ public class BrowserPanel extends JPanel
 			public void valueChanged(TreeSelectionEvent e)
 			{
 				DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
-				File<?>[] files = null;
-				
-				// if the selection is 'root' then combine files list at 'App', else, load files in the selected folder.
-				files = (node.getUserObject() instanceof String) ?
-						App.getRootFiles(false)
-						: ((Folder<?>) node.getUserObject()).getFilesArray();
-				
+				File<?>[] files = ((CombinedFolder) node.getUserObject()).getFilesArray(false);
 				updateTable(files);
 			}
 		});
@@ -277,58 +290,244 @@ public class BrowserPanel extends JPanel
 		}
 	}
 	
+//	public void expandAll()
+//	{
+//	  int row = 0;
+//	  while (row < treeFolders.getRowCount()) {
+//		  treeFolders.expandRow(row);
+//		row++;
+//	  }
+//	}
+//
+	/**
+	 * Pops up a windows to choose a folder, and then updates the chosen folder global var.
+	 */
+	public void chooseAFolder()
+	{
+		LocalFolder selectedFolder = Browse.chooseFolder();
+		
+		// if a folder was chosen ...
+		if (selectedFolder != null)
+		{
+			App.setLastDirectory(selectedFolder.getPath());
+		}
+	}
+	
+	/**
+	 * Update destination folder in the text field.
+	 */
+	public void updateDestinationFolder(String path)
+	{
+		textFieldWorkingFolder.setText(path);
+	}
+	
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Tree methods.
+	// ======================================================================================
+	
 	/**
 	 * Refresh tree.
 	 */
 	public void updateTree()
 	{
-		@SuppressWarnings("unchecked") Enumeration<DefaultMutableTreeNode> nodes = root.children();
+		updateNode(root, true);
+	}
+	
+	/**
+	 * Refresh node's name.
+	 * 
+	 * @param node
+	 *            the node
+	 */
+	public void updateNodeName(DefaultMutableTreeNode node)
+	{
+		((DefaultTreeModel) treeFolders.getModel()).nodeChanged(node);
+	}
+	
+	/**
+	 * Refresh node non-recursively.
+	 * 
+	 * @param node
+	 *            the node
+	 */
+	public void updateNode(DefaultMutableTreeNode node)
+	{
+		updateNode(node, false);
+	}
+	
+	/**
+	 * Refresh node passed. If recursive refreshes the children nodes.
+	 * This differs from {@link #loadNode(DefaultMutableTreeNode, boolean)} in that it doesn't go through new nodes, just the
+	 * existing ones.
+	 * 
+	 * @param node
+	 *            the node
+	 * @param recursively
+	 *            recursively?
+	 */
+	@SuppressWarnings("unchecked")
+	public void updateNode(DefaultMutableTreeNode node, boolean recursively)
+	{
+		if (recursively)
+		{
+			Enumeration<DefaultMutableTreeNode> nodes = node.children();
+			
+			while (nodes.hasMoreElements())
+			{
+				DefaultMutableTreeNode childNode = nodes.nextElement();
+				updateNode(childNode, recursively);
+			}
+		}
+		
+		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
+	}
+	
+	/**
+	 * Loads the whole tree.<br />
+	 * WARNING: might take a VERY long time.
+	 */
+	public void loadTree()
+	{
+		loadNode(root, true);
+	}
+	
+	/**
+	 * Loads node non-recursively.
+	 * 
+	 * @param node
+	 *            the node
+	 */
+	public void loadNode(DefaultMutableTreeNode node)
+	{
+		loadNode(node, false);
+	}
+	
+	/**
+	 * Loads the children of passed node only. If recursive, then loads the ones under (beware of time).
+	 * 
+	 * @param node
+	 *            the node
+	 * @param recursively
+	 *            recursively?
+	 */
+	@SuppressWarnings("unchecked")
+	public void loadNode(DefaultMutableTreeNode node, boolean recursively)
+	{
+		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
+		
+		if (recursively)
+		{
+			Enumeration<DefaultMutableTreeNode> nodes = node.children();
+			
+			while (nodes.hasMoreElements())
+			{
+				((CombinedFolder) nodes.nextElement().getUserObject()).updateCombinedFolder(true);
+			}
+		}
+	}
+	
+	/**
+	 * Expanding node action. Loads the children of the expanding node to show the expansion indicator next to them if possible
+	 * and if they have children.
+	 * 
+	 * @param node
+	 *            the node
+	 */
+	@SuppressWarnings("unchecked")
+	private void expandingNode(DefaultMutableTreeNode node)
+	{
+		Enumeration<DefaultMutableTreeNode> nodes = node.children();
 		
 		while (nodes.hasMoreElements())
 		{
-			fillTreeNode(nodes.nextElement());
+			((CombinedFolder) nodes.nextElement().getUserObject()).updateCombinedFolder(true);
 		}
 	}
 	
 	/**
-	 * Fill the tree using the sent list recursively.
+	 * Gets the selected folder.
 	 * 
-	 * @param folderArray
-	 *            Folder array.
+	 * @return the selected folder
 	 */
-	public void updateTree(Folder<?>[] folderArray)
+	public CombinedFolder getSelectedFolder()
 	{
-		root = new DefaultMutableTreeNode("root");
+		// get the selected folder as a path object.
+		Object selectedPath = treeFolders.getLastSelectedPathComponent();
 		
-		for (Folder<?> folder : folderArray)
+		// if there's something selected ...
+		if (selectedPath != null)
 		{
-			DefaultMutableTreeNode node = new DefaultMutableTreeNode(folder);
-			fillTreeNode(node);
-			root.add(node);
-			
-			// treeFolders.expandPath(new TreePath(node));
+			return (CombinedFolder) ((DefaultMutableTreeNode) selectedPath).getUserObject();
 		}
 		
-		treeFolders.setModel(new DefaultTreeModel(root));
+		// nothing is selected.
+		return null;
 	}
 	
 	/**
-	 * Fill node with sub-folders and files contained within recursively and adds them to the tree.
+	 * Adds the node to tree.
 	 * 
+	 * @param childNode
+	 *            the child node
 	 * @param node
-	 *            Node to be used.
+	 *            the node
 	 */
-	private void fillTreeNode(DefaultMutableTreeNode node)
+	@SuppressWarnings("unchecked")
+	public void addNodeToTree(DefaultMutableTreeNode childNode, DefaultMutableTreeNode node)
 	{
-		node.removeAllChildren();
+		DefaultTreeModel treeModel = ((DefaultTreeModel) treeFolders.getModel());
 		
-		for (Folder<?> folder : ((Folder<?>) node.getUserObject()).getFoldersArray())
+		Enumeration<DefaultMutableTreeNode> children = node.children();
+		
+		int index = 0;
+		
+		// insert node in a sorted order.
+		while (true && !node.isNodeChild(childNode))
 		{
-			DefaultMutableTreeNode subNode = new DefaultMutableTreeNode(folder);
-			fillTreeNode(subNode);
-			node.add(subNode);
+			if (children.hasMoreElements())
+			{
+				// check nodes names to figure out where to put the new one.
+				if (((CombinedFolder) childNode.getUserObject()).compareTo((CombinedFolder) children.nextElement()
+						.getUserObject()) < 0)
+				{
+					treeModel.insertNodeInto(childNode, node, index);
+				}
+				
+				index++;
+			}
+			else
+			{
+				treeModel.insertNodeInto(childNode, node, index);
+			}
 		}
+		
+		if (treeFolders.isExpanded(new TreePath(node.getPath())))
+		{
+			((CombinedFolder) childNode.getUserObject()).updateCombinedFolder(true);
+		}
+		
+//		treeModel.reload(node);
 	}
+	
+	/**
+	 * Removes the node from the tree.
+	 * 
+	 * @param childNode
+	 *            Child node to remove.
+	 */
+	public void removeNodeFromTree(DefaultMutableTreeNode childNode)
+	{
+		DefaultTreeModel treeModel = ((DefaultTreeModel) treeFolders.getModel());
+		treeModel.removeNodeFromParent(childNode);
+	}
+	
+	// ======================================================================================
+	// #endregion Tree methods.
+	// //////////////////////////////////////////////////////////////////////////////////////
+	
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Table methods.
+	// ======================================================================================
 	
 	/**
 	 * Set how the table behaves visually.
@@ -384,6 +583,7 @@ public class BrowserPanel extends JPanel
 		}
 		
 		tableFiles.setModel(new DefaultTableModel(tableData, columnNames));
+		tableFiles.revalidate();
 		
 		formatTable();
 	}
@@ -415,35 +615,13 @@ public class BrowserPanel extends JPanel
 		return files;
 	}
 	
-	/**
-	 * Gets the selected folder.
-	 * 
-	 * @return the selected folder
-	 */
-	public RemoteFolder<?> getSelectedFolder()
-	{
-		// get the selected folder as a path object.
-		Object selectedPath = treeFolders.getLastSelectedPathComponent();
-		
-		// if there's something selected ...
-		if (selectedPath != null)
-		{
-			// get the folder stored there ...
-			Object userObject = ((DefaultMutableTreeNode) selectedPath).getUserObject();
-			
-			// oops, not a folder.
-			if (userObject instanceof String)
-			{
-				return null;
-			}
-			
-			// good, return the folder.
-			return (RemoteFolder<?>) userObject;
-		}
-		
-		// nothing is selected.
-		return null;
-	}
+	// ======================================================================================
+	// #endregion Table methods.
+	// //////////////////////////////////////////////////////////////////////////////////////
+	
+	// //////////////////////////////////////////////////////////////////////////////////////
+	// #region Getters and setters.
+	// ======================================================================================
 	
 	public JTree getTreeFolders()
 	{
@@ -475,25 +653,8 @@ public class BrowserPanel extends JPanel
 		this.tableFiles = tableFiles;
 	}
 	
-	/**
-	 * Pops up a windows to choose a folder, and then updates the chosen folder global var.
-	 */
-	public void chooseAFolder()
-	{
-		LocalFolder selectedFolder = Browse.chooseFolder();
-		
-		// if a folder was chosen ...
-		if (selectedFolder != null)
-		{
-			App.setLastDirectory(selectedFolder.getPath());
-		}
-	}
+	// ======================================================================================
+	// #endregion Getters and setters.
+	// //////////////////////////////////////////////////////////////////////////////////////
 	
-	/**
-	 * Update destination folder in the text field.
-	 */
-	public void updateDestinationFolder(String path)
-	{
-		textFieldWorkingFolder.setText(path);
-	}
 }

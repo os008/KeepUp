@@ -1,5 +1,5 @@
 
-package com.yagasoft.keepup.combinedstorage;
+package com.yagasoft.keepup.combinedstorage.ui;
 
 
 import java.awt.Color;

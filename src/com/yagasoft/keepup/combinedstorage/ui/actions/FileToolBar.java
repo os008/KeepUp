@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.actions;
+package com.yagasoft.keepup.combinedstorage.ui.actions;
 
 
 import java.awt.event.ActionEvent;
@@ -23,11 +23,12 @@ import javax.swing.JToolBar;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
+import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Browse;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.local.LocalFile;
-import com.yagasoft.overcast.base.container.remote.RemoteFolder;
+import com.yagasoft.overcast.base.container.remote.RemoteFile;
 
 
 /**
@@ -156,7 +157,7 @@ public class FileToolBar extends JToolBar implements ActionListener
 
 		if (Actions.UPLOAD.toString().equals(cmd))
 		{
-			RemoteFolder<?> remoteFolder = App.getSelectedFolder();
+			CombinedFolder remoteFolder = App.getSelectedFolder();
 
 			// no folder, so let the user choose either 'root', or stop.
 			if (remoteFolder == null)
@@ -166,18 +167,24 @@ public class FileToolBar extends JToolBar implements ActionListener
 				if (Msg.showQuestion("Upload to 'root'? This will choose the best fit from all CSPs.") == 0)
 				{
 					Logger.info("Uploading to root ...");
-
-					LocalFile[] files = Browse.chooseFiles();
-
-					// get the best CSP to store those files, and initiate upload.
-					App.uploadFile(files, null);
 				}
+				else
+				{
+					return;
+				}
+			}
 
-				// done here.
+			LocalFile[] files = Browse.chooseFiles();
+
+			// no file, then no need to proceed.
+			if (files.length == 0)
+			{
+				Logger.error("Nothing to upload!");
+				Msg.showError("Please, choose a file first.");
 				return;
 			}
 
-			App.uploadFile(Browse.chooseFiles(), remoteFolder);
+			App.uploadFile(files, remoteFolder);
 		}
 
 		if (Actions.REFRESH.toString().equals(cmd))
@@ -210,7 +217,24 @@ public class FileToolBar extends JToolBar implements ActionListener
 
 		if (Actions.DELETE.toString().equals(cmd))
 		{
-			App.deleteFiles(App.getSelectedFiles());
+			RemoteFile<?>[] selectedFiles = App.getSelectedFiles();
+			String filesNames = "";
+
+			// form the names in to a list.
+			for (int i = 0; i < ((selectedFiles.length > 10) ? 10 : selectedFiles.length); i ++)
+			{
+				filesNames += selectedFiles[i].getPath() + "\n";
+			}
+
+			if (selectedFiles.length > 10)
+			{
+				filesNames += "...";
+			}
+
+			if (Msg.askConfirmation("Are you sure you want to delete the following files:\n" + filesNames))
+			{
+				App.deleteFiles(selectedFiles);
+			}
 		}
 	}
 

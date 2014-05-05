@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.actions;
+package com.yagasoft.keepup.combinedstorage.ui.actions;
 
 
 import java.awt.event.ActionEvent;
@@ -23,6 +23,7 @@ import javax.swing.JToolBar;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
+import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Msg;
 
 
@@ -49,7 +50,7 @@ public class FolderToolBar extends JToolBar implements ActionListener
 
 		/** Delete folder. */
 		DELETE,
-		
+
 		PASTE
 	}
 
@@ -176,9 +177,14 @@ public class FolderToolBar extends JToolBar implements ActionListener
 
 		if (Actions.DELETE.toString().equals(cmd))
 		{
-			App.deleteFolder(App.getSelectedFolder());
+			CombinedFolder selectedFolder = App.getSelectedFolder();
+
+			if (Msg.askConfirmation("Are you sure you want to delete '" + selectedFolder.getPath() + "'?"))
+			{
+				App.deleteFolder(selectedFolder);
+			}
 		}
-		
+
 		if (Actions.PASTE.toString().equals(cmd))
 		{
 			App.pasteFiles(App.getSelectedFolder());

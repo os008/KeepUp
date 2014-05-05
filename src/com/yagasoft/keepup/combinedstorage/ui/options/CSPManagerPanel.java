@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.options;
+package com.yagasoft.keepup.combinedstorage.ui.options;
 
 
 import java.awt.BorderLayout;

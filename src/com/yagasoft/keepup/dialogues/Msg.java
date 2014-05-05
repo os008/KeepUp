@@ -26,47 +26,54 @@ import com.yagasoft.keepup.App;
 
 /**
  * @author Ahmed
- * 
+ *
  */
 public final class Msg
 {
-	
+
 	public static void showMessage(String message)
 	{
 		JOptionPane.showMessageDialog(App.mainWindow, message, message
 				, JOptionPane.PLAIN_MESSAGE);
 	}
-	
+
 	public static void showWarning(String message)
 	{
 		JOptionPane.showMessageDialog(App.mainWindow, message, "WARNING!"
 				, JOptionPane.WARNING_MESSAGE);
 	}
-	
+
 	public static void showError(String message)
 	{
 		JOptionPane.showMessageDialog(App.mainWindow, message, "ERROR!"
 				, JOptionPane.ERROR_MESSAGE);
 	}
-	
+
 	public static int showQuestion(String message)
 	{
 		return JOptionPane.showOptionDialog(App.mainWindow, message
 				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
 				, null, 1);
 	}
-	
+
+	public static boolean askConfirmation(String message)
+	{
+		return JOptionPane.showOptionDialog(App.mainWindow, message
+				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
+				, null, 1) == 0 ? true : false;
+	}
+
 	public static String getInput(String message)
 	{
 		return JOptionPane.showInputDialog(App.mainWindow, message);
 	}
-	
+
 	/**
 	 * Gets the password.<br />
 	 * <br />
 	 * Credit: Mark A. Ziesemer
 	 * (http://blogger.ziesemer.com/2007/03/java-password-dialog.html)
-	 * 
+	 *
 	 * @param message
 	 *            the message.
 	 * @return the password
@@ -74,20 +81,20 @@ public final class Msg
 	public static String getPassword(String message)
 	{
 		final JPasswordField jpf = new JPasswordField();
-		
+
 		JOptionPane jop = new JOptionPane(jpf
 				, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
 		JDialog dialog = jop.createDialog(message);
-		
+
 		dialog.addComponentListener(new ComponentAdapter()
 		{
-			
+
 			@Override
 			public void componentShown(ComponentEvent e)
 			{
 				SwingUtilities.invokeLater(new Runnable()
 				{
-					
+
 					@Override
 					public void run()
 					{
@@ -96,11 +103,11 @@ public final class Msg
 				});
 			}
 		});
-		
+
 		dialog.setVisible(true);
 		dialog.dispose();
 		char[] pass = jpf.getPassword();
-		
+
 		return new String(pass);
 	}
 }

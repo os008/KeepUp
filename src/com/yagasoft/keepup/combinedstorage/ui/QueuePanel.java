@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage;
+package com.yagasoft.keepup.combinedstorage.ui;
 
 
 import java.awt.Component;
