@@ -1,12 +1,12 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
+ * 
  *		The Modified MIT Licence (GPL v3 compatible)
- * 			License terms are in a separate file (LICENCE.md)
- *
+ * 			Licence terms are in a separate file (LICENCE.md)
+ * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/CombinedFolder.java
- *
- *			Modified: May 3, 2014 (9:42:29 AM)
+ * 
+ *			Modified: 07-May-2014 (20:32:55)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -15,12 +15,11 @@ package com.yagasoft.keepup.combinedstorage;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import com.yagasoft.keepup.App;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.content.ChangeEvent;
 import com.yagasoft.overcast.base.container.content.IContentListener;
@@ -38,16 +37,25 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 {
 
 	/** Folder name. */
-	String								name;
+	private String							name;
 
 	/** Path of the folder. */
-	String								path;
+	private String							path;
+
+	/** Parent. */
+	protected CombinedFolder					parent;
 
 	/** Folders indexed by their CSP name, and holding the same path and folder name. */
-	HashMap<String, RemoteFolder<?>>	cspFolders	= new HashMap<String, RemoteFolder<?>>();
+	HashMap<String, RemoteFolder<?>>			cspFolders			= new HashMap<String, RemoteFolder<?>>();
+
+	/** Folders inside this folder mapped by path (tree implementation). */
+	protected HashMap<String, CombinedFolder>	subFolders			= new HashMap<String, CombinedFolder>();
 
 	/** The node in the tree that represents this folder visually. */
-	private DefaultMutableTreeNode		node;
+	private DefaultMutableTreeNode				node;
+
+	/** Content listeners. */
+	protected HashSet<ContentListener>			contentListeners	= new HashSet<ContentListener>();
 
 	/**
 	 * Instantiates a new combined folder.
@@ -77,17 +85,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		folder.addContentListener(this);
 		folder.addUpdateListener(this);
 
-		if ((name == null) || (path == null))
-		{
-			name = folder.getName();
-			path = folder.getPath();
-
-			if ((name == null) || (path == null) || path.equals("/"))
-			{
-				name = "root";
-				path = "/";
-			}
-		}
+		updateInfo(folder);
 	}
 
 	/**
@@ -99,11 +97,6 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	public synchronized void removeCspFolder(RemoteFolder<?> folder)
 	{
 		cspFolders.remove(folder.getCsp().getName());
-
-		if (cspFolders.size() <= 0)
-		{
-			App.removeNodeFromTree(node);
-		}
 	}
 
 	/**
@@ -115,7 +108,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	public synchronized void addChild(RemoteFolder<?> folder)
 	{
 		// search for the child in this folder.
-		CombinedFolder combinedFolder = findNode(folder.getName());
+		CombinedFolder combinedFolder = findFolder(folder.getName());
 
 		// if you can't find it, create a new combinedfolder for it
 		if (combinedFolder == null)
@@ -123,6 +116,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 			combinedFolder = new CombinedFolder(folder);
 			folder.addContentListener(combinedFolder);		// used for when the folder content changes.
 			folder.addUpdateListener(combinedFolder);		// used for when the name changes.
+			subFolders.put(combinedFolder.getPath(), combinedFolder);
 		}
 		else
 		{
@@ -132,16 +126,28 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 			folder.addUpdateListener(combinedFolder);
 		}
 
-		App.addNodeToTree(combinedFolder.getNode(), node);
+		notifyContentListeners(UpdateType.ADD, combinedFolder);
 	}
 
+	/**
+	 * Removes the child.
+	 *
+	 * @param folder
+	 *            Folder.
+	 */
 	public synchronized void removeChild(RemoteFolder<?> folder)
 	{
-		CombinedFolder combinedFolder = findNode(folder.getName());
+		CombinedFolder combinedFolder = findFolder(folder.getName());
 
 		if (combinedFolder != null)
 		{
 			combinedFolder.removeCspFolder(folder);
+
+			if (combinedFolder.getCspFolders().size() <= 0)
+			{
+				subFolders.remove(combinedFolder.getPath());
+				notifyContentListeners(UpdateType.REMOVE, combinedFolder);
+			}
 		}
 	}
 
@@ -174,7 +180,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 						e.printStackTrace();
 					}
 
-					name = folder.getName();
+					updateInfo(folder);
 				}
 			}).start();
 		}
@@ -245,24 +251,22 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	 *            Name to search for.
 	 * @return Combined folder found
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized CombinedFolder findNode(String name)
+	public synchronized CombinedFolder findFolder(String name)
 	{
-		Enumeration<DefaultMutableTreeNode> children = node.children();
-
-		while (children.hasMoreElements())
+		for (CombinedFolder folder : subFolders.values())
 		{
-			CombinedFolder child = (CombinedFolder) children.nextElement().getUserObject();
-
-			if (child.name.equals(name))
+			if (folder.getName().equals(name))
 			{
-				return child;
+				return folder;
 			}
 		}
 
 		return null;
 	}
 
+	/**
+	 * @see com.yagasoft.overcast.base.container.content.IContentListener#contentsChanged(com.yagasoft.overcast.base.container.content.ChangeEvent)
+	 */
 	@Override
 	public void contentsChanged(ChangeEvent event)
 	{
@@ -284,11 +288,77 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		}
 	}
 
+	/**
+	 * @see com.yagasoft.overcast.base.container.update.IUpdateListener#containerUpdated(com.yagasoft.overcast.base.container.update.UpdateEvent)
+	 */
 	@Override
 	public void containerUpdated(UpdateEvent event)
 	{
-		name = event.getContainer().getName();
-		App.updateNode(node);
+		updateInfo((RemoteFolder<?>) event.getContainer());
+		notifyContentListeners(UpdateType.NAME);
+	}
+
+	/**
+	 * Update info.
+	 *
+	 * @param folder Folder.
+	 */
+	private void updateInfo(RemoteFolder<?> folder)
+	{
+		setName(folder.getName());
+		setPath(folder.getPath());
+	}
+	
+	/**
+	 * Adds the content listener.
+	 *
+	 * @param listener
+	 *            Listener.
+	 */
+	public void addContentListener(ContentListener listener)
+	{
+		contentListeners.add(listener);
+	}
+
+	/**
+	 * Removes the content listener.
+	 *
+	 * @param listener
+	 *            Listener.
+	 */
+	public void removeContentListener(ContentListener listener)
+	{
+		contentListeners.remove(listener);
+	}
+
+	/**
+	 * Notify content listeners.
+	 *
+	 * @param update
+	 *            Update.
+	 */
+	public void notifyContentListeners(UpdateType update)
+	{
+		for (ContentListener listener : contentListeners)
+		{
+			listener.folderChanged(this, update, null);
+		}
+	}
+
+	/**
+	 * Notify content listeners.
+	 *
+	 * @param update
+	 *            Update.
+	 * @param content
+	 *            Content.
+	 */
+	public void notifyContentListeners(UpdateType update, CombinedFolder content)
+	{
+		for (ContentListener listener : contentListeners)
+		{
+			listener.folderChanged(this, update, content);
+		}
 	}
 
 	/**
@@ -346,6 +416,11 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 
 	public void setName(String name)
 	{
+		if (name == null)
+		{
+			name = "root";
+		}
+
 		this.name = name;
 	}
 
@@ -356,7 +431,31 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 
 	public void setPath(String path)
 	{
+		if ((path == null) || path.equals("/"))
+		{
+			setName("root");
+			path = "/";
+		}
+
 		this.path = path;
+	}
+
+
+	/**
+	 * @return the parent
+	 */
+	public CombinedFolder getParent()
+	{
+		return parent;
+	}
+
+
+	/**
+	 * @param parent the parent to set
+	 */
+	public void setParent(CombinedFolder parent)
+	{
+		this.parent = parent;
 	}
 
 	/**

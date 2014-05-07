@@ -16,6 +16,8 @@ package com.yagasoft.keepup.combinedstorage.ui;
 import javax.swing.JPanel;
 
 
+// TODO implement the LogPanel.
+
 /**
  * The Class LogPanel.
  */

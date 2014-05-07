@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
  *
- *		Modified MIT License (GPL v3 compatible)
- * 			License terms are in a separate file (license.txt)
+ *		The Modified MIT Licence (GPL v3 compatible)
+ * 			Licence terms are in a separate file (LICENCE.md)
  *
- *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.actions/FolderToolBar.java
+ *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.actions/FolderToolBar.java
  *
- *			Modified: Mar 31, 2014 (9:52:00 AM)
+ *			Modified: 07-May-2014 (20:55:36)
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
@@ -51,6 +51,7 @@ public class FolderToolBar extends JToolBar implements ActionListener
 		/** Delete folder. */
 		DELETE,
 
+		/** Paste. */
 		PASTE
 	}
 

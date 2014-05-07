@@ -30,12 +30,15 @@ import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
+import com.yagasoft.keepup.combinedstorage.ui.browser.table.ButtonColumn;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.transfer.ITransferProgressListener;
 import com.yagasoft.overcast.base.container.transfer.TransferEvent;
 import com.yagasoft.overcast.base.container.transfer.TransferJob;
 import com.yagasoft.overcast.base.container.transfer.TransferState;
 
+
+// TODO convert QueuePanel to MVC.
 
 /**
  * The Class QueuePanel.
@@ -65,10 +68,8 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		add(scrollPaneQueue);
 
 		tableQueue.setDefaultRenderer(Float.class, new ProgressRenderer());
-		// tableQueue.setDefaultRenderer(CancelButton.class, new CancelButtonRenderer());
 
-
-		//--------------------------------------------------------------------------------------
+		// --------------------------------------------------------------------------------------
 		// #region Cancel button.
 
 		Action action = new AbstractAction()
@@ -80,27 +81,21 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 			public void actionPerformed(ActionEvent e)
 			{
 				JTable table = (JTable) e.getSource();
-				int modelRow = Integer.valueOf(e.getActionCommand());
+				int modelRow = Integer.valueOf(e.getActionCommand());		// get row clicked.
 
+				// get the status string in that row.
 				String status = (String) ((QueueTableModel) tableQueue.getModel()).getValueAt(
 						modelRow, tableQueue.getColumnModel().getColumnIndex("Status"));
 
+				// if it's in progress, then cancel the job.
 				if ( !(status.toLowerCase().indexOf("failed") >= 0))
 				{
 					TransferJob<?> job = (TransferJob<?>) ((QueueTableModel) tableQueue.getModel()).getValueAt(
 							modelRow, tableQueue.getColumnModel().getColumnIndex("File"));
 					cancelTransfer(job);
 				}
-//				else
-//				{
-					((DefaultTableModel) table.getModel()).removeRow(modelRow);
-//				}
 
-				if (((QueueTableModel) tableQueue.getModel()).getDataVector().size() > 0)
-				{
-					App.updateFreeSpace();	// update free space display
-					App.updateTable();
-				}
+				((DefaultTableModel) table.getModel()).removeRow(modelRow);		// remove row.
 			}
 		};
 
@@ -108,7 +103,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		tableQueue.setCellEditor(buttonColumn);
 
 		// #endregion Cancel button.
-		//--------------------------------------------------------------------------------------
+		// --------------------------------------------------------------------------------------
 
 	}
 
@@ -127,32 +122,6 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				new Object[] {
 						job, job.getParent().getPath(), job.getCsp(), direction, "Queued ...", new Float(0), new CancelButton() });
 	}
-
-//	/**
-//	 * Adds an upload job to the visual queue.
-//	 *
-//	 * @param job
-//	 *            The job.
-//	 * @param destination
-//	 *            Destination.
-//	 */
-//	public void addTransferJob(UploadJob<?, ?> job, Folder<?> destination)
-//	{
-//		addTransferJob(job.getLocalFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Upload");
-//	}
-//
-//	/**
-//	 * Adds a download job to the visual queue.
-//	 *
-//	 * @param job
-//	 *            The job.
-//	 * @param destination
-//	 *            Destination.
-//	 */
-//	public void addTransferJob(DownloadJob<?> job, Folder<?> destination)
-//	{
-//		addTransferJob(job.getRemoteFile().getPath(), destination.getPath(), job.getRemoteFile().getCsp().getName(), "Download");
-//	}
 
 	/**
 	 * @see com.yagasoft.overcast.base.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.TransferEvent)
@@ -279,7 +248,6 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 			if (row.contains(job))
 			{
 				job.getCsp().cancelUpload(job);
-//				((QueueTableModel) tableQueue.getModel()).removeRow(i);
 				break;
 			}
 		}
@@ -326,28 +294,9 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 
 	}
 
-//	/**
-//	 * Defines how to handle the cancel button inside the table.
-//	 */
-//	private class CancelButtonRenderer extends JButton implements TableCellRenderer
-//	{
-//
-//		/** Constant: SerialVersionUID. */
-//		private static final long	serialVersionUID	= -4106456853733016017L;
-//
-//		@Override
-//		public Component getTableCellRendererComponent(JTable table, Object value
-//				, boolean isSelected, boolean hasFocus, int row, int col)
-//		{
-//			setIcon(new ImageIcon(_keepup.class.getResource("images\\cancel.gif")));
-//			return this;
-//		}
-//	}
-
 	/**
 	 * An extension of {@link DefaultTableModel}, which is used to overcome the limitation of treating all cells as {@link String}
-	 * --
-	 * for the progress bar problem.
+	 * -- for the progress bar problem.
 	 */
 	@SuppressWarnings({ "rawtypes", "unused" })
 	private class QueueTableModel extends DefaultTableModel
