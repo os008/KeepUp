@@ -26,6 +26,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ui.MainWindow;
@@ -68,7 +71,7 @@ public final class App
 	// ======================================================================================
 
 	/** Options file path. */
-	private static Path							optionsFile	= Paths.get(System.getProperty("user.dir") + "/etc/options.ser");
+	private static Path							optionsFile	= Paths.get(System.getProperty("user.dir") + "/etc/options.dat");
 
 	/** Options as a map. */
 	private static HashMap<String, Object>		options		= null;
@@ -80,7 +83,7 @@ public final class App
 	public static HashMap<String, CSP<?, ?, ?>>	csps;
 
 	/** Constant: Root of the tree. */
-	public static final CombinedFolder			root		= new CombinedFolder(null);
+	public static final CombinedFolder			ROOT		= new CombinedFolder(null);
 
 	// --------------------------------------------------------------------------------------
 	// #region GUI.
@@ -150,7 +153,7 @@ public final class App
 	 */
 	private static void initGUI()
 	{
-		foldersTree = new FoldersTree(root.getNode());
+		foldersTree = new FoldersTree(ROOT.getNode());
 		filesTable = new FilesTable();
 		browserPanel = new BrowserPanel(foldersTree, filesTable);
 		mainWindow = new MainWindow(browserPanel);
@@ -189,9 +192,10 @@ public final class App
 	{
 		csps = new HashMap<String, CSP<?, ?, ?>>();
 
-		HashSet<Thread> threads = new HashSet<Thread>();
+		// init CSPs in parallel.
+		ExecutorService executor = Executors.newCachedThreadPool();
 
-		threads.add(new Thread(new Runnable()
+		executor.execute(new Runnable()
 		{
 
 			@Override
@@ -207,9 +211,9 @@ public final class App
 					e.printStackTrace();
 				}
 			}
-		}));
+		});
 
-		threads.add(new Thread(new Runnable()
+		executor.execute(new Runnable()
 		{
 
 			@Override
@@ -225,29 +229,26 @@ public final class App
 					e.printStackTrace();
 				}
 			}
-		}));
+		});
 
-		// start the CSP threads.
-		for (Thread thread : threads)
+		try
 		{
-			thread.start();
-		}
+			executor.shutdown();
 
-		// wait for the threads to finish before expanding the root -- caused problems with showing expansion icon of children
-		for (Thread thread : threads)
+			// wait for the threads to finish before expanding the root
+			// -- caused problems with showing expansion icon of children
+			if (executor.awaitTermination(2, TimeUnit.MINUTES))
+			{
+				// show the root as expanded at the start.
+				foldersTree.expandPathToNode(ROOT.getNode());
+			}
+
+		}
+		catch (InterruptedException e)
 		{
-			try
-			{
-				thread.join();
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-			}
+			Msg.showError(e.getMessage());
+			e.printStackTrace();
 		}
-
-		// show the root as expanded at the start.
-		foldersTree.expandPathToNode(root.getNode());
 
 		// if ((ubuntuUser == null) || (ubuntuPass == null))
 		// {
@@ -398,7 +399,7 @@ public final class App
 		// no parent, then choose root.
 		if (parent == null)
 		{
-			parent = root;
+			parent = ROOT;
 		}
 
 		HashSet<RemoteFolder<?>> newFolders = new HashSet<RemoteFolder<?>>();
@@ -590,8 +591,8 @@ public final class App
 		}
 		else
 		{
-			root.updateCombinedFolder(true);
-			tableController.updateTable(root.getFilesArray(false));
+			ROOT.updateCombinedFolder(true);
+			tableController.updateTable(ROOT.getFilesArray(false));
 		}
 	}
 
@@ -677,7 +678,7 @@ public final class App
 		// choose best fitting to upload to its root.
 		if (parent == null)
 		{
-			parent = root;
+			parent = ROOT;
 		}
 
 		// choose best fitting to upload to.
@@ -980,8 +981,8 @@ public final class App
 		try
 		{
 			csp.initTree();
-			csp.getRemoteFileTree().addContentListener(root);
-			root.addCspFolder(csp.getRemoteFileTree());
+			csp.getRemoteFileTree().addContentListener(ROOT);
+			ROOT.addCspFolder(csp.getRemoteFileTree());
 			csps.put(csp.getName(), csp);
 			updateFreeSpace();
 			initTree();
