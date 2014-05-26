@@ -6,8 +6,8 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/App.java
  *
- *			Modified: 07-May-2014 (21:31:15)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 26-May-2014 (22:21:43)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup;
@@ -42,8 +42,6 @@ import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 import com.yagasoft.overcast.base.container.local.LocalFolder;
-import com.yagasoft.overcast.base.container.operation.IOperationListener;
-import com.yagasoft.overcast.base.container.operation.OperationEvent;
 import com.yagasoft.overcast.base.container.operation.OperationState;
 import com.yagasoft.overcast.base.container.remote.RemoteFile;
 import com.yagasoft.overcast.base.container.remote.RemoteFolder;
@@ -76,8 +74,8 @@ public final class App
 	/** Options as a map. */
 	private static HashMap<String, Object>		options		= null;
 
-//	private static String						ubuntuUser;
-//	private static String						ubuntuPass;
+	// private static String ubuntuUser;
+	// private static String ubuntuPass;
 
 	/** CSPs list currently loaded. */
 	public static HashMap<String, CSP<?, ?, ?>>	csps;
@@ -195,39 +193,29 @@ public final class App
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
 
-		executor.execute(new Runnable()
+		executor.execute(() ->
 		{
-
-			@Override
-			public void run()
+			try
 			{
-				try
-				{
-					addCSP(Google.getInstance("os1983@gmail.com"));
-				}
-				catch (AuthorisationException | CSPBuildException e)
-				{
-					Msg.showError(e.getMessage());
-					e.printStackTrace();
-				}
+				addCSP(Google.getInstance("os1983@gmail.com"));
+			}
+			catch (AuthorisationException | CSPBuildException e)
+			{
+				Msg.showError(e.getMessage());
+				e.printStackTrace();
 			}
 		});
 
-		executor.execute(new Runnable()
+		executor.execute(() ->
 		{
-
-			@Override
-			public void run()
+			try
 			{
-				try
-				{
-					addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
-				}
-				catch (AuthorisationException | CSPBuildException e)
-				{
-					Msg.showError(e.getMessage());
-					e.printStackTrace();
-				}
+				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+			}
+			catch (AuthorisationException | CSPBuildException e)
+			{
+				Msg.showError(e.getMessage());
+				e.printStackTrace();
 			}
 		});
 
@@ -237,12 +225,11 @@ public final class App
 
 			// wait for the threads to finish before expanding the root
 			// -- caused problems with showing expansion icon of children
-			if (executor.awaitTermination(2, TimeUnit.MINUTES))
+			if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS))
 			{
 				// show the root as expanded at the start.
 				foldersTree.expandPathToNode(ROOT.getNode());
 			}
-
 		}
 		catch (InterruptedException e)
 		{
@@ -290,33 +277,34 @@ public final class App
 			options = (HashMap<String, Object>) in.readObject();
 			in.close();
 
-			for (String option : options.keySet())
-			{
-				switch (option)
+			options.keySet().parallelStream()
+				.forEach(option ->
 				{
-					case "lastDirectory":
-						String directory = (String) options.get("lastDirectory");
+					switch (option)
+					{
+						case "lastDirectory":
+							String directory = (String) options.get("lastDirectory");
 
-						if (Files.notExists(Paths.get(directory)))
-						{
-							setLastDirectory(System.getProperty("user.home"));
-						}
-						else
-						{
-							setLastDirectory(directory);
-						}
+							if (Files.notExists(Paths.get(directory)))
+							{
+								setLastDirectory(System.getProperty("user.home"));
+							}
+							else
+							{
+								setLastDirectory(directory);
+							}
 
-						break;
+							break;
 
-//					case "ubuntuUser":
-//						ubuntuUser = (String) options.get("ubuntuUser");
-//						break;
-//
-//					case "ubuntuPass":
-//						ubuntuPass = (String) options.get("ubuntuPass");
-//						break;
-				}
-			}
+					// case "ubuntuUser":
+							// ubuntuUser = (String) options.get("ubuntuUser");
+							// break;
+							//
+							// case "ubuntuPass":
+							// ubuntuPass = (String) options.get("ubuntuPass");
+							// break;
+					}
+				});
 		}
 		catch (IOException | ClassNotFoundException e)
 		{
@@ -334,8 +322,8 @@ public final class App
 		try
 		{
 			options.put("lastDirectory", lastDirectory);
-//			options.put("ubuntuUser", ubuntuUser);
-//			options.put("ubuntuPass", ubuntuPass);
+			// options.put("ubuntuUser", ubuntuUser);
+			// options.put("ubuntuPass", ubuntuPass);
 
 			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(optionsFile.toString()));
 			out.writeObject(options);
@@ -358,17 +346,18 @@ public final class App
 	{
 		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
 
-		for (CSP<?, ?, ?> csp : App.getCspsArray())
-		{
-			try
-			{
-				freeSpace.put(csp.getName(), new Long(csp.calculateRemoteFreeSpace()));
-			}
-			catch (OperationException e)
-			{
-				e.printStackTrace();
-			}
-		}
+		csps.values().parallelStream()
+				.forEach(csp ->
+				{
+					try
+					{
+						freeSpace.put(csp.getName(), new Long(csp.calculateRemoteFreeSpace()));
+					}
+					catch (OperationException e)
+					{
+						e.printStackTrace();
+					}
+				});
 
 		mainWindow.getStatusBar().updateFreeSpace(freeSpace);
 	}
@@ -394,6 +383,7 @@ public final class App
 	 * @param name
 	 *            Name.
 	 */
+	@SuppressWarnings("incomplete-switch")
 	public static void createFolder(CombinedFolder parent, String name)
 	{
 		// no parent, then choose root.
@@ -404,70 +394,60 @@ public final class App
 
 		HashSet<RemoteFolder<?>> newFolders = new HashSet<RemoteFolder<?>>();
 
-		// go over the csps list, and create a folder for each.
-		for (CSP<?, ?, ?> csp : csps.values())
-		{
-			try
-			{
-				// try to find the existing combinedfolder.
-				CombinedFolder result = parent.findFolder(name);
-
-				// if it doesn't exist, or the csp folder isn't added ...
-				if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
-				{
-					// create the csp folder.
-					RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
-					newFolders.add(newFolder);
-					newFolder.setName(name);
-				}
-			}
-			catch (CreationException e)
-			{
-				Msg.showError(e.getMessage());
-				e.printStackTrace();
-			}
-		}
-
 		final CombinedFolder threadedParent = parent;
+
+		// go over the csps list, and create a folder for each.
+		csps.values().parallelStream()
+			.forEach(csp ->
+			{
+				try
+				{
+					// try to find the existing combinedfolder.
+					CombinedFolder result = threadedParent.findFolder(name);
+
+					// if it doesn't exist, or the csp folder isn't added ...
+					if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
+					{
+						// create the csp folder.
+						RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
+						newFolders.add(newFolder);
+						newFolder.setName(name);
+					}
+				}
+				catch (CreationException e)
+				{
+					Msg.showError(e.getMessage());
+					e.printStackTrace();
+				}
+			});
 
 		// create the folders that don't exist at their csp.
 		for (final RemoteFolder<?> newFolder : newFolders)
 		{
-			new Thread(new Runnable()
+			new Thread(() ->
 			{
-
-				@Override
-				public void run()
+				try
 				{
-					try
-					{
-						// get the csp-related parent path from the combinedfolder, and create the new folder in it.
-						newFolder.create(threadedParent.getPath(),
-								new IOperationListener()
+					// get the csp-related parent path from the combinedfolder, and create the new folder in it.
+					newFolder.create(threadedParent.getPath()
+							, event ->
+							{
+								switch (event.getState())
 								{
+									case COMPLETED:
+										threadedParent.addChild(newFolder);		// success, add the new folder.
+										break;
 
-									@SuppressWarnings("incomplete-switch")
-									@Override
-									public void operationProgressChanged(OperationEvent event)
-									{
-										switch (event.getState())
-										{
-											case COMPLETED:
-												threadedParent.addChild(newFolder);		// success, add the new folder.
-												break;
-
-											case FAILED:
-												Msg.showError("Failed to create: '" + event.getContainer().getPath() + "'.");
-												break;
-										}
-									}
-								});
-					}
-					catch (CreationException e)
-					{
-						Msg.showError(e.getMessage());
-						e.printStackTrace();
-					}
+									case FAILED:
+										Msg.showError("Failed to create: '" + event.getContainer().getPath() + "'.");
+										break;
+								}
+							});
+				}
+				catch (CreationException e)
+				{
+					Msg.showError(e.getMessage());
+					e.printStackTrace();
 				}
 			}).start();
 		}
@@ -485,33 +465,23 @@ public final class App
 	{
 		for (final RemoteFolder<?> remoteFolder : folder.getCspFolders().values())
 		{
-			new Thread(new Runnable()
+			new Thread(() ->
 			{
-
-				@Override
-				public void run()
+				try
 				{
-					try
-					{
-						remoteFolder.rename(newName, new IOperationListener()
-						{
-
-							@Override
-							public void operationProgressChanged(OperationEvent event)
+					remoteFolder.rename(newName
+							, event ->
 							{
 								if (event.getState() == OperationState.FAILED)
 								{
 									Msg.showError("Failed to rename folder: " + event.getContainer().getName());
 								}
-							}
-						});
-					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-						Msg.showError(e.getMessage());
-					}
-
+							});
+				}
+				catch (OperationException e)
+				{
+					e.printStackTrace();
+					Msg.showError(e.getMessage());
 				}
 			}).start();
 		}
@@ -523,41 +493,31 @@ public final class App
 	 * @param folder
 	 *            Folder.
 	 */
+	@SuppressWarnings("incomplete-switch")
 	public static void deleteFolder(CombinedFolder folder)
 	{
 		for (final RemoteFolder<?> remoteFolder : folder.getCspFolders().values())
 		{
-			new Thread(new Runnable()
+			new Thread(() ->
 			{
-
-				@Override
-				public void run()
+				try
 				{
-					try
+					remoteFolder.delete(event ->
 					{
-						remoteFolder.delete(new IOperationListener()
+						switch (event.getState())
 						{
-
-							@SuppressWarnings("incomplete-switch")
-							@Override
-							public void operationProgressChanged(OperationEvent event)
-							{
-								switch (event.getState())
-								{
-									case FAILED:
-										Msg.showError("Failed to delete: '" + event.getContainer().getPath() + "'.");
-										break;
-								}
-							}
-						});
-					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-						Msg.showError(e.getMessage());
-					}
-
+							case FAILED:
+								Msg.showError("Failed to delete: '" + event.getContainer().getPath() + "'.");
+								break;
+						}
+					});
 				}
+				catch (OperationException e)
+				{
+					e.printStackTrace();
+					Msg.showError(e.getMessage());
+				}
+
 			}).start();
 		}
 	}
@@ -708,14 +668,8 @@ public final class App
 					parentRemoteFolder = csp.getAbstractFactory().createFolder();
 					parentRemoteFolder.setName(parent.getName());
 					parentRemoteFolder.create(
-							parent.getPath().substring(0, (parent.getPath().lastIndexOf("/" + parent.getName()))),
-							new IOperationListener()
-							{
-
-								@Override
-								public void operationProgressChanged(OperationEvent event)
-								{}
-							});
+							parent.getPath().substring(0, (parent.getPath().lastIndexOf("/" + parent.getName())))
+							, event -> {});
 				}
 				else
 				{
@@ -751,34 +705,17 @@ public final class App
 	 */
 	public static void renameFile(final RemoteFile<?>[] files, final String newName)
 	{
-		new Thread(new Runnable()
+		new Thread(() ->
 		{
-
-			@Override
-			public void run()
+			try
 			{
-				try
-				{
-					files[0].rename(newName, new IOperationListener()
-					{
-
-						@Override
-						public void operationProgressChanged(OperationEvent event)
-						{
-							if (event.getState() == OperationState.FAILED)
-							{
-								Msg.showError("Failed to rename file: " + event.getContainer().getName());
-							}
-						}
-					});
-
-					updateTable();
-				}
-				catch (OperationException e)
-				{
-					e.printStackTrace();
-					Msg.showError(e.getMessage());
-				}
+				files[0].rename(newName);
+				updateTable();
+			}
+			catch (OperationException e)
+			{
+				e.printStackTrace();
+				Msg.showError("Failed to rename file: " + files[0].getName() + " => " + e.getMessage());
 			}
 		}).start();
 	}
@@ -827,14 +764,8 @@ public final class App
 					remoteFolder = file.getCsp().getAbstractFactory().createFolder();
 					remoteFolder.setName(folder.getName());
 					remoteFolder.create(
-							folder.getPath().substring(0, (folder.getPath().lastIndexOf("/" + folder.getName()))),
-							new IOperationListener()
-							{
-
-								@Override
-								public void operationProgressChanged(OperationEvent event)
-								{}
-							});
+							folder.getPath().substring(0, (folder.getPath().lastIndexOf("/" + folder.getName())))
+							, event -> {});
 				}
 				catch (CreationException e)
 				{
@@ -859,40 +790,20 @@ public final class App
 				switch (fileAction)
 				{
 					case COPY:
-						file.copy(remoteFolder, true, new IOperationListener()
-						{
-
-							@Override
-							public void operationProgressChanged(OperationEvent event)
-							{
-								if (event.getState() == OperationState.COMPLETED)
-								{
-									updateTable();
-								}
-							}
-						});
+						file.copy(remoteFolder, true);
+						updateTable();
 						break;
 
 					case MOVE:
-						file.move(remoteFolder, true, new IOperationListener()
-						{
-
-							@Override
-							public void operationProgressChanged(OperationEvent event)
-							{
-								if (event.getState() == OperationState.COMPLETED)
-								{
-									updateTable();
-								}
-							}
-						});
+						file.move(remoteFolder, true);
+						updateTable();
 						break;
 				}
 			}
 			catch (OperationException e)
 			{
 				e.printStackTrace();
-				Msg.showError(e.getMessage());
+				Msg.showError("Failed to copy/move file: " + file.getName() + " => " + e.getMessage());
 			}
 		}
 	}
@@ -907,34 +818,17 @@ public final class App
 	{
 		for (final RemoteFile<?> file : files)
 		{
-			new Thread(new Runnable()
+			new Thread(() ->
 			{
-
-				@Override
-				public void run()
+				try
 				{
-					try
-					{
-						file.delete(new IOperationListener()
-						{
-
-							@Override
-							public void operationProgressChanged(OperationEvent event)
-							{
-								if (event.getState() == OperationState.FAILED)
-								{
-									Msg.showError("Failed to delete file: " + event.getContainer().getName());
-								}
-							}
-						});
-
-						updateTable();
-					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-						Msg.showError(e.getMessage());
-					}
+					file.delete();
+					updateTable();
+				}
+				catch (OperationException e)
+				{
+					e.printStackTrace();
+					Msg.showError("Failed to delete file: " + file.getName() + " => " + e.getMessage());
 				}
 			}).start();
 		}

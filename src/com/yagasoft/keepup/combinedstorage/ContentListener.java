@@ -1,13 +1,13 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
+ * 
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- *
+ * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/ContentListener.java
- *
- *			Modified: 07-May-2014 (19:42:17)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ * 
+ *			Modified: 26-May-2014 (22:45:42)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage;
@@ -24,6 +24,7 @@ package com.yagasoft.keepup.combinedstorage;
  *
  * @see ContentEvent
  */
+@FunctionalInterface
 public interface ContentListener
 {
 

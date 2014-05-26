@@ -13,6 +13,7 @@
 package com.yagasoft.keepup.combinedstorage.ui.browser.table;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Observable;
 import java.util.Observer;
@@ -78,7 +79,16 @@ public class TableController implements Observer
 	 */
 	public RemoteFile<?>[] getSelectedFiles()
 	{
-		return (RemoteFile<?>[]) view.getSelectedFiles();
+		// TODO refine 'getSelectedFiles'
+		Object[] tempArray = view.getSelectedFiles();
+		ArrayList<RemoteFile<?>> files = new ArrayList<RemoteFile<?>>();
+
+		for (Object file : tempArray)
+		{
+			files.add((RemoteFile<?>) file);
+		}
+
+		return files.toArray(new RemoteFile<?>[tempArray.length]);
 	}
 
 	/**
@@ -88,7 +98,10 @@ public class TableController implements Observer
 	public void update(Observable o, Object arg)
 	{
 		// selected folder has changed, and so fetch its files and display them.
-		updateTable(((CombinedFolder) arg).getFilesArray(false));
+		if (arg != null)
+		{
+			updateTable(((CombinedFolder) arg).getFilesArray(false));
+		}
 	}
 
 }

@@ -6,8 +6,8 @@
  * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/CombinedFolder.java
  * 
- *			Modified: 07-May-2014 (20:32:55)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 26-May-2014 (22:45:01)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage;
@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -37,10 +39,10 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 {
 
 	/** Folder name. */
-	private String							name;
+	private String								name;
 
 	/** Path of the folder. */
-	private String							path;
+	private String								path;
 
 	/** Parent. */
 	protected CombinedFolder					parent;
@@ -162,26 +164,21 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		// go through the folders' list.
 		for (final RemoteFolder<?> folder : cspFolders.values())
 		{
-			new Thread(new Runnable()
+			new Thread(() ->
 			{
-
-				@Override
-				public void run()
+				try
 				{
-					try
+					if (online)
 					{
-						if (online)
-						{
-							folder.updateFromSource(true, false);
-						}
+						folder.updateFromSource(true, false);
 					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-					}
-
-					updateInfo(folder);
 				}
+				catch (OperationException e)
+				{
+					e.printStackTrace();
+				}
+
+				updateInfo(folder);
 			}).start();
 		}
 	}
@@ -253,15 +250,12 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	 */
 	public synchronized CombinedFolder findFolder(String name)
 	{
-		for (CombinedFolder folder : subFolders.values())
-		{
-			if (folder.getName().equals(name))
-			{
-				return folder;
-			}
-		}
+		List<CombinedFolder> list =
+				subFolders.values().parallelStream()
+					.filter(folder -> folder.getName().equals(name))
+					.collect(Collectors.toList());
 
-		return null;
+		return list.isEmpty() ? null : list.get(0);
 	}
 
 	/**
@@ -301,14 +295,15 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	/**
 	 * Update info.
 	 *
-	 * @param folder Folder.
+	 * @param folder
+	 *            Folder.
 	 */
 	private void updateInfo(RemoteFolder<?> folder)
 	{
 		setName(folder.getName());
 		setPath(folder.getPath());
 	}
-	
+
 	/**
 	 * Adds the content listener.
 	 *
@@ -339,10 +334,8 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	 */
 	public void notifyContentListeners(UpdateType update)
 	{
-		for (ContentListener listener : contentListeners)
-		{
-			listener.folderChanged(this, update, null);
-		}
+		contentListeners.parallelStream()
+			.forEach(listener -> listener.folderChanged(this, update, null));
 	}
 
 	/**
@@ -355,10 +348,8 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	 */
 	public void notifyContentListeners(UpdateType update, CombinedFolder content)
 	{
-		for (ContentListener listener : contentListeners)
-		{
-			listener.folderChanged(this, update, content);
-		}
+		contentListeners.parallelStream()
+			.forEach(listener -> listener.folderChanged(this, update, content));
 	}
 
 	/**
@@ -440,7 +431,6 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		this.path = path;
 	}
 
-
 	/**
 	 * @return the parent
 	 */
@@ -449,9 +439,9 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		return parent;
 	}
 
-
 	/**
-	 * @param parent the parent to set
+	 * @param parent
+	 *            the parent to set
 	 */
 	public void setParent(CombinedFolder parent)
 	{
