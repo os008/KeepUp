@@ -45,48 +45,48 @@ import com.yagasoft.overcast.base.container.transfer.TransferState;
  */
 public class QueuePanel extends JPanel implements ITransferProgressListener
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= -7487540524979826459L;
-
+	
 	/** Table queue. */
 	private JTable				tableQueue;
-
+	
 	/** Scroll pane queue. */
 	private JScrollPane			scrollPaneQueue;
-
+	
 	/**
 	 * Create the panel.
 	 */
 	public QueuePanel()
 	{
-
+		
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		tableQueue = new JTable(new QueueTableModel(
 				new String[] { "File", "Destination", "CSP", "Direction", "Status", "Progress", "Cancel" }, 0));
 		scrollPaneQueue = new JScrollPane(tableQueue);
 		add(scrollPaneQueue);
-
+		
 		tableQueue.setDefaultRenderer(Float.class, new ProgressRenderer());
-
+		
 		// --------------------------------------------------------------------------------------
 		// #region Cancel button.
-
+		
 		Action action = new AbstractAction()
 		{
-
+			
 			private static final long	serialVersionUID	= 5104056154903292487L;
-
+			
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());		// get row clicked.
-
+				
 				// get the status string in that row.
 				String status = (String) ((QueueTableModel) tableQueue.getModel()).getValueAt(
 						modelRow, tableQueue.getColumnModel().getColumnIndex("Status"));
-
+				
 				// if it's in progress, then cancel the job.
 				if ( !(status.toLowerCase().indexOf("failed") >= 0))
 				{
@@ -94,19 +94,19 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 							modelRow, tableQueue.getColumnModel().getColumnIndex("File"));
 					cancelTransfer(job);
 				}
-
+				
 				((DefaultTableModel) table.getModel()).removeRow(modelRow);		// remove row.
 			}
 		};
-
+		
 		ButtonColumn buttonColumn = new ButtonColumn(tableQueue, action, tableQueue.getColumnModel().getColumnIndex("Cancel"));
 		tableQueue.setCellEditor(buttonColumn);
-
+		
 		// #endregion Cancel button.
 		// --------------------------------------------------------------------------------------
-
+		
 	}
-
+	
 	/**
 	 * Adds the transfer job.
 	 *
@@ -118,11 +118,11 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	public void addTransferJob(TransferJob<?> job, String direction)
 	{
 		((QueueTableModel) tableQueue.getModel())
-				.addRow(
+		.addRow(
 				new Object[] {
 						job, job.getParent().getPath(), job.getCsp(), direction, "Queued ...", new Float(0), new CancelButton() });
 	}
-
+	
 	/**
 	 * @see com.yagasoft.overcast.base.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.TransferEvent)
 	 */
@@ -131,23 +131,23 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	public void transferProgressChanged(TransferEvent event)
 	{
 		Logger.info("PROGRESS " + event.getContainer().getPath() + ": " + event.getState() + " => " + event.getProgress());
-
+		
 		// get the data in the table.
 		Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
-
+		
 		String statusString = null;
-
+		
 		switch (event.getState())
 		{
 			case INITIALISED:
 			case IN_PROGRESS:
 				statusString = event.getState() == TransferState.IN_PROGRESS ? "In progress ..." : "Initialised ...";
-
+				
 				// go through the rows searching for the matching row ...
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-
+					
 					// if the file at that row has the same path ...
 					if (row.contains(event.getJob()))
 					{
@@ -158,14 +158,14 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					}
 				}
 				break;
-
+			
 			case FAILED:
 				statusString = "FAILED!";
-
+				
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-
+					
 					if (row.contains(event.getJob()))
 					{
 						setStatus(i, statusString);
@@ -173,14 +173,14 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 						break;
 					}
 				}
-
+				
 				break;
-
+			
 			case COMPLETED:
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-
+					
 					if (row.contains(event.getJob()))
 					{
 						if (rows.size() == 1)
@@ -188,19 +188,19 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 							App.updateFreeSpace();	// update free space display
 							App.updateTable();
 						}
-
+						
 						((QueueTableModel) tableQueue.getModel()).removeRow(i);
 						break;
 					}
 				}
-
+				
 				break;
 			default:
 				break;
-
+		
 		}
 	}
-
+	
 	/**
 	 * Updates the progress of the progress bar for passed row.<br />
 	 * This only updates the attached data value for that cell; the bar is updated by an event automatically.
@@ -215,7 +215,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		((QueueTableModel) tableQueue.getModel()).setValueAt(new Float(progress), row, tableQueue.getColumnModel()
 				.getColumnIndex("Progress"));
 	}
-
+	
 	/**
 	 * Updates the status of the file in the queue.<br />
 	 *
@@ -228,7 +228,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		((QueueTableModel) tableQueue.getModel()).setValueAt(status, row, tableQueue.getColumnModel().getColumnIndex("Status"));
 	}
-
+	
 	/**
 	 * Cancel transfer related to the job passed.
 	 *
@@ -240,60 +240,62 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		// get the data in the table.
 		Vector rows = ((QueueTableModel) tableQueue.getModel()).getDataVector();
-
+		
+		// look for the job in the queue
 		for (int i = 0; i < rows.size(); i++)
 		{
 			Vector row = (Vector) rows.get(i);
-
+			
+			// if found, then fetch the csp and invoke cancel
 			if (row.contains(job))
 			{
-				job.getCsp().cancelUpload(job);
+				job.getCsp().cancelTransfer(job);
 				break;
 			}
 		}
 	}
-
+	
 	/**
 	 * Defines how to handle the progress bar inside the table.
 	 */
 	private class ProgressRenderer extends JProgressBar implements TableCellRenderer
 	{
-
+		
 		/** Constant: SerialVersionUID. */
 		private static final long	serialVersionUID	= -4106456853733016017L;
-
+		
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value
 				, boolean isSelected, boolean hasFocus, int row, int col)
 		{
 			Float v = (Float) value;
-
+			
 			// set the range.
 			setMinimum(0);
 			setMaximum(100);
-
+			
 //			if (v > 0)
 			setIndeterminate(false);
 			setStringPainted(true);
 			setValue((int) (v.floatValue() * 100));
-//			}
-
+			//			}
+			
 			return this;
 		}
 	}
-
+	
 	private class CancelButton extends ImageIcon
 	{
-
+		
 		private static final long	serialVersionUID	= 2710162133669731329L;
-
+		
 		public CancelButton()
 		{
 			super(_keepup.class.getResource("images\\cancel.gif"));
 		}
-
+		
 	}
-
+	
 	/**
 	 * An extension of {@link DefaultTableModel}, which is used to overcome the limitation of treating all cells as {@link String}
 	 * -- for the progress bar problem.
@@ -301,10 +303,10 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	@SuppressWarnings({ "rawtypes", "unused" })
 	private class QueueTableModel extends DefaultTableModel
 	{
-
+		
 		/** Constant: SerialVersionUID. */
 		private static final long	serialVersionUID	= -4057598058867765548L;
-
+		
 		/**
 		 *
 		 */
@@ -312,7 +314,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super();
 		}
-
+		
 		/**
 		 * @param rowCount
 		 * @param columnCount
@@ -321,7 +323,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super(rowCount, columnCount);
 		}
-
+		
 		/**
 		 * @param columnNames
 		 * @param rowCount
@@ -330,7 +332,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super(columnNames, rowCount);
 		}
-
+		
 		/**
 		 * @param data
 		 * @param columnNames
@@ -339,7 +341,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super(data, columnNames);
 		}
-
+		
 		/**
 		 * @param columnNames
 		 * @param rowCount
@@ -348,7 +350,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super(columnNames, rowCount);
 		}
-
+		
 		/**
 		 * @param data
 		 * @param columnNames
@@ -357,7 +359,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		{
 			super(data, columnNames);
 		}
-
+		
 		@SuppressWarnings("unchecked")
 		@Override
 		public Class getColumnClass(int c)
