@@ -1,13 +1,13 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
+ * 
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- *
- *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/FoldersTree.java
- *
- *			Modified: 07-May-2014 (16:15:01)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ * 
+ *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/CSTree.java
+ * 
+ *			Modified: 27-May-2014 (17:44:43)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.browser.tree;
@@ -38,7 +38,7 @@ import com.yagasoft.keepup.combinedstorage.ui.actions.FolderToolBar;
 /**
  * The Class FoldersTree.
  */
-public class FoldersTree extends JPanel implements TreeSelectionListener
+public class CSTree extends JPanel implements TreeSelectionListener
 {
 
 	/** Constant: SerialVersionUID. */
@@ -85,7 +85,7 @@ public class FoldersTree extends JPanel implements TreeSelectionListener
 	 * @param root
 	 *            Root.
 	 */
-	public FoldersTree(DefaultMutableTreeNode root)
+	public CSTree(DefaultMutableTreeNode root)
 	{
 		setLayout(new BorderLayout());
 

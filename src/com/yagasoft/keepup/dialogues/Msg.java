@@ -33,39 +33,39 @@ public final class Msg
 
 	public static void showMessage(String message)
 	{
-		JOptionPane.showMessageDialog(App.mainWindow, message, message
+		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, message
 				, JOptionPane.PLAIN_MESSAGE);
 	}
 
 	public static void showWarning(String message)
 	{
-		JOptionPane.showMessageDialog(App.mainWindow, message, "WARNING!"
+		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, "WARNING!"
 				, JOptionPane.WARNING_MESSAGE);
 	}
 
 	public static void showError(String message)
 	{
-		JOptionPane.showMessageDialog(App.mainWindow, message, "ERROR!"
+		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, "ERROR!"
 				, JOptionPane.ERROR_MESSAGE);
 	}
 
 	public static int showQuestion(String message)
 	{
-		return JOptionPane.showOptionDialog(App.mainWindow, message
+		return JOptionPane.showOptionDialog(App.combinedStoragePanel, message
 				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
 				, null, 1);
 	}
 
 	public static boolean askConfirmation(String message)
 	{
-		return JOptionPane.showOptionDialog(App.mainWindow, message
+		return JOptionPane.showOptionDialog(App.combinedStoragePanel, message
 				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
 				, null, 1) == 0 ? true : false;
 	}
 
 	public static String getInput(String message)
 	{
-		return JOptionPane.showInputDialog(App.mainWindow, message);
+		return JOptionPane.showInputDialog(App.combinedStoragePanel, message);
 	}
 
 	/**

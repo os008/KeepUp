@@ -1,33 +1,32 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/CombinedFolder.java
- * 
- *			Modified: 26-May-2014 (22:45:01)
+ *
+ *			Modified: 27-May-2014 (22:15:21)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import com.yagasoft.overcast.base.container.File;
-import com.yagasoft.overcast.base.container.content.ChangeEvent;
-import com.yagasoft.overcast.base.container.content.IContentListener;
+import com.yagasoft.overcast.base.container.Container;
+import com.yagasoft.overcast.base.container.operation.IOperationListener;
+import com.yagasoft.overcast.base.container.operation.Operation;
+import com.yagasoft.overcast.base.container.operation.OperationEvent;
+import com.yagasoft.overcast.base.container.remote.RemoteFile;
 import com.yagasoft.overcast.base.container.remote.RemoteFolder;
-import com.yagasoft.overcast.base.container.update.IUpdateListener;
-import com.yagasoft.overcast.base.container.update.UpdateEvent;
 import com.yagasoft.overcast.exception.AccessException;
 import com.yagasoft.overcast.exception.OperationException;
 
@@ -35,7 +34,7 @@ import com.yagasoft.overcast.exception.OperationException;
 /**
  * The Class CombinedFolder.
  */
-public class CombinedFolder implements Comparable<CombinedFolder>, IContentListener, IUpdateListener
+public class CombinedFolder implements Comparable<CombinedFolder>, IOperationListener
 {
 
 	/** Folder name. */
@@ -75,6 +74,18 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		setNode(new DefaultMutableTreeNode(this));
 	}
 
+	protected void registerForOperations(Container<?> container)
+	{
+		registerForOperations(container, this);
+	}
+
+	protected void registerForOperations(Container<?> container, CombinedFolder observer)
+	{
+		container.addOperationListener(observer, Operation.ADD);			// used for when the folder content changes.
+		container.addOperationListener(observer, Operation.REMOVE);		// used for when the folder content changes.
+		container.addOperationListener(observer, Operation.UPDATE);		// used for when the name changes.
+	}
+
 	/**
 	 * Adds the folder to the list of folders with the same name.
 	 *
@@ -84,9 +95,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	public synchronized void addCspFolder(RemoteFolder<?> folder)
 	{
 		cspFolders.put(folder.getCsp().getName(), folder);
-		folder.addContentListener(this);
-		folder.addUpdateListener(this);
-
+		registerForOperations(folder);
 		updateInfo(folder);
 	}
 
@@ -116,23 +125,23 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 		if (combinedFolder == null)
 		{
 			combinedFolder = new CombinedFolder(folder);
-			folder.addContentListener(combinedFolder);		// used for when the folder content changes.
-			folder.addUpdateListener(combinedFolder);		// used for when the name changes.
 			subFolders.put(combinedFolder.getPath(), combinedFolder);
 		}
 		else
 		{
 			// if found, then add it to the already existing combinedfolder.
 			combinedFolder.addCspFolder(folder);
-			folder.addContentListener(combinedFolder);
-			folder.addUpdateListener(combinedFolder);
 		}
+
+		combinedFolder.setParent(this);
+		
+		registerForOperations(folder, combinedFolder);
 
 		notifyContentListeners(UpdateType.ADD, combinedFolder);
 	}
 
 	/**
-	 * Removes the child.
+	 * Removes a child.
 	 *
 	 * @param folder
 	 *            Folder.
@@ -148,6 +157,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 			if (combinedFolder.getCspFolders().size() <= 0)
 			{
 				subFolders.remove(combinedFolder.getPath());
+				combinedFolder.setParent(null);
 				notifyContentListeners(UpdateType.REMOVE, combinedFolder);
 			}
 		}
@@ -191,33 +201,32 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	 *            Update online?
 	 * @return the files array
 	 */
-	public File<?>[] getFilesArray(boolean update)
+	public RemoteFile<?>[] getFilesArray(boolean update)
 	{
-		// combined files list.
-		ArrayList<File<?>> files = new ArrayList<File<?>>();
-
 		// go through the folders' list.
-		for (RemoteFolder<?> folder : cspFolders.values())
-		{
-			if (update)
-			{
-				try
+		return cspFolders.values().parallelStream()
+				.flatMap(folder ->
 				{
-					folder.updateFromSource(true, false);
-				}
-				catch (OperationException e)
-				{
-					e.printStackTrace();
-				}
-			}
+					try
+					{
+						if (update)
+						{
+							folder.updateFromSource(true, false);
+						}
+						// continue the pipeline using the file list in this folder
+						return folder.getFilesList().stream();
+					}
+					catch (OperationException e)
+					{
+						e.printStackTrace();
+						// a problem, so return an empty stream to continue
+						return Stream.empty();
+					}
+				})
+				.map(file -> (RemoteFile<?>) file)		// convert the file type
+				.sorted()		// sort
+				.toArray(size -> new RemoteFile<?>[size]);		// return the array of files
 
-			files.addAll(folder.getFilesList());
-		}
-
-		// sort it to appear as contiguous.
-		Collections.sort(files);
-
-		return files.toArray(new File<?>[files.size()]);
 	}
 
 	/**
@@ -252,19 +261,17 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	{
 		List<CombinedFolder> list =
 				subFolders.values().parallelStream()
-					.filter(folder -> folder.getName().equals(name))
-					.collect(Collectors.toList());
+				.filter(folder -> folder.getName().equals(name))
+				.collect(Collectors.toList());
 
 		return list.isEmpty() ? null : list.get(0);
 	}
 
-	/**
-	 * @see com.yagasoft.overcast.base.container.content.IContentListener#contentsChanged(com.yagasoft.overcast.base.container.content.ChangeEvent)
-	 */
+	@SuppressWarnings("incomplete-switch")
 	@Override
-	public void contentsChanged(ChangeEvent event)
+	public void operationChange(OperationEvent event)
 	{
-		switch (event.getChange())
+		switch (event.getOperation())
 		{
 			case ADD:
 				if (event.getObject().isFolder())
@@ -279,17 +286,12 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 					removeChild((RemoteFolder<?>) event.getObject());
 				}
 				break;
-		}
-	}
 
-	/**
-	 * @see com.yagasoft.overcast.base.container.update.IUpdateListener#containerUpdated(com.yagasoft.overcast.base.container.update.UpdateEvent)
-	 */
-	@Override
-	public void containerUpdated(UpdateEvent event)
-	{
-		updateInfo((RemoteFolder<?>) event.getContainer());
-		notifyContentListeners(UpdateType.NAME);
+			case UPDATE:
+				updateInfo((RemoteFolder<?>) event.getContainer());
+				notifyContentListeners(UpdateType.NAME);
+				break;
+		}
 	}
 
 	/**
@@ -335,7 +337,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	public void notifyContentListeners(UpdateType update)
 	{
 		contentListeners.parallelStream()
-			.forEach(listener -> listener.folderChanged(this, update, null));
+		.forEach(listener -> listener.folderChanged(this, update, null));
 	}
 
 	/**
@@ -349,7 +351,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IContentListe
 	public void notifyContentListeners(UpdateType update, CombinedFolder content)
 	{
 		contentListeners.parallelStream()
-			.forEach(listener -> listener.folderChanged(this, update, content));
+		.forEach(listener -> listener.folderChanged(this, update, content));
 	}
 
 	/**

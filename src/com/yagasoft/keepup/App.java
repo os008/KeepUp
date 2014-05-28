@@ -31,17 +31,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
-import com.yagasoft.keepup.combinedstorage.ui.MainWindow;
-import com.yagasoft.keepup.combinedstorage.ui.browser.BrowserPanel;
-import com.yagasoft.keepup.combinedstorage.ui.browser.table.FilesTable;
-import com.yagasoft.keepup.combinedstorage.ui.browser.table.TableController;
-import com.yagasoft.keepup.combinedstorage.ui.browser.tree.FoldersTree;
-import com.yagasoft.keepup.combinedstorage.ui.browser.tree.TreeController;
+import com.yagasoft.keepup.combinedstorage.ui.CombinedStoragePanel;
+import com.yagasoft.keepup.combinedstorage.ui.browser.CSBrowserPanel;
+import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTable;
+import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTableController;
+import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTree;
+import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
+import com.yagasoft.keepup.ui.MainWindow;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 import com.yagasoft.overcast.base.container.local.LocalFolder;
+import com.yagasoft.overcast.base.container.operation.Operation;
 import com.yagasoft.overcast.base.container.operation.OperationState;
 import com.yagasoft.overcast.base.container.remote.RemoteFile;
 import com.yagasoft.overcast.base.container.remote.RemoteFolder;
@@ -87,22 +89,22 @@ public final class App
 	// #region GUI.
 
 	/** Main window. */
-	public static MainWindow					mainWindow;
+	public static CombinedStoragePanel			combinedStoragePanel;
 
 	/** Browser panel. */
-	public static BrowserPanel					browserPanel;
+	public static CSBrowserPanel				csBrowserPanel;
 
 	/** Folders tree. */
-	public static FoldersTree					foldersTree;
+	public static CSTree						csFoldersTree;
 
 	/** Tree controller. */
-	public static TreeController				treeController;
+	public static CSTreeController				treeController;
 
 	/** Table controller. */
-	public static TableController				tableController;
+	public static CSTableController				tableController;
 
 	/** Files table. */
-	public static FilesTable					filesTable;
+	public static CSTable						csFilesTable;
 
 	// #endregion GUI.
 	// --------------------------------------------------------------------------------------
@@ -151,12 +153,17 @@ public final class App
 	 */
 	private static void initGUI()
 	{
-		foldersTree = new FoldersTree(ROOT.getNode());
-		filesTable = new FilesTable();
-		browserPanel = new BrowserPanel(foldersTree, filesTable);
-		mainWindow = new MainWindow(browserPanel);
+		MainWindow mainWindow = new MainWindow();
 
-		mainWindow.getBrowserPanel().resetDivider();
+		csFoldersTree = new CSTree(ROOT.getNode());
+		csFilesTable = new CSTable(
+				new String[] { "Name", "Size", "CSP" }
+				, new float[] { 0.5f, 0.25f, 0.25f }
+				, new int[] { 1 });
+		csBrowserPanel = new CSBrowserPanel(csFoldersTree, csFilesTable);
+		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
+
+		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
 
 		// save options when application is closing.
 		mainWindow.getFrame().addWindowListener(new WindowAdapter()
@@ -168,6 +175,11 @@ public final class App
 				saveOptions();
 			}
 		});
+
+		mainWindow.switchToPanel("Combined Storage");
+		combinedStoragePanel.getBrowserPanel().resetDivider(mainWindow.getFrame().getWidth() / 3);
+
+		mainWindow.getFrame().setVisible(true);
 	}
 
 	/**
@@ -175,10 +187,10 @@ public final class App
 	 */
 	public static void initControllers()
 	{
-		treeController = new TreeController(foldersTree);
-		tableController = new TableController(filesTable);
+		treeController = new CSTreeController(csFoldersTree);
+		tableController = new CSTableController(csFilesTable);
 
-		foldersTree.addTreeSelectionObserver(tableController);
+		csFoldersTree.addTreeSelectionObserver(tableController);
 	}
 
 	/**
@@ -228,7 +240,7 @@ public final class App
 			if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS))
 			{
 				// show the root as expanded at the start.
-				foldersTree.expandPathToNode(ROOT.getNode());
+				csFoldersTree.expandPathToNode(ROOT.getNode());
 			}
 		}
 		catch (InterruptedException e)
@@ -278,33 +290,33 @@ public final class App
 			in.close();
 
 			options.keySet().parallelStream()
-				.forEach(option ->
+			.forEach(option ->
+			{
+				switch (option)
 				{
-					switch (option)
-					{
-						case "lastDirectory":
-							String directory = (String) options.get("lastDirectory");
+					case "lastDirectory":
+						String directory = (String) options.get("lastDirectory");
 
-							if (Files.notExists(Paths.get(directory)))
-							{
-								setLastDirectory(System.getProperty("user.home"));
-							}
-							else
-							{
-								setLastDirectory(directory);
-							}
+								if (Files.notExists(Paths.get(directory)))
+						{
+							setLastDirectory(System.getProperty("user.home"));
+						}
+						else
+						{
+							setLastDirectory(directory);
+						}
 
-							break;
+								break;
 
-					// case "ubuntuUser":
-							// ubuntuUser = (String) options.get("ubuntuUser");
-							// break;
-							//
-							// case "ubuntuPass":
-							// ubuntuPass = (String) options.get("ubuntuPass");
-							// break;
-					}
-				});
+						// case "ubuntuUser":
+						// ubuntuUser = (String) options.get("ubuntuUser");
+						// break;
+						//
+						// case "ubuntuPass":
+						// ubuntuPass = (String) options.get("ubuntuPass");
+						// break;
+				}
+			});
 		}
 		catch (IOException | ClassNotFoundException e)
 		{
@@ -359,7 +371,7 @@ public final class App
 					}
 				});
 
-		mainWindow.getStatusBar().updateFreeSpace(freeSpace);
+		combinedStoragePanel.getStatusBar().updateFreeSpace(freeSpace);
 	}
 
 	/**
@@ -369,6 +381,16 @@ public final class App
 	public static void refreshTree()
 	{
 		treeController.updateTree();
+	}
+
+	public static void navigateBackward()
+	{
+		treeController.navigateBackward();
+	}
+
+	public static void navigateForward()
+	{
+		treeController.navigateForward();
 	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////
@@ -398,28 +420,28 @@ public final class App
 
 		// go over the csps list, and create a folder for each.
 		csps.values().parallelStream()
-			.forEach(csp ->
+		.forEach(csp ->
+		{
+			try
 			{
-				try
-				{
-					// try to find the existing combinedfolder.
-					CombinedFolder result = threadedParent.findFolder(name);
+				// try to find the existing combinedfolder.
+				CombinedFolder result = threadedParent.findFolder(name);
 
-					// if it doesn't exist, or the csp folder isn't added ...
-					if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
-					{
-						// create the csp folder.
-						RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
-						newFolders.add(newFolder);
-						newFolder.setName(name);
-					}
-				}
-				catch (CreationException e)
+						// if it doesn't exist, or the csp folder isn't added ...
+				if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
 				{
-					Msg.showError(e.getMessage());
-					e.printStackTrace();
+					// create the csp folder.
+					RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
+					newFolders.add(newFolder);
+					newFolder.setName(name);
 				}
-			});
+			}
+			catch (CreationException e)
+			{
+				Msg.showError(e.getMessage());
+				e.printStackTrace();
+			}
+		});
 
 		// create the folders that don't exist at their csp.
 		for (final RemoteFolder<?> newFolder : newFolders)
@@ -538,7 +560,7 @@ public final class App
 
 	/**
 	 * Updates the selected folder. It grabs the files in the folder, and then passes them to
-	 * {@link BrowserPanel#updateTable(File[])}.
+	 * {@link CSBrowserPanel#updateTable(File[])}.
 	 */
 	public static void updateTable()
 	{
@@ -614,8 +636,8 @@ public final class App
 					}
 				}
 
-				mainWindow.getQueuePanel().addTransferJob(
-						file.getCsp().download(file, parent, true, mainWindow.getQueuePanel()), "Download");
+				combinedStoragePanel.getQueuePanel().addTransferJob(
+						file.getCsp().download(file, parent, true, combinedStoragePanel.getQueuePanel()), "Download");
 			}
 		}
 		catch (TransferException | OperationException e)
@@ -684,8 +706,9 @@ public final class App
 				}
 
 				// add file job to the gui queue.
-				mainWindow.getQueuePanel().addTransferJob(
-						parentRemoteFolder.getCsp().upload(file, parentRemoteFolder, true, mainWindow.getQueuePanel()), "Upload");
+				combinedStoragePanel.getQueuePanel().addTransferJob(
+						parentRemoteFolder.getCsp().upload(file, parentRemoteFolder, true, combinedStoragePanel.getQueuePanel()),
+						"Upload");
 			}
 		}
 		catch (TransferException | CreationException e)
@@ -875,7 +898,8 @@ public final class App
 		try
 		{
 			csp.initTree();
-			csp.getRemoteFileTree().addContentListener(ROOT);
+			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.ADD);
+			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.REMOVE);
 			ROOT.addCspFolder(csp.getRemoteFileTree());
 			csps.put(csp.getName(), csp);
 			updateFreeSpace();
@@ -1023,7 +1047,7 @@ public final class App
 	public static void setLastDirectory(String lastDirectory)
 	{
 		App.lastDirectory = lastDirectory;
-		mainWindow.getBrowserPanel().updateDestinationFolder(lastDirectory);
+		combinedStoragePanel.getBrowserPanel().updateDestinationFolder(lastDirectory);
 	}
 
 	private App()

@@ -32,10 +32,10 @@ import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
 import com.yagasoft.keepup.combinedstorage.ui.browser.table.ButtonColumn;
 import com.yagasoft.logger.Logger;
-import com.yagasoft.overcast.base.container.transfer.ITransferProgressListener;
-import com.yagasoft.overcast.base.container.transfer.TransferEvent;
 import com.yagasoft.overcast.base.container.transfer.TransferJob;
-import com.yagasoft.overcast.base.container.transfer.TransferState;
+import com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener;
+import com.yagasoft.overcast.base.container.transfer.event.TransferEvent;
+import com.yagasoft.overcast.base.container.transfer.event.TransferState;
 
 
 // TODO convert QueuePanel to MVC.
@@ -124,7 +124,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	}
 	
 	/**
-	 * @see com.yagasoft.overcast.base.container.transfer.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.TransferEvent)
+	 * @see com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.event.TransferEvent)
 	 */
 	@SuppressWarnings("rawtypes")
 	@Override

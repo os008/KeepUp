@@ -1,10 +1,22 @@
+/*
+ * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
+ *
+ *		The Modified MIT Licence (GPL v3 compatible)
+ * 			Licence terms are in a separate file (LICENCE.md)
+ *
+ *		Project/File: KeepUp/com.yagasoft.keepup.ui/FileTable.java
+ *
+ *			Modified: 27-May-2014 (20:17:49)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
+ */
 
-package com.yagasoft.keepup.combinedstorage.ui.browser.table;
+package com.yagasoft.keepup.ui;
 
 
 import java.awt.BorderLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.Arrays;
 import java.util.Vector;
 
 import javax.swing.JPanel;
@@ -15,11 +27,12 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
-import com.yagasoft.keepup.App;
-import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
 
-
-public class FilesTable extends JPanel
+/**
+ * The Class FileTable. It should be used to list files in a folder (selected from a tree).
+ * Make sure to store the file object (to be retrieved later with {@link #getSelectedFiles()}) in the first column.
+ */
+public class FileTable extends JPanel
 {
 
 	private static final long	serialVersionUID	= -8729490450147401081L;
@@ -28,34 +41,37 @@ public class FilesTable extends JPanel
 	// #region Files table fields.
 	// ======================================================================================
 
-	/** Files tool bar. */
-	private FileToolBar			toolBarFiles;
-
 	/** Scroll pane files. */
-	private JScrollPane			scrollPaneFiles;
+	protected JScrollPane		scrollPaneFiles;
 
 	/** Table of the files. */
-	private JTable				tableFiles;
+	protected JTable			tableFiles;
 
 	/** Table model. */
-	private DefaultTableModel	tableModel;
+	protected DefaultTableModel	tableModel;
 
 	/** Column names. */
-	private String[]			columnNames;
+	protected String[]			columnNames;
 
 	/** Table data. */
-	private Object[][]			tableData;
+	protected Object[][]		tableData;
+
+	protected int[]				rightAlignedColumns;
+
+	protected float[] columnsWidthPercent;
 
 	// ======================================================================================
 	// #endregion Files table fields.
 	// //////////////////////////////////////////////////////////////////////////////////////
 
-	public FilesTable()
+	public FileTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
 	{
 		setLayout(new BorderLayout());
 
-		columnNames = new String[] { "Name", "Size", "CSP" };
-		tableData = new String[0][3];
+		this.columnNames = columnNames;
+		tableData = new String[0][columnNames.length];
+		this.columnsWidthPercent = columnsWidthPercent;
+		this.rightAlignedColumns = rightAlignedColumns;
 
 		// create model and table from model.
 		tableModel = new DefaultTableModel(tableData, columnNames);
@@ -64,13 +80,9 @@ public class FilesTable extends JPanel
 		formatTable();
 		add(scrollPaneFiles, BorderLayout.CENTER);
 
-		toolBarFiles = new FileToolBar();
-		add(toolBarFiles, BorderLayout.NORTH);
-
 		// re-adjust columns widths when window is resized.
 		addComponentListener(new ComponentAdapter()
 		{
-
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
@@ -96,18 +108,20 @@ public class FilesTable extends JPanel
 	/**
 	 * Set how the table behaves visually.
 	 */
-	private void formatTable()
+	protected void formatTable()
 	{
 		// set columns to be right aligned.
 		DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
 		rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-		tableFiles.getColumnModel().getColumn(1).setCellRenderer(rightRenderer);
+
+		Arrays.stream(rightAlignedColumns)
+				.forEach(column -> tableFiles.getColumnModel().getColumn(column).setCellRenderer(rightRenderer));
 
 		// columns can't be selected.
 		tableFiles.setColumnSelectionAllowed(false);
 		tableFiles.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-		adjustColumns(App.mainWindow == null ? 768 : App.mainWindow.getWidth());
+		adjustColumns(getWidth());
 	}
 
 	/**
@@ -118,13 +132,11 @@ public class FilesTable extends JPanel
 	 */
 	public void adjustColumns(int width)
 	{
-		tableFiles.getColumnModel().getColumn(0).setPreferredWidth(width - 530);
-
-		tableFiles.getColumnModel().getColumn(1).setPreferredWidth(40);
-		tableFiles.getColumnModel().getColumn(1).setMinWidth(40);
-
-		tableFiles.getColumnModel().getColumn(2).setPreferredWidth(100);
-		tableFiles.getColumnModel().getColumn(2).setMinWidth(100);
+		for (int i = 0; i < columnNames.length; i++)
+		{
+			tableFiles.getColumnModel().getColumn(i).setPreferredWidth((int) (getWidth() * columnsWidthPercent[i]));
+			tableFiles.getColumnModel().getColumn(i).setMinWidth((int) (getWidth() * columnsWidthPercent[i]));
+		}
 	}
 
 	/**
@@ -177,17 +189,7 @@ public class FilesTable extends JPanel
 	// #region Getters and setters.
 	// ======================================================================================
 
-	public FileToolBar getToolBarFiles()
-	{
-		return toolBarFiles;
-	}
-
-	public void setToolBarFiles(FileToolBar toolBarFiles)
-	{
-		this.toolBarFiles = toolBarFiles;
-	}
-
-	public JTable getTableFiles()
+	public JTable getTable()
 	{
 		return tableFiles;
 	}
@@ -197,7 +199,116 @@ public class FilesTable extends JPanel
 		this.tableFiles = tableFiles;
 	}
 
+
+	/**
+	 * @return the scrollPaneFiles
+	 */
+	public JScrollPane getScrollPaneFiles()
+	{
+		return scrollPaneFiles;
+	}
+
+
+	/**
+	 * @param scrollPaneFiles the scrollPaneFiles to set
+	 */
+	public void setScrollPaneFiles(JScrollPane scrollPaneFiles)
+	{
+		this.scrollPaneFiles = scrollPaneFiles;
+	}
+
+
+	/**
+	 * @return the tableModel
+	 */
+	public DefaultTableModel getTableModel()
+	{
+		return tableModel;
+	}
+
+
+	/**
+	 * @param tableModel the tableModel to set
+	 */
+	public void setTableModel(DefaultTableModel tableModel)
+	{
+		this.tableModel = tableModel;
+	}
+
+
+	/**
+	 * @return the columnNames
+	 */
+	public String[] getColumnNames()
+	{
+		return columnNames;
+	}
+
+
+	/**
+	 * @param columnNames the columnNames to set
+	 */
+	public void setColumnNames(String[] columnNames)
+	{
+		this.columnNames = columnNames;
+	}
+
+
+	/**
+	 * @return the tableData
+	 */
+	public Object[][] getTableData()
+	{
+		return tableData;
+	}
+
+
+	/**
+	 * @param tableData the tableData to set
+	 */
+	public void setTableData(Object[][] tableData)
+	{
+		this.tableData = tableData;
+	}
+
+
+	/**
+	 * @return the rightAlignedColumns
+	 */
+	public int[] getRightAlignedColumns()
+	{
+		return rightAlignedColumns;
+	}
+
+
+	/**
+	 * @param rightAlignedColumns the rightAlignedColumns to set
+	 */
+	public void setRightAlignedColumns(int[] rightAlignedColumns)
+	{
+		this.rightAlignedColumns = rightAlignedColumns;
+	}
+
+
+	/**
+	 * @return the columnsWidthPercent
+	 */
+	public float[] getColumnsWidthPercent()
+	{
+		return columnsWidthPercent;
+	}
+
+
+	/**
+	 * @param columnsWidthPercent the columnsWidthPercent to set
+	 */
+	public void setColumnsWidthPercent(float[] columnsWidthPercent)
+	{
+		this.columnsWidthPercent = columnsWidthPercent;
+	}
+
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////
+
 }

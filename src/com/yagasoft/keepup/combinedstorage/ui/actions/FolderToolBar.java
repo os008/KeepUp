@@ -6,23 +6,18 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.actions/FolderToolBar.java
  *
- *			Modified: 07-May-2014 (20:55:36)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 28-May-2014 (18:12:53)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.actions;
 
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JToolBar;
 
 import com.yagasoft.keepup.App;
-import com.yagasoft.keepup._keepup;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Msg;
 
@@ -30,7 +25,7 @@ import com.yagasoft.keepup.dialogues.Msg;
 /**
  * Tool bar at the top of the main window. It has file operations.
  */
-public class FolderToolBar extends JToolBar implements ActionListener
+public class FolderToolBar extends BrowserToolBar
 {
 
 	/**
@@ -52,7 +47,11 @@ public class FolderToolBar extends JToolBar implements ActionListener
 		DELETE,
 
 		/** Paste. */
-		PASTE
+		PASTE,
+
+		BACKWARD,
+
+		FORWARD
 	}
 
 	/** Constant: SerialVersionUID. */
@@ -81,6 +80,12 @@ public class FolderToolBar extends JToolBar implements ActionListener
 	{
 		JButton button = null;
 
+		button = createButton("backward", Actions.BACKWARD + "", "Go to previous folder.", "Backward");
+		add(button);
+
+		button = createButton("forward", Actions.FORWARD + "", "Go to next folder.", "Forward");
+		add(button);
+
 		button = createButton("create", Actions.CREATE + "", "Create a folder.", "Create");
 		add(button);
 
@@ -98,44 +103,6 @@ public class FolderToolBar extends JToolBar implements ActionListener
 	}
 
 	/**
-	 * Create button.
-	 *
-	 * @param imageName
-	 *            Image file name.
-	 * @param actionCommand
-	 *            Action to be taken by that button (from the Enum {@link Actions}).
-	 * @param toolTipText
-	 *            Tool tip text.
-	 * @param altText
-	 *            Text to be displayed in case the icon is missing.
-	 * @return The button.
-	 */
-	protected JButton createButton(String imageName, String actionCommand, String toolTipText, String altText)
-	{
-		// Look for the image.
-		String imgLocation = "images\\" + imageName + ".gif";
-		URL imageURL = _keepup.class.getResource(imgLocation);
-
-		// Create and initialize the button.
-		JButton button = new JButton();
-		button.setActionCommand(actionCommand);
-		button.setToolTipText(toolTipText);
-		button.addActionListener(this);
-
-		if (imageURL != null)
-		{	// image found
-			button.setIcon(new ImageIcon(imageURL, altText));
-		}
-		else
-		{	// no image found
-			button.setText(altText);
-//			Logger.post("Resource not found: " + imgLocation);
-		}
-
-		return button;
-	}
-
-	/**
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
@@ -145,50 +112,63 @@ public class FolderToolBar extends JToolBar implements ActionListener
 
 		// Handle each button.
 
-		if (Actions.CREATE.toString().equals(cmd))
+		switch (cmd)
 		{
-			String folderName = Msg.getInput("Please enter the name of the folder:");
-
-			if ((folderName == null) || (folderName.length() <= 0))
+			case "CREATE":
 			{
-				Msg.showError("Try again with a proper name, please.");
-				return;
+				String folderName = Msg.getInput("Please enter the name of the folder:");
+
+				if ((folderName == null) || (folderName.length() <= 0))
+				{
+					Msg.showError("Try again with a proper name, please.");
+					return;
+				}
+
+				App.createFolder(App.getSelectedFolder(), folderName);
+				break;
 			}
 
-			App.createFolder(App.getSelectedFolder(), folderName);
-		}
+			case "REFRESH":
+				App.refreshTree();
+				break;
 
-		if (Actions.REFRESH.toString().equals(cmd))
-		{
-			App.refreshTree();
-		}
-
-		if (Actions.RENAME.toString().equals(cmd))
-		{
-			String newName = Msg.getInput("Please enter a new name for the file:");
-
-			if ((newName == null) || (newName.length() <= 0))
+			case "RENAME":
 			{
-				Msg.showError("Try again with a proper name, please.");
-				return;
+				String newName = Msg.getInput("Please enter a new name for the file:");
+
+				if ((newName == null) || (newName.length() <= 0))
+				{
+					Msg.showError("Try again with a proper name, please.");
+					return;
+				}
+
+				App.renameFolder(App.getSelectedFolder(), newName);
+				break;
 			}
 
-			App.renameFolder(App.getSelectedFolder(), newName);
-		}
-
-		if (Actions.DELETE.toString().equals(cmd))
-		{
-			CombinedFolder selectedFolder = App.getSelectedFolder();
-
-			if (Msg.askConfirmation("Are you sure you want to delete '" + selectedFolder.getPath() + "'?"))
+			case "DELETE":
 			{
-				App.deleteFolder(selectedFolder);
-			}
-		}
+				CombinedFolder selectedFolder = App.getSelectedFolder();
 
-		if (Actions.PASTE.toString().equals(cmd))
-		{
-			App.pasteFiles(App.getSelectedFolder());
+				if (Msg.askConfirmation("Are you sure you want to delete '" + selectedFolder.getPath() + "'?"))
+				{
+					App.deleteFolder(selectedFolder);
+				}
+
+				break;
+			}
+
+			case "PASTE":
+				App.pasteFiles(App.getSelectedFolder());
+				break;
+
+			case "BACKWARD":
+				App.navigateBackward();
+				break;
+
+			case "FORWARD":
+				App.navigateForward();
+				break;
 		}
 	}
 

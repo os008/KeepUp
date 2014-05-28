@@ -4,25 +4,20 @@
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
  *
- *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.actions/FileToolBar.java
+ *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.actions/FileToolBar.java
  *
- *			Modified: 13-Apr-2014 (00:03:22)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 28-May-2014 (18:13:02)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.actions;
 
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JToolBar;
 
 import com.yagasoft.keepup.App;
-import com.yagasoft.keepup._keepup;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Browse;
 import com.yagasoft.keepup.dialogues.Msg;
@@ -34,7 +29,7 @@ import com.yagasoft.overcast.base.container.remote.RemoteFile;
 /**
  * Tool bar at the top of the main window. It has file operations.
  */
-public class FileToolBar extends JToolBar implements ActionListener
+public class FileToolBar extends BrowserToolBar
 {
 
 	/**
@@ -100,44 +95,6 @@ public class FileToolBar extends JToolBar implements ActionListener
 
 		button = createButton("delete", Actions.DELETE + "", "Delete selected file.", "Delete");
 		add(button);
-	}
-
-	/**
-	 * Create button.
-	 *
-	 * @param imageName
-	 *            Image file name.
-	 * @param actionCommand
-	 *            Action to be taken by that button (from the Enum {@link Actions}).
-	 * @param toolTipText
-	 *            Tool tip text.
-	 * @param altText
-	 *            Text to be displayed in case the icon is missing.
-	 * @return The button.
-	 */
-	protected JButton createButton(String imageName, String actionCommand, String toolTipText, String altText)
-	{
-		// Look for the image.
-		String imgLocation = "images\\" + imageName + ".gif";
-		URL imageURL = _keepup.class.getResource(imgLocation);
-
-		// Create and initialize the button.
-		JButton button = new JButton();
-		button.setActionCommand(actionCommand);
-		button.setToolTipText(toolTipText);
-		button.addActionListener(this);
-
-		if (imageURL != null)
-		{	// image found
-			button.setIcon(new ImageIcon(imageURL, altText));
-		}
-		else
-		{	// no image found
-			button.setText(altText);
-//			Logger.post("Resource not found: " + imgLocation);
-		}
-
-		return button;
 	}
 
 	/**
@@ -221,7 +178,7 @@ public class FileToolBar extends JToolBar implements ActionListener
 			String filesNames = "";
 
 			// form the names in to a list.
-			for (int i = 0; i < ((selectedFiles.length > 10) ? 10 : selectedFiles.length); i ++)
+			for (int i = 0; i < ((selectedFiles.length > 10) ? 10 : selectedFiles.length); i++)
 			{
 				filesNames += selectedFiles[i].getPath() + "\n";
 			}

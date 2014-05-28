@@ -4,16 +4,20 @@
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
  *
- *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/TreeController.java
+ *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/CSTreeController.java
  *
- *			Modified: 07-May-2014 (19:57:26)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 28-May-2014 (16:08:33)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.browser.tree;
 
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Enumeration;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.JTree;
 import javax.swing.event.TreeExpansionEvent;
@@ -30,11 +34,11 @@ import com.yagasoft.keepup.combinedstorage.UpdateType;
 /**
  * The Class TreeController.
  */
-public class TreeController implements TreeWillExpandListener, ContentListener
+public class CSTreeController implements TreeWillExpandListener, ContentListener, Observer
 {
 
 	/** Controlled view. */
-	protected FoldersTree				view;
+	protected CSTree					view;
 
 	/** Tree. */
 	protected JTree						tree;
@@ -42,13 +46,16 @@ public class TreeController implements TreeWillExpandListener, ContentListener
 	/** Root. */
 	protected DefaultMutableTreeNode	root;
 
+	protected Deque<TreePath>			backStack		= new ArrayDeque<TreePath>();
+	protected Deque<TreePath>			forwardStack	= new ArrayDeque<TreePath>();
+
 	/**
 	 * Instantiates a new tree controller.
 	 *
 	 * @param foldersTree
 	 *            Folders tree.
 	 */
-	public TreeController(FoldersTree foldersTree)
+	public CSTreeController(CSTree foldersTree)
 	{
 		view = foldersTree;
 		tree = foldersTree.getTreeFolders();
@@ -56,6 +63,8 @@ public class TreeController implements TreeWillExpandListener, ContentListener
 
 		root = foldersTree.getRoot();
 		((CombinedFolder) root.getUserObject()).addContentListener(this);
+
+		view.addTreeSelectionObserver(this);
 	}
 
 	/**
@@ -236,7 +245,8 @@ public class TreeController implements TreeWillExpandListener, ContentListener
 	{}
 
 	/**
-	 * @see com.yagasoft.keepup.combinedstorage.ContentListener#folderChanged(com.yagasoft.keepup.combinedstorage.CombinedFolder, com.yagasoft.keepup.combinedstorage.UpdateType, com.yagasoft.keepup.combinedstorage.CombinedFolder)
+	 * @see com.yagasoft.keepup.combinedstorage.ContentListener#folderChanged(com.yagasoft.keepup.combinedstorage.CombinedFolder,
+	 *      com.yagasoft.keepup.combinedstorage.UpdateType, com.yagasoft.keepup.combinedstorage.CombinedFolder)
 	 */
 	@Override
 	public void folderChanged(CombinedFolder folder, UpdateType update, CombinedFolder content)
@@ -261,6 +271,71 @@ public class TreeController implements TreeWillExpandListener, ContentListener
 				break;
 
 		}
+	}
+
+	public void navigateBackward()
+	{
+		if (backStack.size() > 1)
+		{
+			forwardStack.push(backStack.pop());		// get current folder navigated to, and put save it for later.
+
+			TreePath path = backStack.peek();		// get last folder navigated to.
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+
+			// if the folder was deleted! ...
+			if ((node).getParent() == null && node.toString() != "root")
+			{
+				navigateBackward();		// go back one more time.
+			}
+			else
+			{
+				tree.setSelectionPath(path);		// select this folder from history.
+			}
+		}
+	}
+
+	public void navigateForward()
+	{
+		if ( !forwardStack.isEmpty())
+		{
+			backStack.push(forwardStack.pop());		// put the forward folder as if it's been selected.
+			TreePath path = backStack.peek();		// read it again.
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+
+			// if the folder was deleted! ...
+			if ((node).getParent() == null && node.toString() != "root")
+			{
+				navigateForward();		// go forward one more time.
+			}
+			else
+			{
+				tree.setSelectionPath(path);
+			}
+		}
+	}
+
+	/**
+	 * Monitors the view for changes in folder selection.
+	 *
+	 * @param o
+	 *            O.
+	 * @param arg
+	 *            Arg.
+	 */
+	@Override
+	public void update(Observable o, Object arg)
+	{
+		TreePath currentPath = new TreePath(((CombinedFolder) arg).getNode().getPath());
+
+		if ( !backStack.isEmpty() && currentPath.equals(backStack.peekFirst()))
+		{
+			return;
+		}
+
+		forwardStack.clear();
+		backStack.push(currentPath);
 	}
 
 }

@@ -36,7 +36,7 @@ public final class Browse
 		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-		int result = chooser.showOpenDialog(App.mainWindow);
+		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File selectedFolder = chooser.getSelectedFile();
 
 		// if a folder was chosen ...
@@ -64,7 +64,7 @@ public final class Browse
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
 
-		int result = chooser.showOpenDialog(App.mainWindow);
+		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File selectedFile = chooser.getSelectedFile();
 
 		// if a folder was chosen ...
@@ -86,7 +86,7 @@ public final class Browse
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(true);
 
-		int result = chooser.showOpenDialog(App.mainWindow);
+		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File[] selectedFiles = chooser.getSelectedFiles();
 
 		// if a folder was chosen ...
