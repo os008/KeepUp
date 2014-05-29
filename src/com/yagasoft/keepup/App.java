@@ -39,6 +39,11 @@ import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTree;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.keepup.ui.MainWindow;
+import com.yagasoft.keepup.ui.BrowserPanel;
+import com.yagasoft.keepup.backup.ui.BackupPanel;
+import com.yagasoft.keepup.backup.ui.browser.LocalFileTable;
+import com.yagasoft.keepup.backup.ui.browser.LocalFolderTree;
+import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
@@ -106,6 +111,21 @@ public final class App
 	/** Files table. */
 	public static CSTable						csFilesTable;
 
+	/** Main window. */
+	public static BackupPanel backupPanel;
+
+	/** Browser panel. */
+	public static BrowserPanel			localBrowserPanel;
+
+	/** Folders tree. */
+	public static LocalFolderTree						localFoldersTree;
+
+	/** Table controller. */
+	public static LocalTableController				localTableController;
+
+	/** Files table. */
+	public static LocalFileTable						LocalFilesTable;
+
 	// #endregion GUI.
 	// --------------------------------------------------------------------------------------
 
@@ -162,8 +182,16 @@ public final class App
 				, new int[] { 1 });
 		csBrowserPanel = new CSBrowserPanel(csFoldersTree, csFilesTable);
 		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
-
 		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
+
+		localFoldersTree = new LocalFolderTree();
+		LocalFilesTable = new LocalFileTable(
+				new String[] { "Name", "Size", "Status" }
+				, new float[] { 0.5f, 0.25f, 0.25f }
+				, new int[] { 1 });
+		localBrowserPanel = new BrowserPanel(localFoldersTree, LocalFilesTable);
+		backupPanel = new BackupPanel(localBrowserPanel);
+		mainWindow.addPanel("Backup", backupPanel);
 
 		// save options when application is closing.
 		mainWindow.getFrame().addWindowListener(new WindowAdapter()
@@ -176,7 +204,7 @@ public final class App
 			}
 		});
 
-		mainWindow.switchToPanel("Combined Storage");
+		//mainWindow.switchToPanel("Combined Storage");
 		combinedStoragePanel.getBrowserPanel().resetDivider(mainWindow.getFrame().getWidth() / 3);
 
 		mainWindow.getFrame().setVisible(true);
@@ -189,8 +217,10 @@ public final class App
 	{
 		treeController = new CSTreeController(csFoldersTree);
 		tableController = new CSTableController(csFilesTable);
+		treeController.addTreeSelectionListener(tableController);
 
-		csFoldersTree.addTreeSelectionObserver(tableController);
+		localTableController = new LocalTableController(LocalFilesTable);
+		localFoldersTree.addSelectionListener(localTableController);
 	}
 
 	/**
@@ -205,31 +235,31 @@ public final class App
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
 
-		executor.execute(() ->
-		{
-			try
-			{
-				addCSP(Google.getInstance("os1983@gmail.com"));
-			}
-			catch (AuthorisationException | CSPBuildException e)
-			{
-				Msg.showError(e.getMessage());
-				e.printStackTrace();
-			}
-		});
+//		executor.execute(() ->
+//		{
+//			try
+//			{
+//				addCSP(Google.getInstance("os1983@gmail.com"));
+//			}
+//			catch (AuthorisationException | CSPBuildException e)
+//			{
+//				Msg.showError(e.getMessage());
+//				e.printStackTrace();
+//			}
+//		});
 
-		executor.execute(() ->
-		{
-			try
-			{
-				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
-			}
-			catch (AuthorisationException | CSPBuildException e)
-			{
-				Msg.showError(e.getMessage());
-				e.printStackTrace();
-			}
-		});
+//		executor.execute(() ->
+//		{
+//			try
+//			{
+//				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+//			}
+//			catch (AuthorisationException | CSPBuildException e)
+//			{
+//				Msg.showError(e.getMessage());
+//				e.printStackTrace();
+//			}
+//		});
 
 		try
 		{

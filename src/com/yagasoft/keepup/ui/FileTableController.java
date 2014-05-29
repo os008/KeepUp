@@ -14,37 +14,37 @@ package com.yagasoft.keepup.ui;
 
 
 import java.util.Arrays;
-import java.util.Observer;
 import java.util.function.Function;
 
 import javax.swing.JTable;
+import javax.swing.event.TreeSelectionListener;
 
 
 /**
  * The Class TableController.
  * The update function of the observer should fetch the files of the selected folder sent to the function's 'arg' parameter.
  * Convert 'arg' to the type of the folders being monitored.
+ * This object should register as an observer at the tree view.
  */
-public abstract class FileTableController<FileType> implements Observer
+public abstract class FileTableController<FileType> implements TreeSelectionListener
 {
-
+	
 	/** Controlled view including the panel. */
 	protected FileTable						view;
-
+	
 	/** Table itself. */
 	protected JTable						table;
-
+	
 	protected int							columnsCount;
-
+	
 	protected Function<FileType, Object>[]	columnFunctions;
-
+	
 	/**
 	 * Instantiates a new table controller.
 	 * The functionalities should use each file to produce something to store in the relevent cell under the column.
 	 * As you can't create a generic array, so add the functions to a list, and then convert them to array using toArray.
 	 *
-	 * For example:
-	 * <code>
+	 * For example: <code>
 	 * 		functions.add(file -> file);		// stores the file object itself in the first column.
 	 * 		functions.add(file -> App.humanReadableSize(file.getSize()));	// stores the size of the file.
 	 * 		functions.add(file -> file.getCsp().getName());		// stores the CSP.
@@ -62,7 +62,7 @@ public abstract class FileTableController<FileType> implements Observer
 		columnsCount = view.getColumnNames().length;
 		this.columnFunctions = columnFunctions;
 	}
-
+	
 	/**
 	 * Update table with the files passed.
 	 *
@@ -72,9 +72,9 @@ public abstract class FileTableController<FileType> implements Observer
 	public void updateTable(FileType[] fileArray)
 	{
 		Arrays.sort(fileArray);
-
+		
 		Object[][] tableData = new Object[fileArray.length][columnsCount];
-
+		
 		for (int i = 0; i < fileArray.length; i++)
 		{
 			for (int j = 0; j < columnsCount; j++)
@@ -82,10 +82,10 @@ public abstract class FileTableController<FileType> implements Observer
 				tableData[i][j] = columnFunctions[j].apply(fileArray[i]);
 			}
 		}
-
+		
 		view.updateTable(tableData);
 	}
-
+	
 	/**
 	 * Gets the selected files from the view.
 	 * You can use view.getSelectedFiles(), then convert the type.
@@ -93,5 +93,5 @@ public abstract class FileTableController<FileType> implements Observer
 	 * @return the selected files
 	 */
 	public abstract FileType[] getSelectedFiles();
-
+	
 }

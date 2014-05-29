@@ -155,7 +155,7 @@ public class FileTable extends JPanel
 	}
 
 	/**
-	 * Gets the selected files.
+	 * Gets the selected files. Fetches the object stored in the first column.
 	 *
 	 * @return the selected files
 	 */

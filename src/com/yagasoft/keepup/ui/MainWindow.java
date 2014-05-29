@@ -6,7 +6,7 @@
  * 
  *		Project/File: KeepUp/com.yagasoft.keepup.ui/MainWindow.java
  * 
- *			Modified: 27-May-2014 (17:18:02)
+ *			Modified: 29-May-2014 (18:16:48)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -14,6 +14,7 @@ package com.yagasoft.keepup.ui;
 
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.FlowLayout;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,13 +26,25 @@ import javax.swing.JPanel;
 
 public class MainWindow
 {
-
-	private JFrame				frame;
-	private Map<String, JPanel>	panels	= new HashMap<String, JPanel>();
 	
-	private JPanel bar;
+	/** Frame. */
+	private JFrame					frame;
+	
+	/** Panels for program features. */
+	private Map<String, JPanel>		panels	= new HashMap<String, JPanel>();
+	
+	/** Bar to contain the feature switching buttons. */
+	private JPanel					bar;
+	
+	/** Buttons names mapped to the button. */
 	private Map<String, JButton>	buttons	= new HashMap<String, JButton>();
-
+	
+	/** Content panel. */
+	private JPanel					contentPanel;
+	
+	/** Card layout to switch between features' panels. */
+	private CardLayout				cardLayout;
+	
 	/**
 	 * Create the application.
 	 */
@@ -39,7 +52,7 @@ public class MainWindow
 	{
 		initialize();
 	}
-
+	
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -49,49 +62,59 @@ public class MainWindow
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setBounds(50, 50, 768, 512);
 		
+		// prep the top bar.
 		bar = new JPanel(new FlowLayout());
 		frame.add(bar, BorderLayout.NORTH);
+		
+		// prep the centre area.
+		cardLayout = new CardLayout();
+		contentPanel = new JPanel(cardLayout);
+		frame.add(contentPanel);
 	}
-
+	
 	/**
 	 * Adds a panel to the frame. Stored using its title to display it on the tool-bar.
 	 *
-	 * @param title Title.
-	 * @param panel Panel.
+	 * @param title
+	 *            Title.
+	 * @param panel
+	 *            Panel.
 	 */
 	public void addPanel(String title, JPanel panel)
 	{
+		// make sure there is no panel with the same name.
 		if (panels.containsValue(panel))
 		{
-			frame.remove(panel);
+			contentPanel.remove(panel);
 			bar.remove(buttons.get(title));
 		}
 		
+		// add the panel to the list, and to the content panel layout.
 		panels.put(title, panel);
-		frame.add(panels.get(title), BorderLayout.CENTER);
+		contentPanel.add(panel, title);
 		
+		// add a button to be able to switch to this panel when needed.
 		JButton button = new JButton(title);
 		button.addActionListener(event -> switchToPanel(title));
 		buttons.put(title, button);
 		bar.add(button);
 	}
-
+	
 	/**
 	 * Switch to the panel with that name. All other panels are hidden.
 	 *
-	 * @param title Title.
+	 * @param title
+	 *            Title.
 	 */
 	public void switchToPanel(String title)
 	{
-		panels.values().parallelStream().forEach(panel -> panel.setVisible(false));
-		panels.get(title).setVisible(true);
-		System.out.println("Test! " + title);
+		cardLayout.show(contentPanel, title);
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
+	
+	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
-	//======================================================================================
-
+	// ======================================================================================
+	
 	/**
 	 * @return the frame
 	 */
@@ -99,7 +122,7 @@ public class MainWindow
 	{
 		return frame;
 	}
-
+	
 	/**
 	 * @param frame
 	 *            the frame to set
@@ -108,7 +131,7 @@ public class MainWindow
 	{
 		this.frame = frame;
 	}
-
+	
 	/**
 	 * @return the panels
 	 */
@@ -116,7 +139,7 @@ public class MainWindow
 	{
 		return panels;
 	}
-
+	
 	/**
 	 * @param panels
 	 *            the panels to set
@@ -125,9 +148,9 @@ public class MainWindow
 	{
 		this.panels = panels;
 	}
-
-	//======================================================================================
+	
+	// ======================================================================================
 	// #endregion Getters and setters.
-	////////////////////////////////////////////////////////////////////////////////////////
-
+	// //////////////////////////////////////////////////////////////////////////////////////
+	
 }

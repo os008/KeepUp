@@ -16,10 +16,11 @@ package com.yagasoft.keepup.combinedstorage.ui.browser.table;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Observable;
 import java.util.function.Function;
 
 import javax.swing.JTable;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
@@ -34,13 +35,13 @@ import com.yagasoft.overcast.base.container.remote.RemoteFile;
  */
 public class CSTableController extends FileTableController<RemoteFile<?>>
 {
-
+	
 	/** Controlled view. */
 	protected CSTable	view;
-
+	
 	/** Table. */
 	protected JTable	table;
-
+	
 	/**
 	 * @param filesTable
 	 * @param columnFunctions
@@ -49,12 +50,14 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 	{
 		this(filesTable, null);
 	}
-
+	
 	/**
 	 * Instantiates a new CS table controller.
 	 *
-	 * @param filesTable Files table.
-	 * @param columnFunctions Column functions.
+	 * @param filesTable
+	 *            Files table.
+	 * @param columnFunctions
+	 *            Column functions.
 	 *
 	 * @see FileTableController#FileTableController(FileTable, Function[])
 	 */
@@ -62,14 +65,14 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 	public CSTableController(FileTable filesTable, Function<RemoteFile<?>, Object>[] columnFunctions)
 	{
 		super(filesTable, columnFunctions);
-
+		
 		List<Function<File<?>, Object>> functions = new ArrayList<Function<File<?>, Object>>();
 		functions.add(file -> file);
 		functions.add(file -> App.humanReadableSize(file.getSize()));
 		functions.add(file -> file.getCsp());
 		this.columnFunctions = functions.toArray(new Function[functions.size()]);
 	}
-
+	
 	/**
 	 * @see com.yagasoft.keepup.ui.FileTableController#getSelectedFiles()
 	 */
@@ -80,18 +83,17 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 				.map(file -> (RemoteFile<?>) file)
 				.toArray(size -> new RemoteFile<?>[size]);
 	}
-
-	/**
-	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
-	 */
+	
 	@Override
-	public void update(Observable o, Object arg)
+	public void valueChanged(TreeSelectionEvent e)
 	{
+		DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
+		
 		// selected folder has changed, and so fetch its files and display them.
-		if (arg != null)
+		if (node != null)
 		{
-			updateTable(((CombinedFolder) arg).getFilesArray(false));
+			updateTable(((CombinedFolder) node.getUserObject()).getFilesArray(false));
 		}
 	}
-
+	
 }
