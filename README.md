@@ -1,7 +1,7 @@
 KeepUp v2.03.0070
 =================
 
-A program which combines the storage of multiple CSPs into a single seamless view.
+A program which combines the storage of multiple CSPs into a single seamless view, and includes a backup feature.
 
 ### Features:
 
@@ -12,7 +12,7 @@ A program which combines the storage of multiple CSPs into a single seamless vie
 	  + Queues.
 	  + Automatic choice of CSP for upload.
     + Combined and seamless folder tree.
-  + Support for OAuth or traditional way of logging in.
+  + Backup to combined CSPs.
 
 ### Instructions:
 

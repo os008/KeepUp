@@ -23,13 +23,21 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+import com.yagasoft.keepup.backup.ui.BackupController;
+import com.yagasoft.keepup.backup.ui.BackupPanel;
+import com.yagasoft.keepup.backup.ui.browser.LocalTable;
+import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
+import com.yagasoft.keepup.backup.ui.browser.LocalTree;
+import com.yagasoft.keepup.backup.ui.watcher.WatcherTableController;
+import com.yagasoft.keepup.backup.watcher.Watcher;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ui.CombinedStoragePanel;
 import com.yagasoft.keepup.combinedstorage.ui.browser.CSBrowserPanel;
@@ -38,12 +46,9 @@ import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTableController;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTree;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
-import com.yagasoft.keepup.ui.MainWindow;
 import com.yagasoft.keepup.ui.BrowserPanel;
-import com.yagasoft.keepup.backup.ui.BackupPanel;
-import com.yagasoft.keepup.backup.ui.browser.LocalFileTable;
-import com.yagasoft.keepup.backup.ui.browser.LocalFolderTree;
-import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
+import com.yagasoft.keepup.ui.FileTable;
+import com.yagasoft.keepup.ui.MainWindow;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
@@ -58,7 +63,6 @@ import com.yagasoft.overcast.exception.CSPBuildException;
 import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
 import com.yagasoft.overcast.exception.TransferException;
-import com.yagasoft.overcast.implement.dropbox.Dropbox;
 import com.yagasoft.overcast.implement.google.Google;
 
 
@@ -112,19 +116,27 @@ public final class App
 	public static CSTable						csFilesTable;
 
 	/** Main window. */
-	public static BackupPanel backupPanel;
+	public static BackupPanel					backupPanel;
+
+	public static BackupController				backupPanelController;
 
 	/** Browser panel. */
-	public static BrowserPanel			localBrowserPanel;
+	public static BrowserPanel					localBrowserPanel;
 
 	/** Folders tree. */
-	public static LocalFolderTree						localFoldersTree;
+	public static LocalTree						localFoldersTree;
 
 	/** Table controller. */
-	public static LocalTableController				localTableController;
+	public static LocalTableController			localTableController;
 
 	/** Files table. */
-	public static LocalFileTable						LocalFilesTable;
+	public static LocalTable					localFilesTable;
+
+	/** Table controller. */
+	public static WatcherTableController		watchTableController;
+
+	/** Files table. */
+	public static FileTable						watchedFilesTable;
 
 	// #endregion GUI.
 	// --------------------------------------------------------------------------------------
@@ -133,7 +145,7 @@ public final class App
 	private static String						lastDirectory;
 
 	/** Array of files in copied or moved to memory. */
-	private static RemoteFile<?>[]				filesInHand;
+	private static List<RemoteFile<?>>			filesInHand;
 
 	/**
 	 * FileActions that can be performed on the one "in hand".
@@ -146,6 +158,8 @@ public final class App
 
 	/** File action to be performed on filesInHand. */
 	private static FileActions	fileAction;
+
+	private static Watcher		watcher;
 
 	// ======================================================================================
 	// #endregion Fields.
@@ -175,6 +189,7 @@ public final class App
 	{
 		MainWindow mainWindow = new MainWindow();
 
+		// combined storage feature gui
 		csFoldersTree = new CSTree(ROOT.getNode());
 		csFilesTable = new CSTable(
 				new String[] { "Name", "Size", "CSP" }
@@ -184,13 +199,18 @@ public final class App
 		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
 		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
 
-		localFoldersTree = new LocalFolderTree();
-		LocalFilesTable = new LocalFileTable(
+		// backup feature GUI
+		localFoldersTree = new LocalTree();
+		localFilesTable = new LocalTable(
 				new String[] { "Name", "Size", "Status" }
-				, new float[] { 0.5f, 0.25f, 0.25f }
+				, new float[] { 0.65f, 0.20f, 0.15f }
 				, new int[] { 1 });
-		localBrowserPanel = new BrowserPanel(localFoldersTree, LocalFilesTable);
-		backupPanel = new BackupPanel(localBrowserPanel);
+		localBrowserPanel = new BrowserPanel(localFoldersTree, localFilesTable);
+		watchedFilesTable = new FileTable(
+				new String[] { "Name", "Path", "Size", "Status"  }
+				, new float[] { 0.0f, 0.65f, 0.20f, 0.15f  }
+				, new int[] { 2 });
+		backupPanel = new BackupPanel(localBrowserPanel, watchedFilesTable);
 		mainWindow.addPanel("Backup", backupPanel);
 
 		// save options when application is closing.
@@ -204,7 +224,7 @@ public final class App
 			}
 		});
 
-		//mainWindow.switchToPanel("Combined Storage");
+		mainWindow.switchToPanel("Combined Storage");
 		combinedStoragePanel.getBrowserPanel().resetDivider(mainWindow.getFrame().getWidth() / 3);
 
 		mainWindow.getFrame().setVisible(true);
@@ -219,8 +239,15 @@ public final class App
 		tableController = new CSTableController(csFilesTable);
 		treeController.addTreeSelectionListener(tableController);
 
-		localTableController = new LocalTableController(LocalFilesTable);
+		localTableController = new LocalTableController(localFilesTable);
 		localFoldersTree.addSelectionListener(localTableController);
+
+		watchTableController = new WatcherTableController(watchedFilesTable);
+		watcher = new Watcher();
+		watcher.addListener(watchTableController);
+
+		backupPanelController = new BackupController(backupPanel, localTableController, watchTableController);
+		backupPanelController.addListener(watcher);
 	}
 
 	/**
@@ -235,31 +262,31 @@ public final class App
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
 
-//		executor.execute(() ->
-//		{
-//			try
-//			{
-//				addCSP(Google.getInstance("os1983@gmail.com"));
-//			}
-//			catch (AuthorisationException | CSPBuildException e)
-//			{
-//				Msg.showError(e.getMessage());
-//				e.printStackTrace();
-//			}
-//		});
+		executor.execute(() ->
+		{
+			try
+			{
+				addCSP(Google.getInstance("os1983@gmail.com"));
+			}
+			catch (AuthorisationException | CSPBuildException e)
+			{
+				Msg.showError(e.getMessage());
+				e.printStackTrace();
+			}
+		});
 
-//		executor.execute(() ->
-//		{
-//			try
-//			{
-//				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
-//			}
-//			catch (AuthorisationException | CSPBuildException e)
-//			{
-//				Msg.showError(e.getMessage());
-//				e.printStackTrace();
-//			}
-//		});
+		// executor.execute(() ->
+		// {
+		// try
+		// {
+		// addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+		// }
+		// catch (AuthorisationException | CSPBuildException e)
+		// {
+		// Msg.showError(e.getMessage());
+		// e.printStackTrace();
+		// }
+		// });
 
 		try
 		{
@@ -599,12 +626,12 @@ public final class App
 		if (folder != null)
 		{
 			folder.updateCombinedFolder(true);
-			tableController.updateTable(folder.getFilesArray(false));
+			tableController.updateTable(folder.getFilesList(false));
 		}
 		else
 		{
 			ROOT.updateCombinedFolder(true);
-			tableController.updateTable(ROOT.getFilesArray(false));
+			tableController.updateTable(ROOT.getFilesList(false));
 		}
 	}
 
@@ -618,10 +645,10 @@ public final class App
 	 * @param files
 	 *            Files list.
 	 */
-	public static void downloadFile(RemoteFile<?>[] files)
+	public static void downloadFile(List<RemoteFile<?>> files)
 	{
 		// no files, then no need to proceed.
-		if (files.length == 0)
+		if (files.size() == 0)
 		{
 			Logger.error("Nothing to download!");
 			Msg.showError("Please, choose a file first from the files list.");
@@ -658,7 +685,7 @@ public final class App
 			// ... download all files passed to that folder.
 			for (RemoteFile<?> file : files)
 			{
-				if (parent.searchByName(file.getName(), false).length > 0)
+				if (parent.searchByName(file.getName(), false).size() > 0)
 				{
 					if (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") != 0)
 					{
@@ -685,7 +712,7 @@ public final class App
 	 * @param parent
 	 *            Parent remote folder.
 	 */
-	public static void uploadFile(LocalFile[] files, CombinedFolder parent)
+	public static void uploadFile(List<LocalFile> files, CombinedFolder parent)
 	{
 		// choose best fitting to upload to its root.
 		if (parent == null)
@@ -726,7 +753,7 @@ public final class App
 				else
 				{
 					// make sure the file doesn't exist, and ask to overwrite if exists.
-					if (parentRemoteFolder.searchByName(file.getName(), false).length > 0)
+					if (parentRemoteFolder.searchByName(file.getName(), false).size() > 0)
 					{
 						if (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") != 0)
 						{
@@ -756,19 +783,19 @@ public final class App
 	 * @param newName
 	 *            New name.
 	 */
-	public static void renameFile(final RemoteFile<?>[] files, final String newName)
+	public static void renameFile(final List<RemoteFile<?>> files, final String newName)
 	{
 		new Thread(() ->
 		{
 			try
 			{
-				files[0].rename(newName);
+				files.get(0).rename(newName);
 				updateTable();
 			}
 			catch (OperationException e)
 			{
 				e.printStackTrace();
-				Msg.showError("Failed to rename file: " + files[0].getName() + " => " + e.getMessage());
+				Msg.showError("Failed to rename file: " + files.get(0).getName() + " => " + e.getMessage());
 			}
 		}).start();
 	}
@@ -779,7 +806,7 @@ public final class App
 	 * @param files
 	 *            Files.
 	 */
-	public static void copyFiles(RemoteFile<?>[] files)
+	public static void copyFiles(List<RemoteFile<?>> files)
 	{
 		filesInHand = files;
 		fileAction = FileActions.COPY;
@@ -791,7 +818,7 @@ public final class App
 	 * @param files
 	 *            Files.
 	 */
-	public static void moveFiles(RemoteFile<?>[] files)
+	public static void moveFiles(List<RemoteFile<?>> files)
 	{
 		filesInHand = files;
 		fileAction = FileActions.MOVE;
@@ -867,7 +894,7 @@ public final class App
 	 * @param files
 	 *            the files.
 	 */
-	public static void deleteFiles(RemoteFile<?>[] files)
+	public static void deleteFiles(List<RemoteFile<?>> files)
 	{
 		for (final RemoteFile<?> file : files)
 		{
@@ -888,15 +915,15 @@ public final class App
 	}
 
 	/**
-	 * Combine the files in all the available CSPs into a single array.
+	 * Combine the files in all the available CSPs into a single list.
 	 *
 	 * @param update
-	 *            update from soure, or read from memory
+	 *            update from source, or read from memory?
 	 * @return the root files
 	 */
-	public static File<?>[] getFilesArray(CombinedFolder folder, boolean update)
+	public static List<RemoteFile<?>> getFilesList(CombinedFolder folder, boolean update)
 	{
-		return folder.getFilesArray(update);
+		return folder.getFilesList(update);
 	}
 
 	/**
@@ -904,9 +931,11 @@ public final class App
 	 *
 	 * @return the selected files
 	 */
-	public static RemoteFile<?>[] getSelectedFiles()
+	public static List<RemoteFile<?>> getSelectedFiles()
 	{
-		return tableController.getSelectedFiles();
+		return tableController.getSelectedFiles().parallelStream()
+				.map(file -> (RemoteFile<?>) file)
+				.collect(Collectors.toList());
 	}
 
 	// ======================================================================================
@@ -955,7 +984,7 @@ public final class App
 	 * @throws OperationException
 	 *             the operation exception
 	 */
-	public static CSP<?, ?, ?> chooseCsp(LocalFile[] files) throws OperationException
+	public static CSP<?, ?, ?> chooseCsp(List<LocalFile> files) throws OperationException
 	{
 		long filesSize = 0L;
 
@@ -1018,20 +1047,9 @@ public final class App
 		}
 
 		// sort the fits.
-		Float[] fitsList = fits.keySet().toArray(new Float[fits.size()]);
-		Arrays.sort(fitsList);
-
-		// choose the highest fit.
-		for (int i = (fitsList.length - 1); i >= 0; i--)
-		{
-			// 100% fit might cause unpredictable approximation errors.
-			if (fitsList[i] < 0.95)
-			{
-				return fits.get(fitsList[i]);
-			}
-		}
-
-		return null;
+		return fits.get(fits.keySet().parallelStream()
+				.filter(fit -> fit < 0.95)
+				.max((a, b) -> a.compareTo(b)));
 	}
 
 	// ======================================================================================

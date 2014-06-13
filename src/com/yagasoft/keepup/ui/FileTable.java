@@ -16,7 +16,9 @@ package com.yagasoft.keepup.ui;
 import java.awt.BorderLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JPanel;
@@ -58,7 +60,7 @@ public class FileTable extends JPanel
 
 	protected int[]				rightAlignedColumns;
 
-	protected float[] columnsWidthPercent;
+	protected float[]			columnsWidthPercent;
 
 	// ======================================================================================
 	// #endregion Files table fields.
@@ -83,6 +85,7 @@ public class FileTable extends JPanel
 		// re-adjust columns widths when window is resized.
 		addComponentListener(new ComponentAdapter()
 		{
+
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
@@ -114,8 +117,10 @@ public class FileTable extends JPanel
 		DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
 		rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
 
-		Arrays.stream(rightAlignedColumns)
-				.forEach(column -> tableFiles.getColumnModel().getColumn(column).setCellRenderer(rightRenderer));
+		for (int column : rightAlignedColumns)
+		{
+			tableFiles.getColumnModel().getColumn(column).setCellRenderer(rightRenderer);
+		}
 
 		// columns can't be selected.
 		tableFiles.setColumnSelectionAllowed(false);
@@ -160,7 +165,7 @@ public class FileTable extends JPanel
 	 * @return the selected files
 	 */
 	@SuppressWarnings("rawtypes")
-	public Object[] getSelectedFiles()
+	public List<Object> getSelectedFiles()
 	{
 		// get the data in the table.
 		Vector rows = ((DefaultTableModel) tableFiles.getModel()).getDataVector();
@@ -168,15 +173,31 @@ public class FileTable extends JPanel
 		int[] selectedRows = tableFiles.getSelectedRows();
 
 		// files to be returned.
-		Object[] files = new Object[selectedRows.length];
-		int index = 0;
+		List<Object> files = new ArrayList<Object>();
 
 		// go through the rows' numbers, fetch them, fetch the file stored there, and put it in the returned list.
-		for (int rowIndex : selectedRows)
-		{
-			files[index] = ((Vector) rows.get(rowIndex)).get(0);
-			index++;
-		}
+		Arrays.stream(selectedRows)
+				.forEach(row -> files.add(((Vector) rows.get(row)).get(0)));
+
+		return files;
+	}
+
+	/**
+	 * Gets all files. Fetches the object stored in the first column.
+	 *
+	 * @return all files
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public List<Object> getAllFiles()
+	{
+		// get the data in the table.
+		Vector rows = ((DefaultTableModel) tableFiles.getModel()).getDataVector();
+
+		// files to be returned.
+		List<Object> files = new ArrayList<Object>();
+
+		// go through the rows, fetch the file stored there, and put it in the returned list.
+		rows.stream().forEach(row -> files.add(((Vector) row).get(0)));
 
 		return files;
 	}
@@ -199,7 +220,6 @@ public class FileTable extends JPanel
 		this.tableFiles = tableFiles;
 	}
 
-
 	/**
 	 * @return the scrollPaneFiles
 	 */
@@ -208,15 +228,14 @@ public class FileTable extends JPanel
 		return scrollPaneFiles;
 	}
 
-
 	/**
-	 * @param scrollPaneFiles the scrollPaneFiles to set
+	 * @param scrollPaneFiles
+	 *            the scrollPaneFiles to set
 	 */
 	public void setScrollPaneFiles(JScrollPane scrollPaneFiles)
 	{
 		this.scrollPaneFiles = scrollPaneFiles;
 	}
-
 
 	/**
 	 * @return the tableModel
@@ -226,15 +245,14 @@ public class FileTable extends JPanel
 		return tableModel;
 	}
 
-
 	/**
-	 * @param tableModel the tableModel to set
+	 * @param tableModel
+	 *            the tableModel to set
 	 */
 	public void setTableModel(DefaultTableModel tableModel)
 	{
 		this.tableModel = tableModel;
 	}
-
 
 	/**
 	 * @return the columnNames
@@ -244,15 +262,14 @@ public class FileTable extends JPanel
 		return columnNames;
 	}
 
-
 	/**
-	 * @param columnNames the columnNames to set
+	 * @param columnNames
+	 *            the columnNames to set
 	 */
 	public void setColumnNames(String[] columnNames)
 	{
 		this.columnNames = columnNames;
 	}
-
 
 	/**
 	 * @return the tableData
@@ -262,15 +279,14 @@ public class FileTable extends JPanel
 		return tableData;
 	}
 
-
 	/**
-	 * @param tableData the tableData to set
+	 * @param tableData
+	 *            the tableData to set
 	 */
 	public void setTableData(Object[][] tableData)
 	{
 		this.tableData = tableData;
 	}
-
 
 	/**
 	 * @return the rightAlignedColumns
@@ -280,15 +296,14 @@ public class FileTable extends JPanel
 		return rightAlignedColumns;
 	}
 
-
 	/**
-	 * @param rightAlignedColumns the rightAlignedColumns to set
+	 * @param rightAlignedColumns
+	 *            the rightAlignedColumns to set
 	 */
 	public void setRightAlignedColumns(int[] rightAlignedColumns)
 	{
 		this.rightAlignedColumns = rightAlignedColumns;
 	}
-
 
 	/**
 	 * @return the columnsWidthPercent
@@ -298,9 +313,9 @@ public class FileTable extends JPanel
 		return columnsWidthPercent;
 	}
 
-
 	/**
-	 * @param columnsWidthPercent the columnsWidthPercent to set
+	 * @param columnsWidthPercent
+	 *            the columnsWidthPercent to set
 	 */
 	public void setColumnsWidthPercent(float[] columnsWidthPercent)
 	{

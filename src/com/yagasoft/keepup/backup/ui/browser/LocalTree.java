@@ -35,7 +35,7 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 
-public class LocalFolderTree extends JPanel
+public class LocalTree extends JPanel
 {
 	
 	private static final long				serialVersionUID	= -8897046346378540458L;
@@ -51,7 +51,7 @@ public class LocalFolderTree extends JPanel
 	/** Tree node selection listeners. */
 	protected Set<ITreeSelectionListener>	selectionListeners	= new HashSet<ITreeSelectionListener>();
 	
-	public LocalFolderTree()
+	public LocalTree()
 	{
 		super(new BorderLayout());
 		setSize(400, 300);
@@ -194,7 +194,7 @@ public class LocalFolderTree extends JPanel
 	public static void main(String argv[])
 	{
 		JFrame frame = new JFrame();
-		frame.add(new LocalFolderTree());
+		frame.add(new LocalTree());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 		frame.setSize(400, 512);
@@ -420,8 +420,8 @@ class FileNode
 		for (int i = 0; i < v.size(); i++)
 		{
 			FileNode nd = (FileNode) v.elementAt(i);
-			IconData idata = new IconData(LocalFolderTree.ICON_FOLDER,
-					LocalFolderTree.ICON_EXPANDEDFOLDER, nd);
+			IconData idata = new IconData(LocalTree.ICON_FOLDER,
+					LocalTree.ICON_EXPANDEDFOLDER, nd);
 			DefaultMutableTreeNode node = new
 					DefaultMutableTreeNode(idata);
 			parent.add(node);

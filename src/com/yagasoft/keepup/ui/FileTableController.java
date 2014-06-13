@@ -13,11 +13,17 @@
 package com.yagasoft.keepup.ui;
 
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.swing.JTable;
 import javax.swing.event.TreeSelectionListener;
+
+import com.yagasoft.overcast.base.container.Container;
+import com.yagasoft.overcast.base.container.File;
 
 
 /**
@@ -26,19 +32,19 @@ import javax.swing.event.TreeSelectionListener;
  * Convert 'arg' to the type of the folders being monitored.
  * This object should register as an observer at the tree view.
  */
-public abstract class FileTableController<FileType> implements TreeSelectionListener
+public abstract class FileTableController implements TreeSelectionListener
 {
-	
+
 	/** Controlled view including the panel. */
 	protected FileTable						view;
-	
+
 	/** Table itself. */
 	protected JTable						table;
-	
+
 	protected int							columnsCount;
-	
-	protected Function<FileType, Object>[]	columnFunctions;
-	
+
+	protected Function<File<?>, Object>[]	columnFunctions;
+
 	/**
 	 * Instantiates a new table controller.
 	 * The functionalities should use each file to produce something to store in the relevent cell under the column.
@@ -55,43 +61,70 @@ public abstract class FileTableController<FileType> implements TreeSelectionList
 	 * @param columnFunctions
 	 *            Column functions.
 	 */
-	public FileTableController(FileTable filesTable, Function<FileType, Object> columnFunctions[])
+	public FileTableController(FileTable filesTable, Function<File<?>, Object> columnFunctions[])
 	{
 		view = filesTable;
 		table = filesTable.getTable();
 		columnsCount = view.getColumnNames().length;
 		this.columnFunctions = columnFunctions;
 	}
-	
+
+	/**
+	 * Call {@link #updateTable(List, Comparator)} with the path comparator.
+	 *
+	 * @param fileArray
+	 *            File array.
+	 */
+	public void updateTable(List<? extends File<?>> files)
+	{
+		updateTable(files, Container.getPathComparator());
+	}
+
 	/**
 	 * Update table with the files passed.
 	 *
 	 * @param fileArray
 	 *            File array.
 	 */
-	public void updateTable(FileType[] fileArray)
+	public void updateTable(List<? extends File<?>> files, Comparator<Container<?>> comparator)
 	{
-		Arrays.sort(fileArray);
-		
-		Object[][] tableData = new Object[fileArray.length][columnsCount];
-		
-		for (int i = 0; i < fileArray.length; i++)
+		Collections.sort(files, comparator);
+
+		Object[][] tableData = new Object[files.size()][columnsCount];
+
+		for (int i = 0; i < files.size(); i++)
 		{
 			for (int j = 0; j < columnsCount; j++)
 			{
-				tableData[i][j] = columnFunctions[j].apply(fileArray[i]);
+				tableData[i][j] = columnFunctions[j].apply(files.get(i));
 			}
 		}
-		
+
 		view.updateTable(tableData);
 	}
-	
+
 	/**
 	 * Gets the selected files from the view.
-	 * You can use view.getSelectedFiles(), then convert the type.
 	 *
 	 * @return the selected files
 	 */
-	public abstract FileType[] getSelectedFiles();
-	
+	public List<File<?>> getSelectedFiles()
+	{
+		return view.getSelectedFiles().parallelStream()
+				.map(file -> (File<?>) file)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Gets all the files from the view.
+	 *
+	 * @return all files
+	 */
+	public List<File<?>> getAllFiles()
+	{
+		return view.getAllFiles().parallelStream()
+				.map(file -> (File<?>) file)
+				.collect(Collectors.toList());
+	}
+
 }

@@ -13,6 +13,7 @@
 package com.yagasoft.keepup.combinedstorage;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -134,7 +135,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		}
 
 		combinedFolder.setParent(this);
-		
+
 		registerForOperations(folder, combinedFolder);
 
 		notifyContentListeners(UpdateType.ADD, combinedFolder);
@@ -194,14 +195,63 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	}
 
 	/**
-	 * Returns an array containing the list of files in the folders with the same name,
+	 * Returns a list containing all children in the folders with the same name,
+	 * from all the CSPs. This list should be used only in tables,
+	 * as the children are a mix of completely different types.
+	 *
+	 * @param update
+	 *            Update online?
+	 * @return the childrens array
+	 */
+	public List<Object> getChildrenList(boolean update)
+	{
+		List<Object> children = new ArrayList<Object>();
+		children.addAll(getFoldersList(update));
+		children.addAll(getFilesList(update));
+
+		return children;
+	}
+
+	/**
+	 * Returns a list containing folders in the folders with the same name,
 	 * from all the CSPs.
 	 *
 	 * @param update
 	 *            Update online?
-	 * @return the files array
+	 * @return the folders list
 	 */
-	public RemoteFile<?>[] getFilesArray(boolean update)
+	public List<CombinedFolder> getFoldersList(boolean update)
+	{
+		// go through the folders' list and update them if the flag is passed.
+		if (update)
+		{
+			cspFolders.values().parallelStream()
+					.forEach(folder ->
+					{
+						try
+						{
+							folder.updateFromSource(true, false);
+						}
+						catch (Exception e)
+						{
+							e.printStackTrace();
+						}
+					});
+		}
+
+		// return the subfolders as a list.
+		return new ArrayList<CombinedFolder>(subFolders.values());
+	}
+
+	/**
+	 * Returns a list containing files in the folders with the same name,
+	 * from all the CSPs.
+	 *
+	 * @param update
+	 *            Update online?
+	 * @return the files list
+	 */
+	public List<RemoteFile<?>> getFilesList(boolean update)
 	{
 		// go through the folders' list.
 		return cspFolders.values().parallelStream()
@@ -225,7 +275,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 				})
 				.map(file -> (RemoteFile<?>) file)		// convert the file type
 				.sorted()		// sort
-				.toArray(size -> new RemoteFile<?>[size]);		// return the array of files
+				.collect(Collectors.toList());		// return the array of files
 
 	}
 
@@ -259,12 +309,11 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 */
 	public synchronized CombinedFolder findFolder(String name)
 	{
-		List<CombinedFolder> list =
-				subFolders.values().parallelStream()
-				.filter(folder -> folder.getName().equals(name))
-				.collect(Collectors.toList());
-
-		return list.isEmpty() ? null : list.get(0);
+		// get the subfolder that match this name
+		return subFolders.values().parallelStream()
+				.filter(folder -> folder.getName().equals(name))	// keep only matches
+				.findFirst()
+				.orElse(null);
 	}
 
 	@SuppressWarnings("incomplete-switch")
@@ -337,7 +386,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	public void notifyContentListeners(UpdateType update)
 	{
 		contentListeners.parallelStream()
-		.forEach(listener -> listener.folderChanged(this, update, null));
+				.forEach(listener -> listener.folderChanged(this, update, null));
 	}
 
 	/**
@@ -351,7 +400,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	public void notifyContentListeners(UpdateType update, CombinedFolder content)
 	{
 		contentListeners.parallelStream()
-		.forEach(listener -> listener.folderChanged(this, update, content));
+				.forEach(listener -> listener.folderChanged(this, update, content));
 	}
 
 	/**

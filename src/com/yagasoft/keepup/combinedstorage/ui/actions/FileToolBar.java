@@ -14,6 +14,8 @@ package com.yagasoft.keepup.combinedstorage.ui.actions;
 
 
 import java.awt.event.ActionEvent;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JButton;
 
@@ -131,10 +133,10 @@ public class FileToolBar extends BrowserToolBar
 				}
 			}
 
-			LocalFile[] files = Browse.chooseFiles();
+			List<LocalFile> files = Arrays.asList(Browse.chooseFiles());
 
 			// no file, then no need to proceed.
-			if (files.length == 0)
+			if (files.size() == 0)
 			{
 				Logger.error("Nothing to upload!");
 				Msg.showError("Please, choose a file first.");
@@ -174,16 +176,16 @@ public class FileToolBar extends BrowserToolBar
 
 		if (Actions.DELETE.toString().equals(cmd))
 		{
-			RemoteFile<?>[] selectedFiles = App.getSelectedFiles();
+			List<RemoteFile<?>> selectedFiles = App.getSelectedFiles();
 			String filesNames = "";
 
 			// form the names in to a list.
-			for (int i = 0; i < ((selectedFiles.length > 10) ? 10 : selectedFiles.length); i++)
+			for (int i = 0; i < ((selectedFiles.size() > 10) ? 10 : selectedFiles.size()); i++)
 			{
-				filesNames += selectedFiles[i].getPath() + "\n";
+				filesNames += selectedFiles.get(i).getPath() + "\n";
 			}
 
-			if (selectedFiles.length > 10)
+			if (selectedFiles.size() > 10)
 			{
 				filesNames += "...";
 			}

@@ -14,7 +14,6 @@ package com.yagasoft.keepup.combinedstorage.ui.browser.table;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -27,13 +26,12 @@ import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.ui.FileTable;
 import com.yagasoft.keepup.ui.FileTableController;
 import com.yagasoft.overcast.base.container.File;
-import com.yagasoft.overcast.base.container.remote.RemoteFile;
 
 
 /**
  * The Class TableController.
  */
-public class CSTableController extends FileTableController<RemoteFile<?>>
+public class CSTableController extends FileTableController
 {
 	
 	/** Controlled view. */
@@ -62,7 +60,7 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 	 * @see FileTableController#FileTableController(FileTable, Function[])
 	 */
 	@SuppressWarnings("unchecked")
-	public CSTableController(FileTable filesTable, Function<RemoteFile<?>, Object>[] columnFunctions)
+	public CSTableController(FileTable filesTable, Function<File<?>, Object>[] columnFunctions)
 	{
 		super(filesTable, columnFunctions);
 		
@@ -73,17 +71,6 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 		this.columnFunctions = functions.toArray(new Function[functions.size()]);
 	}
 	
-	/**
-	 * @see com.yagasoft.keepup.ui.FileTableController#getSelectedFiles()
-	 */
-	@Override
-	public RemoteFile<?>[] getSelectedFiles()
-	{
-		return Arrays.stream(view.getSelectedFiles())
-				.map(file -> (RemoteFile<?>) file)
-				.toArray(size -> new RemoteFile<?>[size]);
-	}
-	
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
 	{
@@ -92,7 +79,7 @@ public class CSTableController extends FileTableController<RemoteFile<?>>
 		// selected folder has changed, and so fetch its files and display them.
 		if (node != null)
 		{
-			updateTable(((CombinedFolder) node.getUserObject()).getFilesArray(false));
+			updateTable(((CombinedFolder) node.getUserObject()).getFilesList(false));
 		}
 	}
 	
