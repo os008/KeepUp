@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.ui;
+package com.yagasoft.keepup.ui;
 
 
 import javax.swing.JPanel;
@@ -23,16 +23,16 @@ import javax.swing.JPanel;
  */
 public class LogPanel extends JPanel
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= 1276525335104090368L;
-
+	
 	/**
 	 * Create the panel.
 	 */
 	public LogPanel()
-	{
-
+	{	
+		
 	}
-
+	
 }

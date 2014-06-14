@@ -6,7 +6,7 @@
  * 
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.watcher/Change.java
  * 
- *			Modified: 12-Jun-2014 (23:23:24)
+ *			Modified: 13-Jun-2014 (16:50:40)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -16,15 +16,22 @@ package com.yagasoft.keepup.backup.watcher;
 /**
  * The Enum Change.
  */
-public enum Change
+public enum State
 {
 	
 	/** Add. */
 	ADD,
 	
+	MODIFY,
+	
+	DELETE,
+	
 	/** Remove. */
 	REMOVE,
 	
 	/** Remove all. */
-	REMOVE_ALL
+	REMOVE_ALL,
+	
+	/** Synced. */
+	SYNCED
 }

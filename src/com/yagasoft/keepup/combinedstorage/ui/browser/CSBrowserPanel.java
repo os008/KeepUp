@@ -30,13 +30,13 @@ import com.yagasoft.overcast.base.container.local.LocalFolder;
  */
 public class CSBrowserPanel extends BrowserPanel
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= 1173503486389973440L;
-
+	
 	/** The text field destination. */
 	private JTextField			textFieldWorkingFolder;
-
+	
 	/**
 	 * Instantiates a new browser panel.
 	 */
@@ -44,7 +44,7 @@ public class CSBrowserPanel extends BrowserPanel
 	{
 		super();
 	}
-
+	
 	/**
 	 * Create the panel.
 	 *
@@ -57,7 +57,7 @@ public class CSBrowserPanel extends BrowserPanel
 	{
 		super(treeView, tableView);
 	}
-
+	
 	/**
 	 * Initialises objects, and forms the split pane.
 	 */
@@ -65,40 +65,40 @@ public class CSBrowserPanel extends BrowserPanel
 	protected void initGUI()
 	{
 		super.initGUI();
-
+		
 		// --------------------------------------------------------------------------------------
 		// #region Working folder.
-
+		
 		JPanel panelWorkingFolder = new JPanel(new BorderLayout());
-
+		
 		textFieldWorkingFolder = new JTextField();
 		textFieldWorkingFolder.setEditable(false);
 		panelWorkingFolder.add(textFieldWorkingFolder, BorderLayout.CENTER);
-
+		
 		JButton buttonBrowse = new JButton("Browse");
 		buttonBrowse.addActionListener(event -> chooseAFolder());
 		panelWorkingFolder.add(buttonBrowse, BorderLayout.EAST);
-
+		
 		add(panelWorkingFolder, BorderLayout.NORTH);
-
+		
 		// #endregion Working folder.
 		// --------------------------------------------------------------------------------------
 	}
-
+	
 	/**
 	 * Pops up a windows to choose a folder, and then updates the chosen folder global var.
 	 */
 	public void chooseAFolder()
 	{
 		LocalFolder selectedFolder = Browse.chooseFolder();
-
+		
 		// if a folder was chosen ...
 		if (selectedFolder != null)
 		{
 			App.setLastDirectory(selectedFolder.getPath());
 		}
 	}
-
+	
 	/**
 	 * Update destination folder in the text field.
 	 */
@@ -106,5 +106,5 @@ public class CSBrowserPanel extends BrowserPanel
 	{
 		textFieldWorkingFolder.setText(path);
 	}
-
+	
 }

@@ -36,78 +36,78 @@ import javax.swing.table.DefaultTableModel;
  */
 public class FileTable extends JPanel
 {
-
+	
 	private static final long	serialVersionUID	= -8729490450147401081L;
-
+	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Files table fields.
 	// ======================================================================================
-
+	
 	/** Scroll pane files. */
 	protected JScrollPane		scrollPaneFiles;
-
+	
 	/** Table of the files. */
 	protected JTable			tableFiles;
-
+	
 	/** Table model. */
 	protected DefaultTableModel	tableModel;
-
+	
 	/** Column names. */
 	protected String[]			columnNames;
-
+	
 	/** Table data. */
 	protected Object[][]		tableData;
-
+	
 	protected int[]				rightAlignedColumns;
-
+	
 	protected float[]			columnsWidthPercent;
-
+	
 	// ======================================================================================
 	// #endregion Files table fields.
 	// //////////////////////////////////////////////////////////////////////////////////////
-
+	
 	public FileTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
 	{
 		setLayout(new BorderLayout());
-
+		
 		this.columnNames = columnNames;
 		tableData = new String[0][columnNames.length];
 		this.columnsWidthPercent = columnsWidthPercent;
 		this.rightAlignedColumns = rightAlignedColumns;
-
+		
 		// create model and table from model.
 		tableModel = new DefaultTableModel(tableData, columnNames);
 		tableFiles = new JTable(tableModel);
 		scrollPaneFiles = new JScrollPane(tableFiles);
 		formatTable();
 		add(scrollPaneFiles, BorderLayout.CENTER);
-
+		
 		// re-adjust columns widths when window is resized.
 		addComponentListener(new ComponentAdapter()
 		{
-
+			
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
 				super.componentResized(e);
 				adjustColumns(getWidth());
 			}
-
+			
 			@Override
 			public void componentShown(ComponentEvent e)
 			{
 				super.componentShown(e);
 				adjustColumns(getWidth());
 			}
-
+			
 		});
-
+		
 	}
-
+	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Table methods.
 	// ======================================================================================
-
+	
 	/**
 	 * Set how the table behaves visually.
 	 */
@@ -116,19 +116,19 @@ public class FileTable extends JPanel
 		// set columns to be right aligned.
 		DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
 		rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-
+		
 		for (int column : rightAlignedColumns)
 		{
 			tableFiles.getColumnModel().getColumn(column).setCellRenderer(rightRenderer);
 		}
-
+		
 		// columns can't be selected.
 		tableFiles.setColumnSelectionAllowed(false);
 		tableFiles.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
+		
 		adjustColumns(getWidth());
 	}
-
+	
 	/**
 	 * Adjust the columns of the table to look best.
 	 *
@@ -143,7 +143,7 @@ public class FileTable extends JPanel
 			tableFiles.getColumnModel().getColumn(i).setMinWidth((int) (getWidth() * columnsWidthPercent[i]));
 		}
 	}
-
+	
 	/**
 	 * Update table with the files passed.
 	 *
@@ -155,10 +155,10 @@ public class FileTable extends JPanel
 		this.tableData = tableData;
 		tableFiles.setModel(new DefaultTableModel(tableData, columnNames));
 		tableFiles.revalidate();
-
+		
 		formatTable();
 	}
-
+	
 	/**
 	 * Gets the selected files. Fetches the object stored in the first column.
 	 *
@@ -171,17 +171,17 @@ public class FileTable extends JPanel
 		Vector rows = ((DefaultTableModel) tableFiles.getModel()).getDataVector();
 		// get selected rows.
 		int[] selectedRows = tableFiles.getSelectedRows();
-
+		
 		// files to be returned.
 		List<Object> files = new ArrayList<Object>();
-
+		
 		// go through the rows' numbers, fetch them, fetch the file stored there, and put it in the returned list.
 		Arrays.stream(selectedRows)
 				.forEach(row -> files.add(((Vector) rows.get(row)).get(0)));
-
+		
 		return files;
 	}
-
+	
 	/**
 	 * Gets all files. Fetches the object stored in the first column.
 	 *
@@ -192,34 +192,34 @@ public class FileTable extends JPanel
 	{
 		// get the data in the table.
 		Vector rows = ((DefaultTableModel) tableFiles.getModel()).getDataVector();
-
+		
 		// files to be returned.
 		List<Object> files = new ArrayList<Object>();
-
+		
 		// go through the rows, fetch the file stored there, and put it in the returned list.
 		rows.stream().forEach(row -> files.add(((Vector) row).get(0)));
-
+		
 		return files;
 	}
-
+	
 	// ======================================================================================
 	// #endregion Table methods.
 	// //////////////////////////////////////////////////////////////////////////////////////
-
+	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
 	// ======================================================================================
-
+	
 	public JTable getTable()
 	{
 		return tableFiles;
 	}
-
+	
 	public void setTableFiles(JTable tableFiles)
 	{
 		this.tableFiles = tableFiles;
 	}
-
+	
 	/**
 	 * @return the scrollPaneFiles
 	 */
@@ -227,7 +227,7 @@ public class FileTable extends JPanel
 	{
 		return scrollPaneFiles;
 	}
-
+	
 	/**
 	 * @param scrollPaneFiles
 	 *            the scrollPaneFiles to set
@@ -236,7 +236,7 @@ public class FileTable extends JPanel
 	{
 		this.scrollPaneFiles = scrollPaneFiles;
 	}
-
+	
 	/**
 	 * @return the tableModel
 	 */
@@ -244,7 +244,7 @@ public class FileTable extends JPanel
 	{
 		return tableModel;
 	}
-
+	
 	/**
 	 * @param tableModel
 	 *            the tableModel to set
@@ -253,7 +253,7 @@ public class FileTable extends JPanel
 	{
 		this.tableModel = tableModel;
 	}
-
+	
 	/**
 	 * @return the columnNames
 	 */
@@ -261,7 +261,7 @@ public class FileTable extends JPanel
 	{
 		return columnNames;
 	}
-
+	
 	/**
 	 * @param columnNames
 	 *            the columnNames to set
@@ -270,7 +270,7 @@ public class FileTable extends JPanel
 	{
 		this.columnNames = columnNames;
 	}
-
+	
 	/**
 	 * @return the tableData
 	 */
@@ -278,7 +278,7 @@ public class FileTable extends JPanel
 	{
 		return tableData;
 	}
-
+	
 	/**
 	 * @param tableData
 	 *            the tableData to set
@@ -287,7 +287,7 @@ public class FileTable extends JPanel
 	{
 		this.tableData = tableData;
 	}
-
+	
 	/**
 	 * @return the rightAlignedColumns
 	 */
@@ -295,7 +295,7 @@ public class FileTable extends JPanel
 	{
 		return rightAlignedColumns;
 	}
-
+	
 	/**
 	 * @param rightAlignedColumns
 	 *            the rightAlignedColumns to set
@@ -304,7 +304,7 @@ public class FileTable extends JPanel
 	{
 		this.rightAlignedColumns = rightAlignedColumns;
 	}
-
+	
 	/**
 	 * @return the columnsWidthPercent
 	 */
@@ -312,7 +312,7 @@ public class FileTable extends JPanel
 	{
 		return columnsWidthPercent;
 	}
-
+	
 	/**
 	 * @param columnsWidthPercent
 	 *            the columnsWidthPercent to set
@@ -321,9 +321,9 @@ public class FileTable extends JPanel
 	{
 		this.columnsWidthPercent = columnsWidthPercent;
 	}
-
+	
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////
-
+	
 }

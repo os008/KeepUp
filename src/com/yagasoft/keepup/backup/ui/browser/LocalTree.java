@@ -1,7 +1,10 @@
+
 package com.yagasoft.keepup.backup.ui.browser;
+
+
 /*
-	Swing, Second Edition
-	by Matthew Robinson, Pavel Vorobiev
+ Swing, Second Edition
+ by Matthew Robinson, Pavel Vorobiev
  */
 
 import java.awt.BorderLayout;

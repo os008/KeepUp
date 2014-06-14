@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.ui;
+package com.yagasoft.keepup.ui;
 
 
 import java.awt.Component;
@@ -118,7 +118,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	public void addTransferJob(TransferJob<?> job, String direction)
 	{
 		((QueueTableModel) tableQueue.getModel())
-		.addRow(
+				.addRow(
 				new Object[] {
 						job, job.getParent().getPath(), job.getCsp(), direction, "Queued ...", new Float(0), new CancelButton() });
 	}
@@ -195,9 +195,9 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				}
 				
 				break;
-			default:
+			
+			case CANCELLED:
 				break;
-		
 		}
 	}
 	
@@ -278,7 +278,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 			setIndeterminate(false);
 			setStringPainted(true);
 			setValue((int) (v.floatValue() * 100));
-			//			}
+			// }
 			
 			return this;
 		}

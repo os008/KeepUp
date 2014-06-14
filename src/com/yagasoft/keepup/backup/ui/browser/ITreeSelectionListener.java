@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
  * 
  *		The Modified MIT Licence (GPL v3 compatible)
@@ -9,6 +9,7 @@
  *			Modified: 12-Jun-2014 (23:22:14)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
+
 package com.yagasoft.keepup.backup.ui.browser;
 
 
@@ -26,7 +27,7 @@ package com.yagasoft.keepup.backup.ui.browser;
 @FunctionalInterface
 public interface ITreeSelectionListener
 {
-
+	
 	/**
 	 * Local tree selection changed.
 	 *

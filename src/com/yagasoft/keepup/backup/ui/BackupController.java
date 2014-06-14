@@ -21,7 +21,7 @@ import java.util.Set;
 
 import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
 import com.yagasoft.keepup.backup.ui.watcher.WatcherTableController;
-import com.yagasoft.keepup.backup.watcher.Change;
+import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.overcast.base.container.Container;
 
 
@@ -30,19 +30,19 @@ import com.yagasoft.overcast.base.container.Container;
  */
 public class BackupController implements ActionListener
 {
-
+	
 	/** Panel. */
 	protected BackupPanel				panel;
-
+	
 	/** Local table controller. */
 	protected LocalTableController		localTableController;
-
+	
 	/** Watch table controller. */
 	protected WatcherTableController	watchTableController;
-
+	
 	/** Listeners. */
 	protected Set<IAddRemoveListener>	listeners	= new HashSet<IAddRemoveListener>();
-
+	
 	/**
 	 * Instantiates a new backup controller.
 	 *
@@ -59,10 +59,10 @@ public class BackupController implements ActionListener
 		this.panel = panel;
 		this.localTableController = localTableController;
 		this.watchTableController = watchTableController;
-
+		
 		panel.addButtonListener(this);
 	}
-
+	
 	/**
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
@@ -71,22 +71,22 @@ public class BackupController implements ActionListener
 	{
 		if (e.getSource() == panel.addSelectedButton)
 		{
-			notifyListeners(localTableController.getSelectedFiles(), Change.ADD);
+			notifyListeners(localTableController.getSelectedFiles(), State.ADD);
 		}
 		else if (e.getSource() == panel.addAllButton)
 		{
-			notifyListeners(localTableController.getAllFiles(), Change.ADD);
+			notifyListeners(localTableController.getAllFiles(), State.ADD);
 		}
 		else if (e.getSource() == panel.removeSelectedButton)
 		{
-			notifyListeners(watchTableController.getSelectedFiles(), Change.REMOVE);		// just notify that the button was pressed
+			notifyListeners(watchTableController.getSelectedFiles(), State.REMOVE);		// just notify that the button was pressed
 		}
 		else if (e.getSource() == panel.removeAllButton)
 		{
-			notifyListeners(watchTableController.getAllFiles(), Change.REMOVE_ALL);		// just notify that the button was pressed
+			notifyListeners(watchTableController.getAllFiles(), State.REMOVE_ALL);		// just notify that the button was pressed
 		}
 	}
-
+	
 	/**
 	 * Notify listeners.
 	 *
@@ -95,12 +95,12 @@ public class BackupController implements ActionListener
 	 * @param change
 	 *            Change.
 	 */
-	protected void notifyListeners(List<? extends Container<?>> containers, Change change)
+	protected void notifyListeners(List<? extends Container<?>> containers, State state)
 	{
 		listeners.parallelStream()
-				.forEach(listener -> listener.containersAddedRemoved(containers, change));
+				.forEach(listener -> listener.containersAddedRemoved(containers, state));
 	}
-
+	
 	/**
 	 * Adds the listener.
 	 *
@@ -111,7 +111,7 @@ public class BackupController implements ActionListener
 	{
 		listeners.add(listener);
 	}
-
+	
 	/**
 	 * Removes the listener.
 	 *
@@ -122,5 +122,5 @@ public class BackupController implements ActionListener
 	{
 		listeners.remove(listener);
 	}
-
+	
 }

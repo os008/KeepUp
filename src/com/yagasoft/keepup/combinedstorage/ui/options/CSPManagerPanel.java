@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
  * 
  *		Modified MIT License (GPL v3 compatible)

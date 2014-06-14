@@ -18,16 +18,16 @@ package com.yagasoft.keepup.combinedstorage;
  */
 public enum UpdateType
 {
-
+	
 	/** Add. */
 	ADD,
-
+	
 	/** Update name. */
 	NAME,
-
+	
 	/** Modify. */
 	MODIFY,
-
+	
 	/** Remove. */
 	REMOVE
 }

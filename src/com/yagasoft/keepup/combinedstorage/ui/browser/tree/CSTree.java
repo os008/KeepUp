@@ -27,13 +27,13 @@ import com.yagasoft.keepup.ui.FolderTree;
  */
 public class CSTree extends FolderTree<CombinedFolder>
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= -427791932709838315L;
-
+	
 	/** Folders tool bar. */
 	private FolderToolBar		toolBarFolders;
-
+	
 	/**
 	 * Instantiates a new folders tree.
 	 *
@@ -43,9 +43,9 @@ public class CSTree extends FolderTree<CombinedFolder>
 	public CSTree(DefaultMutableTreeNode root)
 	{
 		super(root);
-
+		
 		toolBarFolders = new FolderToolBar();
 		add(toolBarFolders, BorderLayout.NORTH);
 	}
-
+	
 }

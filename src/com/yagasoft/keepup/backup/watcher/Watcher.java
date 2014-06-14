@@ -13,6 +13,14 @@
 package com.yagasoft.keepup.backup.watcher;
 
 
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.yagasoft.keepup.backup.ui.IAddRemoveListener;
+import com.yagasoft.keepup.dialogues.Msg;
+import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 import com.yagasoft.overcast.base.container.local.LocalFolder;
@@ -32,38 +42,76 @@ public class Watcher implements IAddRemoveListener
 {
 
 	/** Watched folders. */
-	protected Map<String, LocalFolder>	watchedFolders	= new HashMap<String, LocalFolder>();
+	protected Map<LocalFolder, State>	watchedFolders	= new HashMap<LocalFolder, State>();
 
 	/** Watched files. */
-	protected Map<String, LocalFile>	watchedFiles	= new HashMap<String, LocalFile>();
+	protected Map<LocalFile, State>		watchedFiles	= new HashMap<LocalFile, State>();
+
+	/** Watched paths and the files inside being watched. This is used for the watcher itself. */
+	protected Map<Path, WatchKey>		watchedPaths	= new HashMap<Path, WatchKey>();
 
 	/** Listeners. */
 	protected Set<IWatchListener>		listeners		= new HashSet<IWatchListener>();
 
-	/**
-	 * Adds the container.
-	 *
-	 * @param container
-	 *            Container.
-	 */
-	public void addContainer(Container<?> container)
-	{
-		Container<?> oldContainer = null;		// if already existing will be saved here.
+	/** Watcher service responsible for watching the folder. */
+	protected WatchService	watcher;
 
-		// add to watch list.
+	/** Key! */
+	protected WatchKey		watckKey;
+
+
+	public Watcher()
+	{
+		startWatchLoop();
+	}
+
+	private void setContainerState(Container<?> container, State state)
+	{
+		if (state == State.ADD)
+		{
+			Path path = Paths.get(container.getParent().getPath());
+
+			// register the path of the parent to be watched if it wasn't
+			if (!watchedPaths.containsKey(path))
+			{
+				try
+				{
+					// add the parent to the watched paths after registering
+					watchedPaths.put(path, path.register(watcher
+							, StandardWatchEventKinds.ENTRY_CREATE
+							, StandardWatchEventKinds.ENTRY_DELETE
+							, StandardWatchEventKinds.ENTRY_MODIFY));
+				}
+				catch (IOException e)
+				{
+					Logger.except(e);
+					e.printStackTrace();
+				}
+			}
+		}
+
+		if ((state == State.REMOVE) || (state == State.DELETE))
+		{
+			removeContainer(container, state);
+			return;
+		}
+
+		State oldState = null;		// if already existing will be saved here.
+
+		// add to watch list, it will replace if already exists and returns old state.
 		if (container.isFolder())
 		{
-			oldContainer = watchedFolders.put(container.getPath(), (LocalFolder) container);
+			oldState = watchedFolders.put((LocalFolder) container, state);
 		}
 		else
 		{
-			oldContainer = watchedFiles.put(container.getPath(), (LocalFile) container);
+			oldState = watchedFiles.put((LocalFile) container, state);
 		}
 
-		// notify listeners if the container is new.
-		if (oldContainer == null)
+		// notify listeners if the container's state changed or the container was modified.
+		if ((oldState != state) || (state == State.MODIFY))
 		{
-			notifyListeners(container, Change.ADD);
+			notifyListeners(container, state);
 		}
 	}
 
@@ -73,24 +121,46 @@ public class Watcher implements IAddRemoveListener
 	 * @param container
 	 *            Container.
 	 */
-	public void removeContainer(Container<?> container)
+	private void removeContainer(Container<?> container, State state)
 	{
-		Container<?> oldContainer = null;		// if already existing will be saved here.
+		State oldState = null;		// if already existing will be saved here.
 
 		// remove from watch list.
 		if (container.isFolder())
 		{
-			oldContainer = watchedFolders.remove(container.getPath());
+			oldState = watchedFolders.remove(container);
 		}
 		else
 		{
-			oldContainer = watchedFiles.remove(container.getPath());
+			oldState = watchedFiles.remove(container);
 		}
 
 		// notify listeners if the container existed.
-		if (oldContainer != null)
+		if (oldState != null)
 		{
-			notifyListeners(container, Change.REMOVE);
+			Path path = Paths.get(container.getParent().getPath());
+
+			// unregister the path of the parent from being watched if no more files are watched inside
+			boolean keepKey = false;
+
+			// check if any file has this parent
+			for (LocalFile file : watchedFiles.keySet())
+			{
+				if (watchedPaths.containsKey(Paths.get(file.getParent().getPath())))
+				{
+					keepKey = true;
+					break;
+				}
+			}
+
+			// cancel the watch key and remove the path from the watch list
+			if (!keepKey)
+			{
+				watchedPaths.get(path).cancel();
+				watchedPaths.remove(path);
+			}
+
+			notifyListeners(container, state);
 		}
 	}
 
@@ -99,13 +169,14 @@ public class Watcher implements IAddRemoveListener
 	 *
 	 * @param container
 	 *            Container.
-	 * @param change
+	 * @param state
 	 *            Change.
 	 */
-	protected void notifyListeners(Container<?> container, Change change)
+	protected void notifyListeners(Container<?> container, State state)
 	{
+		Logger.info("container change state: " + state + " => " + container.getPath());
 		listeners.parallelStream()
-				.forEach(listener -> listener.watchListChanged(container, change));
+				.forEach(listener -> listener.watchListChanged(container, state));
 	}
 
 	/**
@@ -132,25 +203,117 @@ public class Watcher implements IAddRemoveListener
 
 	/**
 	 * @see com.yagasoft.keepup.backup.ui.IAddRemoveListener#containersAddedRemoved(java.util.List,
-	 *      com.yagasoft.keepup.backup.watcher.Change)
+	 *      com.yagasoft.keepup.backup.watcher.State)
 	 */
 	@Override
-	public void containersAddedRemoved(List<? extends Container<?>> containers, Change change)
+	public void containersAddedRemoved(List<? extends Container<?>> containers, State state)
 	{
 		containers.stream()
 				.forEach(container ->
 				{
-					switch (change)
+					switch (state)
 					{
 						case ADD:
-							addContainer(container);
+						case MODIFY:
+						case SYNCED:
+							setContainerState(container, state);
 							break;
 
+						case DELETE:
 						case REMOVE_ALL:
 						case REMOVE:
-							removeContainer(container);
+							removeContainer(container, state);
 							break;
 					}
 				});
+	}
+
+	public void startWatchLoop()
+	{
+		try
+		{
+			Logger.info("starting file watcher loop.");
+
+			watcher = FileSystems.getDefault().newWatchService();		// create a watch service.
+			new Thread(new WatchThread()).start();
+		}
+		catch (IOException e)
+		{
+			Logger.except(e);
+			e.printStackTrace();
+		}
+	}
+
+	private class WatchThread implements Runnable
+	{
+		List<WatchEvent<?>> events;
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void run()
+		{
+			while(true)
+			{
+				try
+				{
+					Thread.sleep(1000);
+
+					watckKey = watcher.take();		// this will pause the loop until the system notifies of a file-change.
+					events = watckKey.pollEvents();		// what are the changes?
+
+					// go through all the changes.
+					eventsLoop:
+					for (WatchEvent<?> event : events)
+					{
+						// don't need these events
+						if (event.kind() == StandardWatchEventKinds.OVERFLOW
+								|| event.kind() == StandardWatchEventKinds.ENTRY_CREATE)
+						{
+							continue;
+						}
+
+						// get the file path of the file changed.
+						Path path = ((Path) watckKey.watchable())
+								.resolve(((WatchEvent<Path>) event).context());
+						State state = null;
+
+						// if the file modified then set state
+						if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY)
+						{
+							state = State.MODIFY;
+						}
+						// if the file was deleted then set state
+						else if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE)
+						{
+							state = State.DELETE;
+						}
+
+						for (LocalFile file : watchedFiles.keySet())
+						{
+							if (Paths.get(file.getPath()).equals(path) && state != null)
+							{
+								Logger.info("container modified: queueing " + path);
+
+								setContainerState(file, state);
+								break eventsLoop;
+							}
+						}
+					}
+
+					// if there's a problem with the watcher, exit.
+					if ( !watckKey.reset())
+					{
+						Msg.showError("There's a problem with the watcher loop.\nPlease, restart the program.");
+						break;
+					}
+				}
+				catch (InterruptedException e)
+				{
+					Logger.except(e);
+					e.printStackTrace();
+				}
+			}
+		}
+
 	}
 }

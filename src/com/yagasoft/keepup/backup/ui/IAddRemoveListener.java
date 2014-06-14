@@ -15,7 +15,7 @@ package com.yagasoft.keepup.backup.ui;
 
 import java.util.List;
 
-import com.yagasoft.keepup.backup.watcher.Change;
+import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.overcast.base.container.Container;
 
 
@@ -32,14 +32,14 @@ import com.yagasoft.overcast.base.container.Container;
  */
 public interface IAddRemoveListener
 {
-
+	
 	/**
 	 * Containers added or removed from the backup list.
 	 *
 	 * @param containers
 	 *            Containers.
-	 * @param change
-	 *            Change.
+	 * @param state
+	 *            State.
 	 */
-	void containersAddedRemoved(List<? extends Container<?>> containers, Change change);
+	void containersAddedRemoved(List<? extends Container<?>> containers, State state);
 }

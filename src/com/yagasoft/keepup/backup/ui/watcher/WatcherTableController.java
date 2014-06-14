@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.ui.watcher/WatcherTableController.java
- * 
+ *
  *			Modified: 12-Jun-2014 (23:23:16)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
@@ -22,8 +22,8 @@ import java.util.function.Function;
 import javax.swing.event.TreeSelectionEvent;
 
 import com.yagasoft.keepup.App;
-import com.yagasoft.keepup.backup.watcher.Change;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
+import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.keepup.ui.FileTable;
 import com.yagasoft.keepup.ui.FileTableController;
 import com.yagasoft.overcast.base.container.Container;
@@ -79,10 +79,10 @@ public class WatcherTableController extends FileTableController implements IWatc
 	
 	/**
 	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
-	 *      com.yagasoft.keepup.backup.watcher.Change)
+	 *      com.yagasoft.keepup.backup.watcher.State)
 	 */
 	@Override
-	public void watchListChanged(Container<?> container, Change change)
+	public void watchListChanged(Container<?> container, State state)
 	{
 		// this will be removed in the future to support watching folders.
 		if (container.isFolder())
@@ -93,15 +93,25 @@ public class WatcherTableController extends FileTableController implements IWatc
 		Set<File<?>> files = new HashSet<File<?>>();
 		files.addAll(getAllFiles());
 		
-		switch (change)
+		switch (state)
 		{
 			case ADD:
 				files.add((File<?>) container);
 				break;
-				
+			
 			case REMOVE_ALL:
 			case REMOVE:
 				files.remove(container);
+				break;
+			
+			// TODO implement state changes visually
+			case DELETE:
+				break;
+			
+			case MODIFY:
+				break;
+			
+			case SYNCED:
 				break;
 		}
 		

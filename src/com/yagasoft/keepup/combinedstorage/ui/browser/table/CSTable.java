@@ -23,45 +23,45 @@ import com.yagasoft.keepup.ui.FileTable;
 
 public class CSTable extends FileTable
 {
-
+	
 	private static final long	serialVersionUID	= -8729490450147401081L;
-
+	
 	private FileToolBar			toolBarFiles;
-
+	
 	public CSTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
 	{
 		super(columnNames, columnsWidthPercent, rightAlignedColumns);
-
+		
 		toolBarFiles = new FileToolBar();
 		add(toolBarFiles, BorderLayout.NORTH);
 	}
-
+	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
 	// ======================================================================================
-
+	
 	public FileToolBar getToolBarFiles()
 	{
 		return toolBarFiles;
 	}
-
+	
 	public void setToolBarFiles(FileToolBar toolBarFiles)
 	{
 		this.toolBarFiles = toolBarFiles;
 	}
-
+	
 	@Override
 	public JTable getTable()
 	{
 		return tableFiles;
 	}
-
+	
 	@Override
 	public void setTableFiles(JTable tableFiles)
 	{
 		this.tableFiles = tableFiles;
 	}
-
+	
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////

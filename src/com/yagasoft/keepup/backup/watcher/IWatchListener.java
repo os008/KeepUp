@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.watcher/WatchListener.java
- * 
+ *
  *			Modified: 12-Jun-2014 (23:23:40)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
@@ -37,8 +37,8 @@ public interface IWatchListener
 	 *
 	 * @param container
 	 *            Container.
-	 * @param change
-	 *            Change.
+	 * @param state
+	 *            State.
 	 */
-	void watchListChanged(Container<?> container, Change change);
+	void watchListChanged(Container<?> container, State state);
 }

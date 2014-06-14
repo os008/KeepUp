@@ -24,19 +24,19 @@ import javax.swing.JSplitPane;
  */
 public class BrowserPanel extends JPanel
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= 1173503486389973440L;
-
+	
 	/** Split pane. */
 	protected JSplitPane		splitPane;
-
+	
 	/** Tree view. */
 	protected JPanel			treeView;
-
+	
 	/** Table view. */
 	protected JPanel			tableView;
-
+	
 	/**
 	 * Instantiates a new browser panel.
 	 */
@@ -44,7 +44,7 @@ public class BrowserPanel extends JPanel
 	{
 		this(null, null);
 	}
-
+	
 	/**
 	 * Create the panel.
 	 *
@@ -59,34 +59,34 @@ public class BrowserPanel extends JPanel
 		this.tableView = tableView;
 		initGUI();
 	}
-
+	
 	/**
 	 * Initialises objects, and forms the split pane.
 	 */
 	protected void initGUI()
 	{
 		setLayout(new BorderLayout(0, 0));
-
+		
 		splitPane = new JSplitPane();
-
+		
 		if ((treeView != null) && (tableView != null))
 		{
 			setTreeView(treeView);
 			setTableView(tableView);
 		}
-
+		
 		add(splitPane, BorderLayout.CENTER);
-
+		
 		resetDivider(150);
 	}
-
+	
 	public void setTreeView(JPanel treeView)
 	{
 		this.treeView = treeView;
 		splitPane.setLeftComponent(treeView);
 		resetDivider();
 	}
-
+	
 	/**
 	 * Sets the table view.
 	 *
@@ -99,7 +99,7 @@ public class BrowserPanel extends JPanel
 		splitPane.setRightComponent(tableView);
 		resetDivider();
 	}
-
+	
 	/**
 	 * Resets the position of the divider between the tree and the files' list.
 	 *
@@ -117,5 +117,5 @@ public class BrowserPanel extends JPanel
 			splitPane.setDividerLocation(position[0]);
 		}
 	}
-
+	
 }

@@ -16,19 +16,19 @@ import javax.swing.tree.TreePath;
 public abstract class FolderTreeController<FolderType extends Comparable<FolderType>> implements TreeWillExpandListener,
 		TreeSelectionListener
 {
-
+	
 	/** Controlled view. */
 	protected FolderTree<FolderType>	view;
-
+	
 	/** Tree. */
 	protected JTree						tree;
-
+	
 	/** Root. */
 	protected DefaultMutableTreeNode	root;
-
+	
 	protected Deque<TreePath>			backStack		= new ArrayDeque<TreePath>();
 	protected Deque<TreePath>			forwardStack	= new ArrayDeque<TreePath>();
-
+	
 	/**
 	 * Instantiates a new tree controller.
 	 *
@@ -40,12 +40,12 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 		view = foldersTree;
 		tree = foldersTree.getTreeFolders();
 		addTreeExpandListener(this);
-
+		
 		root = foldersTree.getRoot();
-
+		
 		addTreeSelectionListener(this);
 	}
-
+	
 	/**
 	 * Gets the selected folder.
 	 *
@@ -55,7 +55,7 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 	{
 		return view.getSelectedFolder();
 	}
-
+	
 	/**
 	 * Adds the tree expand listener.
 	 *
@@ -66,7 +66,7 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 	{
 		tree.addTreeWillExpandListener(listener);
 	}
-
+	
 	/**
 	 * Removes the tree expand listener.
 	 *
@@ -77,41 +77,41 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 	{
 		tree.removeTreeWillExpandListener(listener);
 	}
-
+	
 	public void addTreeSelectionListener(TreeSelectionListener listener)
 	{
 		tree.addTreeSelectionListener(listener);
 	}
-
+	
 	public void removeTreeSelectionListener(TreeSelectionListener listener)
 	{
 		tree.removeTreeSelectionListener(listener);
 	}
-
+	
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
 	{
 		TreePath currentPath = e.getPath();
-
+		
 		if ( !backStack.isEmpty() && currentPath.equals(backStack.peekFirst()))
 		{
 			return;
 		}
-
+		
 		forwardStack.clear();
 		backStack.push(currentPath);
 	}
-
+	
 	public void navigateBackward()
 	{
 		if (backStack.size() > 1)
 		{
 			forwardStack.push(backStack.pop());		// get current folder navigated to, and put save it for later.
-
+			
 			TreePath path = backStack.peek();		// get last folder navigated to.
-
+			
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-
+			
 			// if the folder was deleted! ...
 			if (((node).getParent() == null) && (node.toString() != "root"))
 			{
@@ -123,16 +123,16 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 			}
 		}
 	}
-
+	
 	public void navigateForward()
 	{
 		if ( !forwardStack.isEmpty())
 		{
 			backStack.push(forwardStack.pop());		// put the forward folder as if it's been selected.
 			TreePath path = backStack.peek();		// read it again.
-
+			
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-
+			
 			// if the folder was deleted! ...
 			if (((node).getParent() == null) && (node.toString() != "root"))
 			{
@@ -144,5 +144,5 @@ public abstract class FolderTreeController<FolderType extends Comparable<FolderT
 			}
 		}
 	}
-
+	
 }

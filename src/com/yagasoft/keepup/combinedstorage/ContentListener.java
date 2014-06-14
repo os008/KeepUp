@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
  * 
  *		The Modified MIT Licence (GPL v3 compatible)
@@ -27,7 +27,7 @@ package com.yagasoft.keepup.combinedstorage;
 @FunctionalInterface
 public interface ContentListener
 {
-
+	
 	/**
 	 * Folder changed.
 	 *

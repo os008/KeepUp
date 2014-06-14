@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.ui;
+package com.yagasoft.keepup.ui;
 
 
 import java.awt.FlowLayout;
@@ -29,25 +29,25 @@ import com.yagasoft.keepup.App;
  */
 public class StatusBar extends JPanel
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= 899048339739870513L;
-
+	
 	/** Label free space. */
 	private JLabel				labelFreeSpace;
-
+	
 	/** Label free space values. */
 	private JLabel				labelFreeSpaceValues;
-
+	
 	/**
 	 * Create the panel.
 	 */
 	public StatusBar()
 	{
-
+		
 		initGUI();
 	}
-
+	
 	private void initGUI()
 	{
 		setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -58,21 +58,21 @@ public class StatusBar extends JPanel
 		labelFreeSpaceValues = new JLabel("free space values");
 		add(labelFreeSpaceValues);
 	}
-
+	
 	public void updateFreeSpace(HashMap<String, Long> csps)
 	{
 		String text = "";
 		long total = 0;
-
+		
 		for (String csp : csps.keySet())
 		{
 			text += csp + " => " + App.humanReadableSize(csps.get(csp)) + " | ";
 			total += csps.get(csp);
 		}
-
+		
 		text += "Total => " + App.humanReadableSize(total);
-
+		
 		labelFreeSpaceValues.setText(text);
 	}
-
+	
 }

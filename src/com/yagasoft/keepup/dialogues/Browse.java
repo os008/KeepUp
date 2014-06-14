@@ -29,16 +29,16 @@ import com.yagasoft.overcast.exception.OperationException;
  */
 public final class Browse
 {
-
+	
 	public static LocalFolder chooseFolder()
 	{
 		// only choose directories.
 		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
+		
 		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File selectedFolder = chooser.getSelectedFile();
-
+		
 		// if a folder was chosen ...
 		if ((result == JFileChooser.APPROVE_OPTION) && (selectedFolder != null))
 		{
@@ -57,21 +57,21 @@ public final class Browse
 			return null;
 		}
 	}
-
+	
 	public static LocalFile chooseFile()
 	{
 		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
-
+		
 		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File selectedFile = chooser.getSelectedFile();
-
+		
 		// if a folder was chosen ...
 		if ((result == JFileChooser.APPROVE_OPTION) && (selectedFile != null))
 		{
 			App.setLastDirectory(selectedFile.getParent());
-
+			
 			return new LocalFile(Paths.get(selectedFile.toURI()));
 		}
 		else
@@ -79,29 +79,29 @@ public final class Browse
 			return null;
 		}
 	}
-
+	
 	public static LocalFile[] chooseFiles()
 	{
 		JFileChooser chooser = new JFileChooser(App.getLastDirectory());
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(true);
-
+		
 		int result = chooser.showOpenDialog(App.combinedStoragePanel);
 		java.io.File[] selectedFiles = chooser.getSelectedFiles();
-
+		
 		// if a folder was chosen ...
 		if ((result == JFileChooser.APPROVE_OPTION)
 				&& (selectedFiles != null) && (selectedFiles.length > 0))
 		{
 			App.setLastDirectory(selectedFiles[0].getParent());
-
+			
 			LocalFile[] files = new LocalFile[selectedFiles.length];
-
+			
 			for (int i = 0; i < files.length; i++)
 			{
 				files[i] = new LocalFile(Paths.get(selectedFiles[i].toURI()));
 			}
-
+			
 			return files;
 		}
 		else

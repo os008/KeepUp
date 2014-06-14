@@ -21,13 +21,14 @@ import com.yagasoft.logger.Logger;
  */
 public class _keepup
 {
+	
 	/** Enable debug-related logging throughout the program. */
-	public static final boolean					DEBUG		= true;
-
+	public static final boolean	DEBUG	= true;
+	
 //	static DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 //	static int number = 0;
 //	static int index = 0;
-
+	
 	/**
 	 * The main method.
 	 *
@@ -42,9 +43,9 @@ public class _keepup
 		}
 		
 		Logger.info("Started KeepUp.");
-
+		
 		App.initApp();
-
+		
 //		// test dynamic adding and removing from a GUI tree.
 //
 //		JFrame frame = new JFrame();
@@ -110,5 +111,5 @@ public class _keepup
 //
 //		frame.setVisible(true);
 	}
-
+	
 }
