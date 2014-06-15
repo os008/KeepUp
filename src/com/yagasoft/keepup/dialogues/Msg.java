@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
  *
- *		Modified MIT License (GPL v3 compatible)
- * 			License terms are in a separate file (license.txt)
+ *		The Modified MIT Licence (GPL v3 compatible)
+ * 			Licence terms are in a separate file (LICENCE.md)
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.dialogues/Msg.java
  *
- *			Modified: 01-Apr-2014 (13:48:24)
- *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
+ *			Modified: 15-Jun-2014 (19:27:03)
+ *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.dialogues;
@@ -25,44 +25,100 @@ import com.yagasoft.keepup.App;
 
 
 /**
- * @author Ahmed
+ * The Class Msg.
  *
+ * @author Ahmed
  */
 public final class Msg
 {
 	
+	/**
+	 * Show message to show.
+	 *
+	 * @param message
+	 *            Message.
+	 */
 	public static void showMessage(String message)
 	{
-		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, message
-				, JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, "Infomation."
+				, JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	/**
+	 * Show warning.
+	 *
+	 * @param message
+	 *            Message to show.
+	 */
 	public static void showWarning(String message)
 	{
 		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, "WARNING!"
 				, JOptionPane.WARNING_MESSAGE);
 	}
 	
+	/**
+	 * Show an error.
+	 *
+	 * @param message
+	 *            Message to show.
+	 */
 	public static void showError(String message)
 	{
 		JOptionPane.showMessageDialog(App.combinedStoragePanel, message, "ERROR!"
 				, JOptionPane.ERROR_MESSAGE);
 	}
 	
-	public static int showQuestion(String message)
+	/**
+	 * Show an error and wait for a confirmation by button press.
+	 *
+	 * @param message
+	 *            Message to show.
+	 */
+	public static void showErrorAndConfirm(String message)
 	{
-		return JOptionPane.showOptionDialog(App.combinedStoragePanel, message
-				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
-				, null, 1);
+		if (JOptionPane.showOptionDialog(App.combinedStoragePanel, message
+				, "ERROR!", JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE, null
+				, new String[] { "OK" }, 0) == 0)
+		{
+			;
+		}
 	}
 	
-	public static boolean askConfirmation(String message)
+	/**
+	 * Ask a yes or no question.
+	 *
+	 * @param message
+	 *            Message to show.
+	 * @return true for 'Yes', and false for 'No'.
+	 */
+	public static boolean askQuestion(String message)
 	{
 		return JOptionPane.showOptionDialog(App.combinedStoragePanel, message
-				, message, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
+				, "Question.", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null
 				, null, 1) == 0 ? true : false;
 	}
 	
+	/**
+	 * Ask confirmation.
+	 *
+	 * @param message
+	 *            Message to show.
+	 * @return true, if confirmed
+	 */
+	public static boolean askConfirmation(String message)
+	{
+		return JOptionPane.showOptionDialog(App.combinedStoragePanel, message
+				, "Please confirm.", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null
+				, null, 1) == 0 ? true : false;
+	}
+	
+	/**
+	 * Gets the input.
+	 *
+	 * @param message
+	 *            Message to show.
+	 * @return the input as a string
+	 */
 	public static String getInput(String message)
 	{
 		return JOptionPane.showInputDialog(App.combinedStoragePanel, message);

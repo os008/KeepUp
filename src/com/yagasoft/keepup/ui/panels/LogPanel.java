@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 7 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.ui;
+package com.yagasoft.keepup.ui.panels;
 
 
 import javax.swing.JPanel;

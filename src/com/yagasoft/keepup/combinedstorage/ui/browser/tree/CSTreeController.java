@@ -23,7 +23,7 @@ import javax.swing.tree.TreePath;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ContentListener;
 import com.yagasoft.keepup.combinedstorage.UpdateType;
-import com.yagasoft.keepup.ui.FolderTreeController;
+import com.yagasoft.keepup.ui.browser.FolderTreeController;
 
 
 /**

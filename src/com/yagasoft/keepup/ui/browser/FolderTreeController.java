@@ -1,5 +1,5 @@
 
-package com.yagasoft.keepup.ui;
+package com.yagasoft.keepup.ui.browser;
 
 
 import java.util.ArrayDeque;

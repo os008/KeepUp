@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.ui;
+package com.yagasoft.keepup.ui.browser;
 
 
 import java.util.Collections;

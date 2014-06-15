@@ -51,9 +51,9 @@ import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTableController;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTree;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
-import com.yagasoft.keepup.ui.BrowserPanel;
-import com.yagasoft.keepup.ui.FileTable;
 import com.yagasoft.keepup.ui.MainWindow;
+import com.yagasoft.keepup.ui.browser.BrowserPanel;
+import com.yagasoft.keepup.ui.browser.FileTable;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.File;
@@ -78,85 +78,85 @@ import com.yagasoft.overcast.implement.google.Google;
  */
 public final class App
 {
-	
+
 	/** Constant: VERSION. */
 	public static final String					VERSION		= "2.03.0070";
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Fields.
 	// ======================================================================================
-	
+
 	/** Options file path. */
 	private static Path							optionsFile	= Paths.get(System.getProperty("user.dir") + "/etc/options.dat");
-	
+
 	/** Options as a map. */
 	private static HashMap<String, Object>		options		= null;
-	
+
 	// private static String ubuntuUser;
 	// private static String ubuntuPass;
-	
+
 	/** CSPs list currently loaded. */
 	public static HashMap<String, CSP<?, ?, ?>>	csps;
-	
+
 	/** Constant: Root of the tree. */
 	public static final CombinedFolder			ROOT		= new CombinedFolder(null);
-	
+
 	// --------------------------------------------------------------------------------------
 	// #region GUI.
-	
+
 	/** Main window. */
 	public static MainWindow					mainWindow;
-	
+
 	/** Combined storage panel. */
 	public static CombinedStoragePanel			combinedStoragePanel;
-	
+
 	/** Browser panel. */
 	public static CSBrowserPanel				csBrowserPanel;
-	
+
 	/** Folders tree. */
 	public static CSTree						csFoldersTree;
-	
+
 	/** Tree controller. */
 	public static CSTreeController				treeController;
-	
+
 	/** Table controller. */
 	public static CSTableController				tableController;
-	
+
 	/** Files table. */
 	public static CSTable						csFilesTable;
-	
+
 	/** Main window. */
 	public static BackupPanel					backupPanel;
-	
+
 	public static BackupController				backupPanelController;
-	
+
 	/** Browser panel. */
 	public static BrowserPanel					localBrowserPanel;
-	
+
 	/** Folders tree. */
 	public static LocalTree						localFoldersTree;
-	
+
 	/** Table controller. */
 	public static LocalTableController			localTableController;
-	
+
 	/** Files table. */
 	public static LocalTable					localFilesTable;
-	
+
 	/** Table controller. */
 	public static WatcherTableController		watchTableController;
-	
+
 	/** Files table. */
 	public static FileTable						watchedFilesTable;
-	
+
 	// #endregion GUI.
 	// --------------------------------------------------------------------------------------
-	
+
 	/** Last directory used. */
 	private static String						lastDirectory;
-	
+
 	/** Array of files in copied or moved to memory. */
 	private static List<RemoteFile<?>>			filesInHand;
-	
+
 	/**
 	 * FileActions that can be performed on the one "in hand".
 	 */
@@ -165,22 +165,22 @@ public final class App
 		COPY,
 		MOVE
 	}
-	
+
 	/** File action to be performed on filesInHand. */
 	private static FileActions	fileAction;
-	
+
 	private static Watcher		watcher;
-	
+
 	private static Scheduler	scheduler;
-	
+
 	// ======================================================================================
 	// #endregion Fields.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Initialisation.
 	// ======================================================================================
-	
+
 	/**
 	 * Prepare the app for usage.
 	 *
@@ -190,18 +190,19 @@ public final class App
 	{
 		initGUI();
 		initControllers();
+		initDB();
 		loadOptions();
 		initCSPs();
 		initBackup();
 	}
-	
+
 	/**
 	 * Constructs the main window of the combined storage app, and sets it to be displayed.
 	 */
 	private static void initGUI()
 	{
 		mainWindow = new MainWindow();
-		
+
 		// combined storage feature gui
 		csFoldersTree = new CSTree(ROOT.getNode());
 		csFilesTable = new CSTable(
@@ -211,7 +212,7 @@ public final class App
 		csBrowserPanel = new CSBrowserPanel(csFoldersTree, csFilesTable);
 		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
 		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
-		
+
 		// backup feature GUI
 		localFoldersTree = new LocalTree();
 		localFilesTable = new LocalTable(
@@ -225,24 +226,25 @@ public final class App
 				, new int[] { 2 });
 		backupPanel = new BackupPanel(localBrowserPanel, watchedFilesTable);
 		mainWindow.addPanel("Backup", backupPanel);
-		
-		// save options when application is closing.
+
+		// save options and close DB when application is closing.
 		mainWindow.getFrame().addWindowListener(new WindowAdapter()
 		{
-			
+
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				saveOptions();
+				DB.closeDB();
 			}
 		});
-		
+
 		mainWindow.switchToPanel("Combined Storage");
 		combinedStoragePanel.getBrowserPanel().resetDivider(mainWindow.getFrame().getWidth() / 3);
-		
+
 		mainWindow.getFrame().setVisible(true);
 	}
-	
+
 	/**
 	 * Inits the view controllers.
 	 */
@@ -251,18 +253,27 @@ public final class App
 		treeController = new CSTreeController(csFoldersTree);
 		tableController = new CSTableController(csFilesTable);
 		treeController.addTreeSelectionListener(tableController);
-		
+
 		localTableController = new LocalTableController(localFilesTable);
 		localFoldersTree.addSelectionListener(localTableController);
-		
+
 		watchTableController = new WatcherTableController(watchedFilesTable);
 		watcher = new Watcher();
 		watcher.addListener(watchTableController);
-		
+
 		backupPanelController = new BackupController(backupPanel, localTableController, watchTableController);
 		backupPanelController.addListener(watcher);
 	}
-	
+
+	private static void initDB()
+	{
+		if (!DB.ready)
+		{
+			Msg.showErrorAndConfirm("Problem with DB! Closing application ...");
+			System.exit(1);
+		}
+	}
+
 	/**
 	 * Create, authenticate, and initialise the tree of each CSP.
 	 *
@@ -271,10 +282,10 @@ public final class App
 	private static void initCSPs()
 	{
 		csps = new HashMap<String, CSP<?, ?, ?>>();
-		
+
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
-		
+
 		executor.execute(() ->
 		{
 			try
@@ -287,7 +298,7 @@ public final class App
 				e.printStackTrace();
 			}
 		});
-		
+
 //		executor.execute(() ->
 		// {
 		// try
@@ -300,11 +311,11 @@ public final class App
 		// e.printStackTrace();
 		// }
 		// });
-		
+
 		try
 		{
 			executor.shutdown();
-			
+
 			// wait for the threads to finish before expanding the root
 			// -- caused problems with showing expansion icon of children
 			if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS))
@@ -318,7 +329,7 @@ public final class App
 			Msg.showError(e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		// if ((ubuntuUser == null) || (ubuntuPass == null))
 		// {
 		// ubuntuUser = Msg.getInput("Please, enter Ubuntu One's username:");
@@ -327,7 +338,7 @@ public final class App
 		//
 		// addCSP(new Ubuntu(ubuntuUser, ubuntuPass));
 	}
-	
+
 	/**
 	 * Initialises the folders tree's root by using the in-memory folder list.
 	 */
@@ -346,7 +357,7 @@ public final class App
 			}
 		}
 	}
-	
+
 	/**
 	 * Load options from file.
 	 */
@@ -358,7 +369,7 @@ public final class App
 			ObjectInputStream in = new ObjectInputStream(new FileInputStream(optionsFile.toString()));
 			options = (HashMap<String, Object>) in.readObject();
 			in.close();
-			
+
 			options.keySet().parallelStream()
 					.forEach(option ->
 					{
@@ -366,7 +377,7 @@ public final class App
 						{
 							case "lastDirectory":
 								String directory = (String) options.get("lastDirectory");
-								
+
 								if (Files.notExists(Paths.get(directory)))
 								{
 									setLastDirectory(System.getProperty("user.home"));
@@ -375,9 +386,9 @@ public final class App
 								{
 									setLastDirectory(directory);
 								}
-								
+
 								break;
-						
+
 						// case "ubuntuUser":
 						// ubuntuUser = (String) options.get("ubuntuUser");
 						// break;
@@ -395,7 +406,7 @@ public final class App
 			setLastDirectory(System.getProperty("user.home"));
 		}
 	}
-	
+
 	/**
 	 * Save options to file.
 	 */
@@ -406,7 +417,7 @@ public final class App
 			options.put("lastDirectory", lastDirectory);
 			// options.put("ubuntuUser", ubuntuUser);
 			// options.put("ubuntuPass", ubuntuPass);
-			
+
 			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(optionsFile.toString()));
 			out.writeObject(options);
 			out.close();
@@ -416,24 +427,24 @@ public final class App
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void initBackup()
 	{
 		scheduler = new Scheduler();
 		watcher.addListener(scheduler);
 	}
-	
+
 	// ======================================================================================
 	// #endregion Initialisation.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 	/**
 	 * Update free space, and display it.
 	 */
 	public static void updateFreeSpace()
 	{
 		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
-		
+
 		csps.values().parallelStream()
 				.forEach(csp ->
 				{
@@ -446,10 +457,10 @@ public final class App
 						e.printStackTrace();
 					}
 				});
-		
+
 		mainWindow.getStatusBar().updateFreeSpace(freeSpace);
 	}
-	
+
 	/**
 	 * Refresh tree by going through the folders already loaded, and making sure they're up to date.
 	 * It does NOT load the tree from scratch.
@@ -458,21 +469,21 @@ public final class App
 	{
 		treeController.updateTree();
 	}
-	
+
 	public static void navigateBackward()
 	{
 		treeController.navigateBackward();
 	}
-	
+
 	public static void navigateForward()
 	{
 		treeController.navigateForward();
 	}
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Folders operations.
 	// ======================================================================================
-	
+
 	/**
 	 * Creates the folder.
 	 *
@@ -484,12 +495,12 @@ public final class App
 	public static void createFolder(String parentPath, String name)
 	{
 		CombinedFolder parent = App.searchForFolder(parentPath);
-		
+
 		if (parent != null)
 		{
 			return;
 		}
-		
+
 		csps.values().parallelStream()
 				.forEach(csp ->
 				{
@@ -509,7 +520,7 @@ public final class App
 					}
 				});
 	}
-	
+
 	/**
 	 * Creates the folder.
 	 *
@@ -525,11 +536,11 @@ public final class App
 		{
 			parent = ROOT;
 		}
-		
+
 		HashSet<RemoteFolder<?>> newFolders = new HashSet<RemoteFolder<?>>();
-		
+
 		final CombinedFolder threadedParent = parent;
-		
+
 		// go over the csps list, and create a folder in memory for each.
 		csps.values().parallelStream()
 				.forEach(csp ->
@@ -538,7 +549,7 @@ public final class App
 					{
 						// try to find the existing combinedfolder.
 						CombinedFolder result = threadedParent.findFolder(name);
-						
+
 						// if it doesn't exist, or the csp folder isn't added ...
 						if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
 						{
@@ -559,7 +570,7 @@ public final class App
 					}
 				});
 	}
-	
+
 	/**
 	 * Rename folder.
 	 *
@@ -593,7 +604,7 @@ public final class App
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * Delete folder.
 	 *
@@ -624,11 +635,11 @@ public final class App
 					e.printStackTrace();
 					Msg.showError(e.getMessage());
 				}
-				
+
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * Gets the selected folder.
 	 *
@@ -638,11 +649,11 @@ public final class App
 	{
 		return treeController.getSelectedFolder();
 	}
-	
+
 	// ======================================================================================
 	// #endregion Folders operations.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 	/**
 	 * Updates the selected folder. It grabs the files in the folder, and then passes them to
 	 * {@link CSBrowserPanel#updateTable(File[])}.
@@ -650,7 +661,7 @@ public final class App
 	public static void updateTable()
 	{
 		CombinedFolder folder = getSelectedFolder();
-		
+
 		if (folder != null)
 		{
 			folder.updateCombinedFolder(true);
@@ -662,11 +673,11 @@ public final class App
 			tableController.updateTable(ROOT.getFilesList(false));
 		}
 	}
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Files operations.
 	// ======================================================================================
-	
+
 	/**
 	 * Download selected files to the selected folder.
 	 *
@@ -682,23 +693,23 @@ public final class App
 			Msg.showError("Please, choose a file first from the files list.");
 			return;
 		}
-		
+
 		try
 		{
 			// prepare folder object ...
 			LocalFolder parent = new LocalFolder(getLastDirectory());
 			// parent.buildTree(false);
-			
+
 			// --------------------------------------------------------------------------------------
 			// #region Make sure there's enough space.
-			
+
 			Long filesSize = 0L;
-			
+
 			for (RemoteFile<?> file : files)
 			{
 				filesSize += file.getSize();
 			}
-			
+
 			// no space, then no need to proceed.
 			if (parent.getLocalFreeSpace() <= filesSize)
 			{
@@ -706,21 +717,21 @@ public final class App
 				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
-			
+
 			// #endregion Make sure there's enough space.
 			// --------------------------------------------------------------------------------------
-			
+
 			// ... download all files passed to that folder.
 			for (RemoteFile<?> file : files)
 			{
 				if ( !parent.searchByName(file.getName(), false).isEmpty())
 				{
-					if (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") != 0)
+					if (!Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
 					{
 						continue;
 					}
 				}
-				
+
 				mainWindow.getQueuePanel().addTransferJob(
 						file.getCsp().download(file, parent, true, mainWindow.getQueuePanel()), "Download");
 			}
@@ -731,7 +742,7 @@ public final class App
 			Msg.showError(e.getMessage());
 		}
 	}
-	
+
 	/**
 	 * Upload selected file to the selected folder.
 	 *
@@ -747,9 +758,9 @@ public final class App
 	{
 		List<LocalFile> fileList = new ArrayList<LocalFile>();
 		fileList.add(file);
-		
+
 		List<UploadJob<?, ?>> uploadJobs = uploadFiles(fileList, parent, overwrite);
-		
+
 		if ((uploadJobs != null) && !uploadJobs.isEmpty())
 		{
 			return uploadJobs.get(0);
@@ -759,7 +770,7 @@ public final class App
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Upload selected files to the selected folder.
 	 *
@@ -778,20 +789,20 @@ public final class App
 		{
 			parent = ROOT;
 		}
-		
+
 		List<UploadJob<?, ?>> uploadJobs = new ArrayList<UploadJob<?, ?>>();
-		
+
 		// choose best fitting to upload to.
 		RemoteFolder<?> parentRemoteFolder;
 		CSP<?, ?, ?> csp;
-		
+
 		try
 		{
 			if ((csp = chooseCsp(files)) == null)
 			{
 				return null;
 			}
-			
+
 			parentRemoteFolder = parent.getCspFolders().get(csp.getName());
 		}
 		catch (OperationException e)
@@ -800,7 +811,7 @@ public final class App
 			Msg.showError(e.getMessage());
 			return uploadJobs;
 		}
-		
+
 		try
 		{
 			// upload each file to the folder.
@@ -809,7 +820,7 @@ public final class App
 			{
 				// check if file exists on any of the CSPs
 				List<Container<?>> existingContainers = parent.findContainer(file.getName(), false);
-				
+
 				// found something
 				if ( !existingContainers.isEmpty())
 				{
@@ -820,7 +831,7 @@ public final class App
 						if ( !container.isFolder() && (container.getName() == file.getName()))
 						{
 							// ask to overwrite
-							if (((overwrite.length <= 0) && (Msg.showQuestion("Overwrite: '" + file.getPath() + "'?") != 0))
+							if (((overwrite.length <= 0) && !Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
 									|| ((overwrite.length > 0) && !overwrite[0]))
 							{
 								continue outerLoop;		// skip file.
@@ -832,7 +843,7 @@ public final class App
 						}
 					}
 				}
-				
+
 				// create the remote folder before uploading to it at the csp.
 				if (parentRemoteFolder == null)
 				{
@@ -842,13 +853,13 @@ public final class App
 							parent.getPath().substring(0, (parent.getPath().lastIndexOf("/" + parent.getName())))
 							, event -> {});
 				}
-				
+
 				UploadJob<?, ?> uploadJob = parentRemoteFolder.getCsp()
 						.upload(file, parentRemoteFolder, true, mainWindow.getQueuePanel());
-				
+
 				// add file job to the gui queue.
 				mainWindow.getQueuePanel().addTransferJob(uploadJob, "Upload");
-				
+
 				uploadJobs.add(uploadJob);
 			}
 		}
@@ -857,10 +868,10 @@ public final class App
 			e.printStackTrace();
 			Msg.showError(e.getMessage());
 		}
-		
+
 		return uploadJobs;
 	}
-	
+
 	/**
 	 * Rename file.
 	 *
@@ -885,7 +896,7 @@ public final class App
 			}
 		}).start();
 	}
-	
+
 	/**
 	 * Copy files and hold their reference in memory.
 	 *
@@ -897,7 +908,7 @@ public final class App
 		filesInHand = files;
 		fileAction = FileActions.COPY;
 	}
-	
+
 	/**
 	 * Move files and hold their reference in memory.
 	 *
@@ -909,7 +920,7 @@ public final class App
 		filesInHand = files;
 		fileAction = FileActions.MOVE;
 	}
-	
+
 	/**
 	 * Paste files.
 	 *
@@ -921,7 +932,7 @@ public final class App
 		for (RemoteFile<?> file : filesInHand)
 		{
 			RemoteFolder<?> remoteFolder = folder.getCspFolders().get(file.getCsp().getName());
-			
+
 			// create the remote folder before uploading to it at the csp.
 			if (remoteFolder == null)
 			{
@@ -939,9 +950,9 @@ public final class App
 					Msg.showError(e.getMessage());
 					continue;
 				}
-				
+
 			}
-			
+
 			// make sure the user wants to overwrite if necessary.
 			if (remoteFolder.searchById(file.getId(), false) != null)
 			{
@@ -950,7 +961,7 @@ public final class App
 					return;
 				}
 			}
-			
+
 			try
 			{
 				switch (fileAction)
@@ -959,7 +970,7 @@ public final class App
 						file.copy(remoteFolder, true);
 						updateTable();
 						break;
-					
+
 					case MOVE:
 						file.move(remoteFolder, true);
 						updateTable();
@@ -973,7 +984,7 @@ public final class App
 			}
 		}
 	}
-	
+
 	/**
 	 * Delete passed files.
 	 *
@@ -999,7 +1010,7 @@ public final class App
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * Combine the files in all the available CSPs into a single list.
 	 *
@@ -1011,7 +1022,7 @@ public final class App
 	{
 		return folder.getFilesList(update);
 	}
-	
+
 	/**
 	 * Gets the selected files.
 	 *
@@ -1023,15 +1034,15 @@ public final class App
 				.map(file -> (RemoteFile<?>) file)
 				.collect(Collectors.toList());
 	}
-	
+
 	// ======================================================================================
 	// #endregion Files operations.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region CSP operations.
 	// ======================================================================================
-	
+
 	/**
 	 * Adds a csp, and initialise its tree.
 	 *
@@ -1055,12 +1066,12 @@ public final class App
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static CSP<?, ?, ?>[] getCspsArray()
 	{
 		return csps.values().toArray(new CSP<?, ?, ?>[csps.values().size()]);
 	}
-	
+
 	/**
 	 * Gets the CSP with the least space to fit the file passed.
 	 *
@@ -1074,10 +1085,10 @@ public final class App
 	{
 		List<LocalFile> fileList = new ArrayList<LocalFile>();
 		fileList.add(file);
-		
+
 		return chooseCsp(fileList);
 	}
-	
+
 	/**
 	 * Gets the CSP with the least space to fit the files passed.
 	 *
@@ -1090,16 +1101,16 @@ public final class App
 	public static CSP<?, ?, ?> chooseCsp(List<LocalFile> files) throws OperationException
 	{
 		long filesSize = 0L;
-		
+
 		// add up all the files' sizes.
 		for (LocalFile file : files)
 		{
 			filesSize += file.getSize();
 		}
-		
+
 		// get best fitting csp for the files at hand.
 		CSP<?, ?, ?> bestFit = bestFit(filesSize);
-		
+
 		// if no fit, then not enough space on any csp.
 		if (bestFit == null)
 		{
@@ -1112,7 +1123,7 @@ public final class App
 			return bestFit;
 		}
 	}
-	
+
 	/**
 	 * Gets the % of the fit of the files inside the CSP's free space.
 	 *
@@ -1129,7 +1140,7 @@ public final class App
 		// get current free space, and divide the file size by it to get percentage of fit.
 		return filesSize / (float) csp.calculateRemoteFreeSpace();
 	}
-	
+
 	/**
 	 * Gets the smallest fit for the files among all the CSPs.
 	 *
@@ -1142,23 +1153,23 @@ public final class App
 	private static CSP<?, ?, ?> bestFit(long filesSize) throws OperationException
 	{
 		HashMap<Float, CSP<?, ?, ?>> fits = new HashMap<Float, CSP<?, ?, ?>>();
-		
+
 		// store each fit value for each csp in the map.
 		for (CSP<?, ?, ?> csp : csps.values())
 		{
 			fits.put(fit(csp, filesSize), csp);
 		}
-		
+
 		// return highest fit below 0.95
 		return fits.get(fits.keySet().parallelStream()
 				.filter(fit -> fit < 0.95)		// might cause issues if cutting it too close.
 				.max((a, b) -> a.compareTo(b)).orElse(null));
 	}
-	
+
 	// ======================================================================================
 	// #endregion CSP operations.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 	/**
 	 * Search for file in all CSPs using the path passed.
 	 *
@@ -1180,13 +1191,13 @@ public final class App
 					{
 						e.printStackTrace();
 					}
-					
+
 					return null;
 				})
 				.filter(file -> file != null)
 				.collect(Collectors.toList());
 	}
-	
+
 	/**
 	 * Search for combined folder using the path passed.
 	 *
@@ -1199,10 +1210,10 @@ public final class App
 		ArrayList<String> splitPath = csps.values().iterator().next().splitPath(path);
 		// get the name from the last entry in the path.
 		String containerName = splitPath.remove(splitPath.size() - 1);
-		
+
 		// save intermediate nodes
 		CombinedFolder result = ROOT;
-		
+
 		// search for each entry in the path ...
 		while ((result != null) && !splitPath.isEmpty())
 		{
@@ -1210,7 +1221,7 @@ public final class App
 			result.updateCombinedFolder(true);
 			result = result.findFolder(splitPath.remove(0));
 		}
-		
+
 		// if part of the path is not found ...
 		if ( !splitPath.isEmpty() || (result == null))
 		{
@@ -1221,7 +1232,7 @@ public final class App
 			return result.findFolder(containerName);
 		}
 	}
-	
+
 	/**
 	 * Human readable size conversion.<br/>
 	 * <br />
@@ -1234,18 +1245,18 @@ public final class App
 	public static String humanReadableSize(long bytes)
 	{
 		int unit = 1024;
-		
+
 		if (bytes < unit)
 		{
 			return bytes + " B";
 		}
-		
+
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
 		String pre = ("KMGTPE").charAt(exp - 1) + ("i");
-		
+
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
-	
+
 	/**
 	 * Gets the MD5 corresponding to the passed string.
 	 *
@@ -1263,18 +1274,18 @@ public final class App
 		try
 		{
 			byte[] bytesOfMessage = string.getBytes("UTF-8");
-			
+
 			MessageDigest md5 = MessageDigest.getInstance("MD5");
 			byte[] hash = md5.digest(bytesOfMessage);
-			
+
 			// converting byte array to Hexadecimal String
 			StringBuilder sb = new StringBuilder(2 * hash.length);
-			
+
 			for (byte b : hash)
 			{
 				sb.append(String.format("%02x", b & 0xff));
 			}
-			
+
 			return sb.toString();
 		}
 		catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
@@ -1283,7 +1294,7 @@ public final class App
 			return null;
 		}
 	}
-	
+
 	/**
 	 * @return the lastDirectory
 	 */
@@ -1291,7 +1302,7 @@ public final class App
 	{
 		return lastDirectory;
 	}
-	
+
 	/**
 	 * @param lastDirectory
 	 *            the lastDirectory to set
@@ -1301,8 +1312,8 @@ public final class App
 		App.lastDirectory = lastDirectory;
 		combinedStoragePanel.getBrowserPanel().updateDestinationFolder(lastDirectory);
 	}
-	
+
 	private App()
 	{}
-	
+
 }

@@ -25,6 +25,10 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import com.yagasoft.keepup.ui.panels.LogPanel;
+import com.yagasoft.keepup.ui.panels.QueuePanel;
+import com.yagasoft.keepup.ui.panels.StatusBar;
+
 
 public class MainWindow
 {

@@ -33,35 +33,35 @@ import com.yagasoft.overcast.base.container.remote.RemoteFile;
  */
 public class FileToolBar extends BrowserToolBar
 {
-	
+
 	/**
 	 * What actions can be done by buttons on that bar.
 	 */
 	private enum Actions
 	{
-		
+
 		/** Download. */
 		DOWNLOAD,
-		
+
 		/** Upload. */
 		UPLOAD,
-		
+
 		REFRESH,
-		
+
 		COPY,
-		
+
 		MOVE,
-		
+
 		/** The rename. */
 		RENAME,
-		
+
 		/** Delete file. */
 		DELETE
 	}
-	
+
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= 6667133528600925976L;
-	
+
 	/**
 	 * Instantiates a new tool bar.
 	 */
@@ -69,36 +69,36 @@ public class FileToolBar extends BrowserToolBar
 	{
 		initBar();
 	}
-	
+
 	/**
 	 * Inits the bar.
 	 */
 	private void initBar()
 	{
 		JButton button = null;
-		
+
 		button = createButton("download", Actions.DOWNLOAD + "", "Download selected files.", "Download");
 		add(button);
-		
+
 		button = createButton("upload", Actions.UPLOAD + "", "Upload files to selected folder.", "Upload");
 		add(button);
-		
+
 		button = createButton("refresh", Actions.REFRESH + "", "Refresh contents of selected folder.", "Refresh");
 		add(button);
-		
+
 		button = createButton("copy", Actions.COPY + "", "copy selected file.", "Copy");
 		add(button);
-		
+
 		button = createButton("move", Actions.MOVE + "", "move selected file.", "Move");
 		add(button);
-		
+
 		button = createButton("rename", Actions.RENAME + "", "rename selected file.", "Rename");
 		add(button);
-		
+
 		button = createButton("delete", Actions.DELETE + "", "Delete selected file.", "Delete");
 		add(button);
 	}
-	
+
 	/**
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
@@ -106,24 +106,24 @@ public class FileToolBar extends BrowserToolBar
 	public void actionPerformed(ActionEvent e)
 	{
 		String cmd = e.getActionCommand();
-		
+
 		// Handle each button.
-		
+
 		if (Actions.DOWNLOAD.toString().equals(cmd))
 		{
 			App.downloadFiles(App.getSelectedFiles());
 		}
-		
+
 		if (Actions.UPLOAD.toString().equals(cmd))
 		{
 			CombinedFolder remoteFolder = App.getSelectedFolder();
-			
+
 			// no folder, so let the user choose either 'root', or stop.
 			if (remoteFolder == null)
 			{
 				Logger.error("Nothing to upload to!");
-				
-				if (Msg.showQuestion("Upload to 'root'? This will choose the best fit from all CSPs.") == 0)
+
+				if (Msg.askConfirmation("Upload to 'root'? This will choose the best fit from all CSPs."))
 				{
 					Logger.info("Uploading to root ...");
 				}
@@ -132,9 +132,9 @@ public class FileToolBar extends BrowserToolBar
 					return;
 				}
 			}
-			
+
 			List<LocalFile> files = Arrays.asList(Browse.chooseFiles());
-			
+
 			// no file, then no need to proceed.
 			if (files.size() == 0)
 			{
@@ -142,59 +142,59 @@ public class FileToolBar extends BrowserToolBar
 				Msg.showError("Please, choose a file first.");
 				return;
 			}
-			
+
 			App.uploadFiles(files, remoteFolder);
 		}
-		
+
 		if (Actions.REFRESH.toString().equals(cmd))
 		{
 			App.updateTable();
 		}
-		
+
 		if (Actions.COPY.toString().equals(cmd))
 		{
 			App.copyFiles(App.getSelectedFiles());
 		}
-		
+
 		if (Actions.MOVE.toString().equals(cmd))
 		{
 			App.moveFiles(App.getSelectedFiles());
 		}
-		
+
 		if (Actions.RENAME.toString().equals(cmd))
 		{
 			String newName = Msg.getInput("Please enter a new name for the file:");
-			
+
 			if ((newName == null) || (newName.length() <= 0))
 			{
 				Msg.showError("Try again with a proper name, please.");
 				return;
 			}
-			
+
 			App.renameFile(App.getSelectedFiles(), newName);
 		}
-		
+
 		if (Actions.DELETE.toString().equals(cmd))
 		{
 			List<RemoteFile<?>> selectedFiles = App.getSelectedFiles();
 			String filesNames = "";
-			
+
 			// form the names in to a list.
 			for (int i = 0; i < ((selectedFiles.size() > 10) ? 10 : selectedFiles.size()); i++)
 			{
 				filesNames += selectedFiles.get(i).getPath() + "\n";
 			}
-			
+
 			if (selectedFiles.size() > 10)
 			{
 				filesNames += "...";
 			}
-			
+
 			if (Msg.askConfirmation("Are you sure you want to delete the following files:\n" + filesNames))
 			{
 				App.deleteFiles(selectedFiles);
 			}
 		}
 	}
-	
+
 }

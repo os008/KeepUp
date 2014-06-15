@@ -23,8 +23,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
-import com.yagasoft.keepup.ui.FileTable;
-import com.yagasoft.keepup.ui.FileTableController;
+import com.yagasoft.keepup.ui.browser.FileTable;
+import com.yagasoft.keepup.ui.browser.FileTableController;
 import com.yagasoft.overcast.base.container.File;
 
 

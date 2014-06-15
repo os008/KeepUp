@@ -21,7 +21,7 @@ import javax.swing.JTextField;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.dialogues.Browse;
-import com.yagasoft.keepup.ui.BrowserPanel;
+import com.yagasoft.keepup.ui.browser.BrowserPanel;
 import com.yagasoft.overcast.base.container.local.LocalFolder;
 
 

@@ -18,7 +18,7 @@ import java.awt.BorderLayout;
 import javax.swing.JTable;
 
 import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
-import com.yagasoft.keepup.ui.FileTable;
+import com.yagasoft.keepup.ui.browser.FileTable;
 
 
 public class CSTable extends FileTable

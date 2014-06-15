@@ -13,7 +13,7 @@
 package com.yagasoft.keepup.backup.ui.browser;
 
 
-import com.yagasoft.keepup.ui.FileTable;
+import com.yagasoft.keepup.ui.browser.FileTable;
 
 
 /**

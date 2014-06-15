@@ -25,8 +25,8 @@ import javax.swing.event.TreeSelectionEvent;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.dialogues.Msg;
-import com.yagasoft.keepup.ui.FileTable;
-import com.yagasoft.keepup.ui.FileTableController;
+import com.yagasoft.keepup.ui.browser.FileTable;
+import com.yagasoft.keepup.ui.browser.FileTableController;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 

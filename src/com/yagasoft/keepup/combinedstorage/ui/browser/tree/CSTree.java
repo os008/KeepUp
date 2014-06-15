@@ -19,7 +19,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ui.actions.FolderToolBar;
-import com.yagasoft.keepup.ui.FolderTree;
+import com.yagasoft.keepup.ui.browser.FolderTree;
 
 
 /**

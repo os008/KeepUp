@@ -21,8 +21,8 @@ import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
 
-import com.yagasoft.keepup.ui.BrowserPanel;
-import com.yagasoft.keepup.ui.FileTable;
+import com.yagasoft.keepup.ui.browser.BrowserPanel;
+import com.yagasoft.keepup.ui.browser.FileTable;
 
 
 /**
