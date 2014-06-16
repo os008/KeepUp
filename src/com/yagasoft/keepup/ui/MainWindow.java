@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.ui/MainWindow.java
  *
- *			Modified: 29-May-2014 (18:16:48)
+ *			Modified: 16-Jun-2014 (15:03:55)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -14,16 +14,15 @@ package com.yagasoft.keepup.ui;
 
 
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 
 import com.yagasoft.keepup.ui.panels.LogPanel;
 import com.yagasoft.keepup.ui.panels.QueuePanel;
@@ -32,37 +31,32 @@ import com.yagasoft.keepup.ui.panels.StatusBar;
 
 public class MainWindow
 {
-
+	
 	/** Frame. */
-	private JFrame					frame;
-
+	private JFrame				frame;
+	
 	/** Panels for program features. */
-	private Map<String, JPanel>		panels	= new HashMap<String, JPanel>();
-
-	/** Bar to contain the feature switching buttons. */
-	private JPanel					bar;
-
-	/** Buttons names mapped to the button. */
-	private Map<String, JButton>	buttons	= new HashMap<String, JButton>();
-
-	/** Content panel. */
-	private JPanel					contentPanel;
-
-	/** Card layout to switch between features' panels. */
-	private CardLayout				cardLayout;
-
+	private Map<String, JPanel>	panels	= new HashMap<String, JPanel>();
+	
+	/** Menu bar. */
+	@SuppressWarnings("unused")
+	private JMenuBar			menuBar;
+	
+	/** Tabbed pane. */
+	private JTabbedPane			tabbedPane;
+	
 	/** Lower panel. */
-	private JPanel					lowerPanel;
-
+	private JPanel				lowerPanel;
+	
 	/** Queue panel. */
-	private QueuePanel				queuePanel;
-
+	private QueuePanel			queuePanel;
+	
 	/** Log panel. */
-	private LogPanel				logPanel;
-
+	private LogPanel			logPanel;
+	
 	/** Log panel. */
-	private StatusBar				statusBar;
-
+	private StatusBar			statusBar;
+	
 	/**
 	 * Create the application.
 	 */
@@ -70,7 +64,7 @@ public class MainWindow
 	{
 		initialize();
 	}
-
+	
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -79,52 +73,59 @@ public class MainWindow
 		frame = new JFrame("KeepUp - Google & Dropbox");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setBounds(50, 50, 768, 512);
-
+		
 		initWindow();
 	}
-
+	
 	/**
 	 * Construct the panels in the main window.
 	 */
 	private void initWindow()
 	{
-
-		// prep the top bar.
-		bar = new JPanel(new FlowLayout());
-		frame.add(bar, BorderLayout.NORTH);
-
+		
 		// prep the centre area.
-		cardLayout = new CardLayout();
-		contentPanel = new JPanel(cardLayout);
-		frame.add(contentPanel, BorderLayout.CENTER);
-
+		tabbedPane = new JTabbedPane();
+		frame.add(tabbedPane, BorderLayout.CENTER);
+		
 		// --------------------------------------------------------------------------------------
 		// #region Lower panel.
-
+		
 		lowerPanel = new JPanel();
 		lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.Y_AXIS));
-
+		
 		queuePanel = new QueuePanel();
 		queuePanel.setPreferredSize(new Dimension(frame.getWidth(), 100));
 		lowerPanel.add(queuePanel);
-
+		
 		logPanel = new LogPanel();
 		logPanel.setPreferredSize(new Dimension(frame.getWidth(), 100));
 		lowerPanel.add(logPanel);
-
+		
 		statusBar = new StatusBar();
 		statusBar.setPreferredSize(new Dimension(frame.getWidth(), 25));
 		lowerPanel.add(statusBar);
 		// lowerPanel.setPreferredSize(new Dimension(WIDTH, 300));
-
+		
 		frame.add(lowerPanel, BorderLayout.SOUTH);
-
+		
 		// #endregion Lower panel.
 		// --------------------------------------------------------------------------------------
 	}
-
+	
 	/**
-	 * Adds a panel to the frame. Stored using its title to display it on the tool-bar.
+	 * Sets the menu bar.
+	 *
+	 * @param menuBar
+	 *            the new menu bar
+	 */
+	public void setMenuBar(JMenuBar menuBar)
+	{
+		this.menuBar = menuBar;
+		frame.add(menuBar, BorderLayout.NORTH);
+	}
+	
+	/**
+	 * Adds a panel to the frame. Stored using its title to display it on the tab bar.
 	 *
 	 * @param title
 	 *            Title.
@@ -136,36 +137,18 @@ public class MainWindow
 		// make sure there is no panel with the same name.
 		if (panels.containsValue(panel))
 		{
-			contentPanel.remove(panel);
-			bar.remove(buttons.get(title));
+			tabbedPane.remove(panel);
 		}
-
-		// add the panel to the list, and to the content panel layout.
+		
+		// add the panel to the list, and to the tabbed pane.
 		panels.put(title, panel);
-		contentPanel.add(panel, title);
-
-		// add a button to be able to switch to this panel when needed.
-		JButton button = new JButton(title);
-		button.addActionListener(event -> switchToPanel(title));
-		buttons.put(title, button);
-		bar.add(button);
+		tabbedPane.addTab(title, panel);
 	}
-
-	/**
-	 * Switch to the panel with that name. All other panels are hidden.
-	 *
-	 * @param title
-	 *            Title.
-	 */
-	public void switchToPanel(String title)
-	{
-		cardLayout.show(contentPanel, title);
-	}
-
+	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
 	// ======================================================================================
-
+	
 	/**
 	 * @return the frame
 	 */
@@ -173,7 +156,7 @@ public class MainWindow
 	{
 		return frame;
 	}
-
+	
 	/**
 	 * @param frame
 	 *            the frame to set
@@ -182,7 +165,7 @@ public class MainWindow
 	{
 		this.frame = frame;
 	}
-
+	
 	/**
 	 * @return the panels
 	 */
@@ -190,7 +173,7 @@ public class MainWindow
 	{
 		return panels;
 	}
-
+	
 	/**
 	 * @param panels
 	 *            the panels to set
@@ -199,7 +182,7 @@ public class MainWindow
 	{
 		this.panels = panels;
 	}
-
+	
 	/**
 	 * Gets the lower panel.
 	 *
@@ -209,7 +192,7 @@ public class MainWindow
 	{
 		return lowerPanel;
 	}
-
+	
 	/**
 	 * Sets the lower panel.
 	 *
@@ -220,7 +203,7 @@ public class MainWindow
 	{
 		this.lowerPanel = lowerPanel;
 	}
-
+	
 	/**
 	 * Gets the queue panel.
 	 *
@@ -230,7 +213,7 @@ public class MainWindow
 	{
 		return queuePanel;
 	}
-
+	
 	/**
 	 * Sets the queue panel.
 	 *
@@ -241,7 +224,7 @@ public class MainWindow
 	{
 		this.queuePanel = queuePanel;
 	}
-
+	
 	/**
 	 * Gets the log panel.
 	 *
@@ -251,7 +234,7 @@ public class MainWindow
 	{
 		return logPanel;
 	}
-
+	
 	/**
 	 * Sets the log panel.
 	 *
@@ -262,7 +245,7 @@ public class MainWindow
 	{
 		this.logPanel = logPanel;
 	}
-
+	
 	/**
 	 * @return the statusBar
 	 */
@@ -270,7 +253,7 @@ public class MainWindow
 	{
 		return statusBar;
 	}
-
+	
 	/**
 	 * @param statusBar
 	 *            the statusBar to set
@@ -279,9 +262,9 @@ public class MainWindow
 	{
 		this.statusBar = statusBar;
 	}
-
+	
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////
-
+	
 }

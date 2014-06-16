@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/DB.java
  *
- *			Modified: 15-Jun-2014 (16:25:30)
+ *			Modified: 15-Jun-2014 (23:35:11)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -63,6 +63,18 @@ public final class DB
 		backup_revisions
 	}
 
+	/** Options columns. */
+	public static String[]	optionsColumns			= new String[] { "option", "value" };
+
+	/** Backup path columns. The 'remote' is the remote parent, not full path. */
+	public static String[]	backupPathColumns		= new String[] { "path", "remote" };
+
+	/** Backup status columns. */
+	public static String[]	backupStatusColumns		= new String[] { "path", "status" };
+
+	/** Backup revisions columns. */
+	public static String[]	backupRevisionsColumns	= new String[] { "path", "revision", "date" };
+
 	/**
 	 * <p>
 	 * Creates an SQLite database file and connection. Only creates a connection if the file already exists.
@@ -110,24 +122,18 @@ public final class DB
 	private static void initTables() throws SQLException
 	{
 		// create the options table.
-		createTable(Table.options, new String[] { "option TEXT", "value TEXT" }, "option");
+		createTable(Table.options, optionsColumns, optionsColumns[0]);
 
 		// create the files path table.
-		createTable(Table.backup_path
-				, new String[] { "path TEXT", "remote TEXT" }
-				, "path");
+		createTable(Table.backup_path, backupPathColumns, backupPathColumns[0]);
 
 		// create the files status table.
-		createTable(Table.backup_status
-				, new String[] { "path TEXT", "status TEXT" }
-				, "path"
-				, "(path) REFERENCES backup_path(path)");
+		createTable(Table.backup_status, backupStatusColumns
+				, backupStatusColumns[0], "(path) REFERENCES backup_path(path)");
 
 		// create the files revisions table.
-		createTable(Table.backup_revisions
-				, new String[] { "path TEXT", "revision TEXT", "date TEXT" }
-				, "path, revision"
-				, "(path) REFERENCES backup_path(path)");
+		createTable(Table.backup_revisions, backupRevisionsColumns
+				, "path, revision", "(path) REFERENCES backup_path(path)");
 	}
 
 	/**
@@ -138,7 +144,6 @@ public final class DB
 	 *            the table to be created.
 	 * @param columnsArray
 	 *            an array of the names of columns in the table in the form <br>
-	 *            <code>[column-name] [type]</code>
 	 * @param primaryKey
 	 *            primary key column
 	 * @param foreignKeysArray
@@ -159,7 +164,7 @@ public final class DB
 			// form the columns.
 			for (int i = 0; i < columnsArray.length; i++)
 			{
-				columns += columnsArray[i] + ((i + 1) < columnsArray.length ? ", " : "");
+				columns += columnsArray[i] + " TEXT" + ((i + 1) < columnsArray.length ? ", " : "");
 			}
 		}
 
@@ -187,7 +192,7 @@ public final class DB
 		ResultSet result = dbMetaData.getTables(null, null, table.toString(), null);
 
 		// if there's no such table, create.
-		if (!result.next())
+		if ( !result.next())
 		{
 			Logger.info("Creating table in DB: " + table);
 
@@ -303,6 +308,119 @@ public final class DB
 	}
 
 	/**
+	 * Update record.
+	 *
+	 * @param table
+	 *            Table.
+	 * @param columns
+	 *            Columns.
+	 * @param values
+	 *            Values.
+	 * @param condition
+	 *            Condition.
+	 * @return true, if successful
+	 */
+	public static boolean updateRecord(Table table, String[] columns, String[] values, String... condition)
+	{
+		// flag for the success of the insertion operation.
+		boolean success = false;
+
+		// String to form the 'SET' portion of the SQL statement.
+		String formattedValues = "";
+
+		// form 'SET'.
+		for (int i = 0; i < columns.length; i++)
+		{
+			formattedValues += columns[i] + " = '" + values[i] + ((i + 1) < values.length ? "', " : "'");
+		}
+
+		String query = "UPDATE " + table + " SET " + formattedValues
+				+ (condition.length > 0 ? " WHERE " + condition[0] : "") + ";";
+
+		// execute UPDATE.
+		try
+		{
+			Logger.info(query);
+
+			// execute the statement using the values built, and store the success status.
+			success = statement.executeUpdate(query) > 0;
+
+			connection.commit();	// make sure data is saved lest a crash occurs and data is lost.
+
+			return success;
+		}
+		catch (Exception e)
+		{
+			Logger.error("Failed to update record: " + query);
+			Logger.except(e);
+			e.printStackTrace();
+
+			return false;
+		}
+	}
+
+	/**
+	 * Delete record.
+	 *
+	 * @param table
+	 *            Table.
+	 * @param condition
+	 *            Condition.
+	 * @return true, if successful
+	 */
+	public static boolean deleteRecord(Table table, String condition)
+	{
+		// flag for the success of the insertion operation.
+		boolean success = false;
+
+		String query = "DELETE FROM " + table + " WHERE " + condition + ";";
+
+		// execute DELETE.
+		try
+		{
+			Logger.info(query);
+
+			// execute the statement using the values built, and store the success status.
+			success = statement.executeUpdate(query) > 0;
+
+			connection.commit();	// make sure data is saved lest a crash occurs and data is lost.
+
+			return success;
+		}
+		catch (Exception e)
+		{
+			Logger.error("Failed to delete record: " + query);
+			Logger.except(e);
+			e.printStackTrace();
+
+			return false;
+		}
+	}
+
+	/**
+	 * Insert or update a record.
+	 *
+	 * @param table
+	 *            Table.
+	 * @param columns
+	 *            Columns.
+	 * @param values
+	 *            Values.
+	 * @return true, if successful
+	 */
+	public static boolean insertOrUpdate(Table table, String[] columns, String[] values)
+	{
+		if (insertRecord(table, values))
+		{
+			return true;
+		}
+		else
+		{
+			return updateRecord(table, columns, values, columns[0] + " = " + values[0]);
+		}
+	}
+
+	/**
 	 * Uses 'SELECT' SQL statement to query the database for rows matching the
 	 * criteria.
 	 *
@@ -328,7 +446,7 @@ public final class DB
 		}
 
 		String query = "SELECT " + columnsString + " FROM " + table
-				+ (condition.length > 0 ? " WHERE " + condition : "") + ";";
+				+ (condition.length > 0 ? " WHERE " + condition[0] : "") + ";";
 
 		Logger.info(query);
 
@@ -369,11 +487,14 @@ public final class DB
 		}
 	}
 
+	/**
+	 * Close db.
+	 */
 	public static void closeDB()
 	{
 		try
 		{
-			if (connection != null && !connection.isClosed())
+			if ((connection != null) && !connection.isClosed())
 			{
 				connection.commit();
 				connection.close();
@@ -390,7 +511,7 @@ public final class DB
 	}
 
 	/**
-	 * Singleton
+	 * Singleton.
 	 */
 	private DB()
 	{}

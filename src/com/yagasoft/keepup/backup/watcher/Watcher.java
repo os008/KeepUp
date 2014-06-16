@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.watcher/Watcher.java
  *
- *			Modified: 12-Jun-2014 (23:23:30)
+ *			Modified: 16-Jun-2014 (00:05:59)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.yagasoft.keepup.backup.scheduler.ISyncListener;
 import com.yagasoft.keepup.backup.ui.IAddRemoveListener;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
@@ -38,7 +39,7 @@ import com.yagasoft.overcast.base.container.local.LocalFolder;
 /**
  * The Class Watcher.
  */
-public class Watcher implements IAddRemoveListener
+public class Watcher implements IAddRemoveListener, ISyncListener
 {
 
 	/** Watched folders. */
@@ -56,15 +57,27 @@ public class Watcher implements IAddRemoveListener
 	/** Watcher service responsible for watching the folder. */
 	protected WatchService	watcher;
 
-	/** Key! */
+	/**  Key! */
 	protected WatchKey		watckKey;
 
 
+	/**
+	 * Instantiates a new watcher.
+	 */
 	public Watcher()
 	{
+		// TODO load all the watched files from the DB and set their status.
+		// add the file, then check its current revision (calculate)
+		// , if it exists on the server, then it's 'sync'd', if not, then it's modified.
 		startWatchLoop();
 	}
 
+	/**
+	 * Sets the container state.
+	 *
+	 * @param container Container.
+	 * @param state State.
+	 */
 	private void setContainerState(Container<?> container, State state)
 	{
 		if (state == State.ADD)
@@ -118,8 +131,8 @@ public class Watcher implements IAddRemoveListener
 	/**
 	 * Removes the container.
 	 *
-	 * @param container
-	 *            Container.
+	 * @param container            Container.
+	 * @param state State.
 	 */
 	private void removeContainer(Container<?> container, State state)
 	{
@@ -175,6 +188,7 @@ public class Watcher implements IAddRemoveListener
 	protected void notifyListeners(Container<?> container, State state)
 	{
 		Logger.info("container change state: " + state + " => " + container.getPath());
+
 		listeners.parallelStream()
 				.forEach(listener -> listener.watchListChanged(container, state));
 	}
@@ -202,6 +216,10 @@ public class Watcher implements IAddRemoveListener
 	}
 
 	/**
+	 * Containers added removed.
+	 *
+	 * @param containers Containers.
+	 * @param state State.
 	 * @see com.yagasoft.keepup.backup.ui.IAddRemoveListener#containersAddedRemoved(java.util.List,
 	 *      com.yagasoft.keepup.backup.watcher.State)
 	 */
@@ -220,6 +238,7 @@ public class Watcher implements IAddRemoveListener
 							break;
 
 						case DELETE:
+							// TODO delete all revisions and delete empty folder.
 						case REMOVE_ALL:
 						case REMOVE:
 							removeContainer(container, state);
@@ -228,6 +247,18 @@ public class Watcher implements IAddRemoveListener
 				});
 	}
 
+	/**
+	 * @see com.yagasoft.keepup.backup.scheduler.ISyncListener#containerSynced(com.yagasoft.overcast.base.container.Container, java.lang.String)
+	 */
+	@Override
+	public void containerSynced(Container<?> container, String revision)
+	{
+		setContainerState(container, State.SYNCED);
+	}
+
+	/**
+	 * Start watch loop.
+	 */
 	public void startWatchLoop()
 	{
 		try
@@ -244,10 +275,18 @@ public class Watcher implements IAddRemoveListener
 		}
 	}
 
+	/**
+	 * The Class WatchThread.
+	 */
 	private class WatchThread implements Runnable
 	{
+
+		/** Events. */
 		List<WatchEvent<?>> events;
 
+		/**
+		 * @see java.lang.Runnable#run()
+		 */
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run()

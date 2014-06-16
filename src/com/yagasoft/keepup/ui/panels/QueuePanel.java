@@ -88,14 +88,19 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 						modelRow, tableQueue.getColumnModel().getColumnIndex("Status"));
 				
 				// if it's in progress, then cancel the job.
-				if ( !(status.toLowerCase().indexOf("failed") >= 0))
+				if ( !(status.toLowerCase().contains("failed")))
 				{
 					TransferJob<?> job = (TransferJob<?>) ((QueueTableModel) tableQueue.getModel()).getValueAt(
 							modelRow, tableQueue.getColumnModel().getColumnIndex("File"));
 					cancelTransfer(job);
 				}
 				
-				((DefaultTableModel) table.getModel()).removeRow(modelRow);		// remove row.
+				
+				// if it's failed or initialised, remove. Those two aren't removed automatically anyway.
+				if (status.toLowerCase().contains("failed") || status.toLowerCase().contains("queued"))
+				{
+					((DefaultTableModel) table.getModel()).removeRow(modelRow);		// remove row.
+				}
 			}
 		};
 		
@@ -197,6 +202,17 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				break;
 			
 			case CANCELLED:
+				for (int i = 0; i < rows.size(); i++)
+				{
+					Vector row = (Vector) rows.get(i);
+					
+					if (row.contains(event.getJob()))
+					{
+						((QueueTableModel) tableQueue.getModel()).removeRow(i);
+						break;
+					}
+				}
+				
 				break;
 		}
 	}
@@ -297,7 +313,8 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	}
 	
 	/**
-	 * An extension of {@link DefaultTableModel}, which is used to overcome the limitation of treating all cells as {@link String}
+	 * An extension of {@link DefaultTableModel}
+	 * , which is used to overcome the limitation of treating all cells as {@link String}
 	 * -- for the progress bar problem.
 	 */
 	@SuppressWarnings({ "rawtypes", "unused" })

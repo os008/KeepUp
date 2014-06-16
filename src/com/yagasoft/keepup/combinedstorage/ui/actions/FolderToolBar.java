@@ -95,7 +95,7 @@ public class FolderToolBar extends BrowserToolBar
 		button = createButton("rename", Actions.RENAME + "", "rename selected file.", "Rename");
 		add(button);
 		
-		button = createButton("delete_folder", Actions.DELETE + "", "Delete selected folder.", "Delete");
+		button = createButton("delete", Actions.DELETE + "", "Delete selected folder.", "Delete");
 		add(button);
 		
 		button = createButton("paste", Actions.PASTE + "", "Paste into selected folder.", "Paste");

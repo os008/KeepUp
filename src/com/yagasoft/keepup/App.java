@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/App.java
  *
- *			Modified: 14-Jun-2014 (23:40:48)
+ *			Modified: 16-Jun-2014 (14:44:06)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -54,6 +54,7 @@ import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.keepup.ui.MainWindow;
 import com.yagasoft.keepup.ui.browser.BrowserPanel;
 import com.yagasoft.keepup.ui.browser.FileTable;
+import com.yagasoft.keepup.ui.menu.MenuBar;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.File;
@@ -70,6 +71,7 @@ import com.yagasoft.overcast.exception.CSPBuildException;
 import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
 import com.yagasoft.overcast.exception.TransferException;
+import com.yagasoft.overcast.implement.dropbox.Dropbox;
 import com.yagasoft.overcast.implement.google.Google;
 
 
@@ -203,6 +205,9 @@ public final class App
 	{
 		mainWindow = new MainWindow();
 
+		// add the menu bar.
+		mainWindow.setMenuBar(new MenuBar());
+
 		// combined storage feature gui
 		csFoldersTree = new CSTree(ROOT.getNode());
 		csFilesTable = new CSTable(
@@ -239,8 +244,7 @@ public final class App
 			}
 		});
 
-		mainWindow.switchToPanel("Combined Storage");
-		combinedStoragePanel.getBrowserPanel().resetDivider(mainWindow.getFrame().getWidth() / 3);
+		combinedStoragePanel.getBrowserPanel().resetDivider((mainWindow.getFrame().getWidth() / 3) + 15);
 
 		mainWindow.getFrame().setVisible(true);
 	}
@@ -267,7 +271,7 @@ public final class App
 
 	private static void initDB()
 	{
-		if (!DB.ready)
+		if ( !DB.ready)
 		{
 			Msg.showErrorAndConfirm("Problem with DB! Closing application ...");
 			System.exit(1);
@@ -286,11 +290,24 @@ public final class App
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
 
+//		executor.execute(() ->
+//		{
+//			try
+//			{
+//				addCSP(Google.getInstance("os1983@gmail.com"));
+//			}
+//			catch (AuthorisationException | CSPBuildException e)
+//			{
+//				Msg.showError(e.getMessage());
+//				e.printStackTrace();
+//			}
+//		});
+
 		executor.execute(() ->
 		{
 			try
 			{
-				addCSP(Google.getInstance("os1983@gmail.com"));
+				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
 			}
 			catch (AuthorisationException | CSPBuildException e)
 			{
@@ -298,19 +315,6 @@ public final class App
 				e.printStackTrace();
 			}
 		});
-
-//		executor.execute(() ->
-		// {
-		// try
-		// {
-		// addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
-		// }
-		// catch (AuthorisationException | CSPBuildException e)
-		// {
-		// Msg.showError(e.getMessage());
-		// e.printStackTrace();
-		// }
-		// });
 
 		try
 		{
@@ -445,7 +449,7 @@ public final class App
 	{
 		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
 
-		csps.values().parallelStream()
+		csps.values().stream()
 				.forEach(csp ->
 				{
 					try
@@ -726,7 +730,7 @@ public final class App
 			{
 				if ( !parent.searchByName(file.getName(), false).isEmpty())
 				{
-					if (!Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
+					if ( !Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
 					{
 						continue;
 					}
@@ -1234,6 +1238,26 @@ public final class App
 	}
 
 	/**
+	 * Set the focus state of the main window.
+	 * This is used when a window is opened on top of this main window
+	 * to force the user to finish working with it first.
+	 *
+	 * @param focusable
+	 *            true for allowing focus using the mouse click.
+	 */
+	public static void setMainWindowFocusable(boolean focusable)
+	{
+		mainWindow.getFrame().setFocusableWindowState(focusable);
+		mainWindow.getFrame().setEnabled(focusable);
+
+		// bring it to front.
+		if (focusable)
+		{
+			mainWindow.getFrame().setVisible(true);
+		}
+	}
+
+	/**
 	 * Human readable size conversion.<br/>
 	 * <br />
 	 * Credit: 'aioobe' at 'StackOverFlow.com'
@@ -1293,6 +1317,15 @@ public final class App
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	/**
+	 * Form the path to the parent, using a prefix, and removing ':' and '\'
+	 * because they are windows based and unsupported.
+	 */
+	public static String formRemoteBackupParent(Container<?> container)
+	{
+		return "/keepup_backup/" + container.getParent().getPath().replace(":", "").replace("\\", "/");
 	}
 
 	/**

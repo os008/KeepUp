@@ -14,9 +14,11 @@ package com.yagasoft.keepup.backup.scheduler;
 
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
@@ -49,11 +51,16 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	/** Timer. */
 	protected int					timer		= 20;
 
+	/** Listeners. */
+	protected Set<ISyncListener>		listeners		= new HashSet<ISyncListener>();
+
 	/**
 	 * Instantiates a new scheduler.
 	 */
 	public Scheduler()
 	{
+		// TODO load the tree of the folder below.
+		// TODO remove obsoletes in db and server, and revise empty folders.
 		// make sure the root folder for backup exists.
 		App.createFolder(App.ROOT, "keepup_backup");
 
@@ -87,9 +94,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		{
 			if ( !container.isFolder())
 			{
-				// form the path to the parent, using a prefix, and removing ':' and '\' because they are windows based and
-				// unsupported.
-				String parentPath = "/keepup_backup/" + container.getParent().getPath().replace(":", "").replace("\\", "/");
+				String parentPath = App.formRemoteBackupParent(container);
 
 				// check if file already existsF
 				if (App.searchForFile(parentPath + "/" + calculateNewName(container)).isEmpty())
@@ -162,6 +167,42 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	}
 
 	/**
+	 * Notify listeners that a container has been sync'd.
+	 *
+	 * @param container
+	 *            Container.
+	 */
+	protected void notifyListenersOfSync(Container<?> container, String revision)
+	{
+		Logger.info("container sync'd: " + container.getPath());
+
+		listeners.parallelStream()
+				.forEach(listener -> listener.containerSynced(container, revision));
+	}
+
+	/**
+	 * Adds the listener.
+	 *
+	 * @param listener
+	 *            Listener.
+	 */
+	public void addListener(ISyncListener listener)
+	{
+		listeners.add(listener);
+	}
+
+	/**
+	 * Removes the listener.
+	 *
+	 * @param listener
+	 *            Listener.
+	 */
+	public void removeListener(ISyncListener listener)
+	{
+		listeners.remove(listener);
+	}
+
+	/**
 	 * Watch list changed.
 	 *
 	 * @param container
@@ -211,9 +252,13 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		switch (event.getState())
 		{
 			case INITIALISED:
-				break;
-
 			case IN_PROGRESS:
+				// the container has been removed from the watch list, so cancel its upload.
+				if (!uploading.contains(container))
+				{
+					event.getJob().cancelTransfer();
+				}
+
 				break;
 
 			case COMPLETED:
@@ -221,13 +266,14 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 
 				try
 				{
-					System.out.println(calculateNewName(container));
-					System.out.println(container.getPath());
-					System.out.println(remoteContainer.getPath());
+					String newName = calculateNewName(container);
 					// rename to new revision name.
-					remoteContainer.rename(calculateNewName(container));
+					remoteContainer.rename(newName);
 					// remove if everything went fine.
 					uploading.remove(container);
+
+					// notify listeners of sync
+					notifyListenersOfSync(container, newName);
 				}
 				catch (OperationException e)
 				{
