@@ -37,28 +37,28 @@ import com.yagasoft.overcast.exception.OperationException;
  */
 public class CombinedFolder implements Comparable<CombinedFolder>, IOperationListener
 {
-	
+
 	/** Folder name. */
 	private String								name;
-	
+
 	/** Path of the folder. */
 	private String								path;
-	
+
 	/** Parent. */
 	protected CombinedFolder					parent;
-	
+
 	/** Folders indexed by their CSP name, and holding the same path and folder name. */
 	HashMap<String, RemoteFolder<?>>			cspFolders			= new HashMap<String, RemoteFolder<?>>();
-	
+
 	/** Folders inside this folder mapped by path (tree implementation). */
 	protected HashMap<String, CombinedFolder>	subFolders			= new HashMap<String, CombinedFolder>();
-	
+
 	/** The node in the tree that represents this folder visually. */
 	private DefaultMutableTreeNode				node;
-	
+
 	/** Content listeners. */
 	protected HashSet<ContentListener>			contentListeners	= new HashSet<ContentListener>();
-	
+
 	/**
 	 * Instantiates a new combined folder.
 	 *
@@ -71,22 +71,22 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		{
 			addCspFolder(firstFolder);
 		}
-		
+
 		setNode(new DefaultMutableTreeNode(this));
 	}
-	
+
 	protected void registerForOperations(Container<?> container)
 	{
 		registerForOperations(container, this);
 	}
-	
+
 	protected void registerForOperations(Container<?> container, CombinedFolder observer)
 	{
 		container.addOperationListener(observer, Operation.ADD);			// used for when the folder content changes.
 		container.addOperationListener(observer, Operation.REMOVE);		// used for when the folder content changes.
 		container.addOperationListener(observer, Operation.UPDATE);		// used for when the name changes.
 	}
-	
+
 	/**
 	 * Adds the folder to the list of folders with the same name.
 	 *
@@ -99,7 +99,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		registerForOperations(folder);
 		updateInfo(folder);
 	}
-	
+
 	/**
 	 * Removes the folder to the list of folders.
 	 *
@@ -110,7 +110,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		cspFolders.remove(folder.getCsp().getName());
 	}
-	
+
 	/**
 	 * Creates a new {@link CombinedFolder} object, and a visual tree node, and then adds that node to the tree.
 	 *
@@ -121,7 +121,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		// search for the child in this folder.
 		CombinedFolder combinedFolder = findFolder(folder.getName());
-		
+
 		// if you can't find it, create a new combinedfolder for it
 		if (combinedFolder == null)
 		{
@@ -133,14 +133,14 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 			// if found, then add it to the already existing combinedfolder.
 			combinedFolder.addCspFolder(folder);
 		}
-		
+
 		combinedFolder.setParent(this);
-		
+
 		registerForOperations(folder, combinedFolder);
-		
+
 		notifyContentListeners(UpdateType.ADD, combinedFolder);
 	}
-	
+
 	/**
 	 * Removes a child.
 	 *
@@ -150,11 +150,11 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	public synchronized void removeChild(RemoteFolder<?> folder)
 	{
 		CombinedFolder combinedFolder = findFolder(folder.getName());
-		
+
 		if (combinedFolder != null)
 		{
 			combinedFolder.removeCspFolder(folder);
-			
+
 			if (combinedFolder.getCspFolders().isEmpty())
 			{
 				subFolders.remove(combinedFolder.getPath());
@@ -163,7 +163,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 			}
 		}
 	}
-	
+
 	/**
 	 * Updates all the folders in this CombinedFolder online.
 	 *
@@ -188,12 +188,12 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 				{
 					e.printStackTrace();
 				}
-				
+
 				updateInfo(folder);
 			}).start();
 		}
 	}
-	
+
 	/**
 	 * Returns a list containing all children in the folders with the same name,
 	 * from all the CSPs. This list should be used only in tables,
@@ -208,10 +208,10 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		List<Object> children = new ArrayList<Object>();
 		children.addAll(getFoldersList(update));
 		children.addAll(getFilesList(update));
-		
+
 		return children;
 	}
-	
+
 	/**
 	 * Returns a list containing folders in the folders with the same name,
 	 * from all the CSPs.
@@ -238,11 +238,11 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 						}
 					});
 		}
-		
+
 		// return the subfolders as a list.
 		return new ArrayList<CombinedFolder>(subFolders.values());
 	}
-	
+
 	/**
 	 * Returns a list containing files in the folders with the same name,
 	 * from all the CSPs.
@@ -276,9 +276,9 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 				.map(file -> (RemoteFile<?>) file)		// convert the file type
 				.sorted()		// sort
 				.collect(Collectors.toList());		// return the array of files
-		
+
 	}
-	
+
 	/**
 	 * Remove folders that don't exist anymore at their CSP.
 	 */
@@ -299,7 +299,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 			}
 		}
 	}
-	
+
 	/**
 	 * Finds the {@link CombinedFolder} sub-folder with the same name as the one passed.
 	 *
@@ -315,7 +315,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 				.findFirst()
 				.orElse(null);
 	}
-	
+
 	/**
 	 * Finds containers by searching in this combined folder for the name.
 	 * This will search in all CSPs starting at the same path.
@@ -326,14 +326,14 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 *            Recursive.
 	 * @return Container list
 	 */
-	public synchronized List<Container<?>> findContainer(String name, boolean recursive)
+	public synchronized List<Container<?>> findContainer(String name, boolean partial, boolean recursive)
 	{
 		return cspFolders.values().parallelStream()
 				// replace each folder with a stream containing its children that match the name
-				.flatMap(folder -> folder.searchByName(name, recursive).parallelStream())
+				.flatMap(folder -> folder.searchByName(name, partial, recursive).parallelStream())
 				.collect(Collectors.toList());
 	}
-	
+
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public void operationChange(OperationEvent event)
@@ -346,21 +346,21 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 					addChild((RemoteFolder<?>) event.getObject());
 				}
 				break;
-			
+
 			case REMOVE:
 				if (event.getObject().isFolder())
 				{
 					removeChild((RemoteFolder<?>) event.getObject());
 				}
 				break;
-			
+
 			case UPDATE:
 				updateInfo((RemoteFolder<?>) event.getContainer());
 				notifyContentListeners(UpdateType.NAME);
 				break;
 		}
 	}
-	
+
 	/**
 	 * Update info.
 	 *
@@ -372,7 +372,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		setName(folder.getName());
 		setPath(folder.getPath());
 	}
-	
+
 	/**
 	 * Adds the content listener.
 	 *
@@ -383,7 +383,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		contentListeners.add(listener);
 	}
-	
+
 	/**
 	 * Removes the content listener.
 	 *
@@ -394,7 +394,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		contentListeners.remove(listener);
 	}
-	
+
 	/**
 	 * Notify content listeners.
 	 *
@@ -406,7 +406,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		contentListeners.parallelStream()
 				.forEach(listener -> listener.folderChanged(this, update, null));
 	}
-	
+
 	/**
 	 * Notify content listeners.
 	 *
@@ -420,7 +420,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		contentListeners.parallelStream()
 				.forEach(listener -> listener.folderChanged(this, update, content));
 	}
-	
+
 	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
@@ -429,7 +429,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return ((obj instanceof CombinedFolder) && path.equals(((CombinedFolder) obj).path));
 	}
-	
+
 	/**
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
@@ -438,7 +438,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return path.toLowerCase().compareTo(folder.path.toLowerCase());
 	}
-	
+
 	/**
 	 * @see java.lang.Object#toString()
 	 */
@@ -447,11 +447,11 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return name;
 	}
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
 	// ======================================================================================
-	
+
 	/**
 	 * @return the node
 	 */
@@ -459,7 +459,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return node;
 	}
-	
+
 	/**
 	 * @param node
 	 *            the node to set
@@ -468,27 +468,27 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		this.node = node;
 	}
-	
+
 	public String getName()
 	{
 		return name;
 	}
-	
+
 	public void setName(String name)
 	{
 		if (name == null)
 		{
 			name = "root";
 		}
-		
+
 		this.name = name;
 	}
-	
+
 	public String getPath()
 	{
 		return path;
 	}
-	
+
 	public void setPath(String path)
 	{
 		if ((path == null) || path.equals("/"))
@@ -496,10 +496,10 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 			setName("root");
 			path = "/";
 		}
-		
+
 		this.path = path;
 	}
-	
+
 	/**
 	 * @return the parent
 	 */
@@ -507,7 +507,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return parent;
 	}
-	
+
 	/**
 	 * @param parent
 	 *            the parent to set
@@ -516,7 +516,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		this.parent = parent;
 	}
-	
+
 	/**
 	 * @return the cspFolders
 	 */
@@ -524,7 +524,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		return cspFolders;
 	}
-	
+
 	/**
 	 * @param cspFolders
 	 *            the cspFolders to set
@@ -533,9 +533,9 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		this.cspFolders = cspFolders;
 	}
-	
+
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////
-	
+
 }

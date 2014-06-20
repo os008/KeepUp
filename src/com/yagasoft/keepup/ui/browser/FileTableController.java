@@ -34,17 +34,17 @@ import com.yagasoft.overcast.base.container.File;
  */
 public abstract class FileTableController implements TreeSelectionListener
 {
-
+	
 	/** Controlled view including the panel. */
-	protected FileTable						view;
-
+	protected FileTable							view;
+	
 	/** Table itself. */
-	protected JTable						table;
-
-	protected int							columnsCount;
-
+	protected JTable							table;
+	
+	protected int								columnsCount;
+	
 	protected List<Function<File<?>, Object>>	columnFunctions;
-
+	
 	/**
 	 * Instantiates a new table controller.
 	 * The functionalities should use each file to produce something to store in the relevent cell under the column.
@@ -68,7 +68,7 @@ public abstract class FileTableController implements TreeSelectionListener
 		columnsCount = view.getColumnNames().length;
 		this.columnFunctions = columnFunctions;
 	}
-
+	
 	/**
 	 * Call {@link #updateTable(List, Comparator)} with the path comparator.
 	 *
@@ -79,7 +79,7 @@ public abstract class FileTableController implements TreeSelectionListener
 	{
 		updateTable(files, Container.getPathComparator());
 	}
-
+	
 	/**
 	 * Update table with the files passed.
 	 *
@@ -89,9 +89,9 @@ public abstract class FileTableController implements TreeSelectionListener
 	public void updateTable(List<? extends File<?>> files, Comparator<Container<?>> comparator)
 	{
 		Collections.sort(files, comparator);
-
+		
 		Object[][] tableData = new Object[files.size()][columnsCount];
-
+		
 		for (int i = 0; i < files.size(); i++)
 		{
 			for (int j = 0; j < columnsCount; j++)
@@ -99,10 +99,10 @@ public abstract class FileTableController implements TreeSelectionListener
 				tableData[i][j] = columnFunctions.get(j).apply(files.get(i));
 			}
 		}
-
+		
 		view.updateTable(tableData);
 	}
-
+	
 	/**
 	 * Gets the selected files from the view.
 	 *
@@ -114,7 +114,7 @@ public abstract class FileTableController implements TreeSelectionListener
 				.map(file -> (File<?>) file)
 				.collect(Collectors.toList());
 	}
-
+	
 	/**
 	 * Gets all the files from the view.
 	 *
@@ -126,5 +126,5 @@ public abstract class FileTableController implements TreeSelectionListener
 				.map(file -> (File<?>) file)
 				.collect(Collectors.toList());
 	}
-
+	
 }

@@ -6,32 +6,40 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/CSTreeController.java
  *
- *			Modified: 28-May-2014 (16:08:33)
+ *			Modified: 20-Jun-2014 (21:21:14)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.browser.tree;
 
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
+import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ContentListener;
 import com.yagasoft.keepup.combinedstorage.UpdateType;
+import com.yagasoft.keepup.combinedstorage.ui.search.SearchPanel;
 import com.yagasoft.keepup.ui.browser.FolderTreeController;
+import com.yagasoft.overcast.base.container.Container;
+import com.yagasoft.overcast.base.container.File;
 
 
 /**
  * The Class TreeController.
  */
-public class CSTreeController extends FolderTreeController<CombinedFolder> implements ContentListener
+public class CSTreeController extends FolderTreeController<CombinedFolder> implements ContentListener, ActionListener
 {
-	
+
 	/**
 	 * Instantiates a new tree controller.
 	 *
@@ -41,10 +49,10 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	public CSTreeController(CSTree foldersTree)
 	{
 		super(foldersTree);
-		
+		foldersTree.addSearchButtonListener(this);
 		((CombinedFolder) root.getUserObject()).addContentListener(this);
 	}
-	
+
 	/**
 	 * Adds the node to tree.
 	 *
@@ -56,13 +64,13 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	public void addNodeToTree(DefaultMutableTreeNode childNode, DefaultMutableTreeNode node)
 	{
 		view.addNodeToTree(childNode, node);
-		
+
 		if (tree.isExpanded(new TreePath(node.getPath())))
 		{
 			((CombinedFolder) childNode.getUserObject()).updateCombinedFolder(true);
 		}
 	}
-	
+
 	/**
 	 * Removes the node from the tree.
 	 *
@@ -73,7 +81,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	{
 		view.removeNodeFromTree(childNode);
 	}
-	
+
 	/**
 	 * Refresh tree.
 	 */
@@ -81,7 +89,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	{
 		updateNode(root, true);
 	}
-	
+
 	/**
 	 * Refresh node non-recursively.
 	 *
@@ -92,7 +100,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	{
 		updateNode(node, false);
 	}
-	
+
 	/**
 	 * Refresh node passed. If recursive refreshes the children nodes.
 	 * This differs from {@link #loadNode(DefaultMutableTreeNode, boolean)} in that it doesn't go through new nodes, just the
@@ -109,17 +117,17 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 		if (recursively)
 		{
 			Enumeration<DefaultMutableTreeNode> nodes = node.children();
-			
+
 			while (nodes.hasMoreElements())
 			{
 				DefaultMutableTreeNode childNode = nodes.nextElement();
 				updateNode(childNode, recursively);
 			}
 		}
-		
+
 		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
 	}
-	
+
 	/**
 	 * Loads the whole tree.<br />
 	 * WARNING: might take a VERY long time.
@@ -128,7 +136,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	{
 		loadNode(root, true);
 	}
-	
+
 	/**
 	 * Loads node non-recursively.
 	 *
@@ -139,7 +147,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	{
 		loadNode(node, false);
 	}
-	
+
 	/**
 	 * Loads the children of passed node only. If recursive, then loads the ones under (beware of time).
 	 *
@@ -152,18 +160,18 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	public void loadNode(DefaultMutableTreeNode node, boolean recursively)
 	{
 		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
-		
+
 		if (recursively)
 		{
 			Enumeration<DefaultMutableTreeNode> nodes = node.children();
-			
+
 			while (nodes.hasMoreElements())
 			{
 				((CombinedFolder) nodes.nextElement().getUserObject()).updateCombinedFolder(true);
 			}
 		}
 	}
-	
+
 	/**
 	 * A listener to prepare a node for expansion. Also, it must be used to decide if the node needs a '+'.<br />
 	 * <br />
@@ -182,7 +190,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 			expandingNode((DefaultMutableTreeNode) event.getPath().getLastPathComponent());
 		}
 	}
-	
+
 	/**
 	 * Expanding node action. Loads the children of the expanding node to show the expansion indicator next to them if possible
 	 * and if they have children.
@@ -194,20 +202,20 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	private void expandingNode(DefaultMutableTreeNode node)
 	{
 		Enumeration<DefaultMutableTreeNode> nodes = node.children();
-		
+
 		while (nodes.hasMoreElements())
 		{
 			((CombinedFolder) nodes.nextElement().getUserObject()).updateCombinedFolder(true);
 		}
 	}
-	
+
 	/**
 	 * @see javax.swing.event.TreeWillExpandListener#treeWillCollapse(javax.swing.event.TreeExpansionEvent)
 	 */
 	@Override
 	public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException
 	{}
-	
+
 	/**
 	 * @see com.yagasoft.keepup.combinedstorage.ContentListener#folderChanged(com.yagasoft.keepup.combinedstorage.CombinedFolder,
 	 *      com.yagasoft.keepup.combinedstorage.UpdateType, com.yagasoft.keepup.combinedstorage.CombinedFolder)
@@ -221,20 +229,40 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 				view.addNodeToTree(content.getNode(), folder.getNode());
 				content.addContentListener(this);
 				break;
-			
+
 			case MODIFY:
 				break;
-			
+
 			case NAME:
 				view.updateNodeName(folder.getNode());
 				break;
-			
+
 			case REMOVE:
 				content.removeContentListener(this);
 				view.removeNodeFromTree(content.getNode());
 				break;
-		
+
 		}
 	}
-	
+
+	/**
+	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		List<File<?>> result = new ArrayList<File<?>>();
+		String searchWord = ((CSTree) view).getSearchText();
+
+		for (Container<?> container : getSelectedFolder().findContainer(searchWord, true, true))
+		{
+			if (!container.isFolder())
+			{
+				result.add((File<?>) container);
+			}
+		}
+
+		App.showSubWindow(new SearchPanel(result), "Result search for " + searchWord + " in " + getSelectedFolder());
+	}
+
 }

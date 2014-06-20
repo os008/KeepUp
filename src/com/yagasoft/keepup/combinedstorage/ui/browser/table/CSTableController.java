@@ -31,13 +31,13 @@ import com.yagasoft.overcast.base.container.File;
  */
 public class CSTableController extends FileTableController
 {
-
+	
 	/** Controlled view. */
 	protected CSTable	view;
-
+	
 	/** Table. */
 	protected JTable	table;
-
+	
 	/**
 	 * @param filesTable
 	 * @param columnFunctions
@@ -46,7 +46,7 @@ public class CSTableController extends FileTableController
 	{
 		this(filesTable, null);
 	}
-
+	
 	/**
 	 * Instantiates a new CS table controller.
 	 *
@@ -54,7 +54,7 @@ public class CSTableController extends FileTableController
 	 *            Files table.
 	 * @param columnFunctions
 	 *            Column functions. Those can be defined as a list of:<br />
-	 * <code>
+	 *            <code>
 	 * [object] -> [value_to_store_in_column]		// in order of columns
 	 * </code>
 	 *
@@ -64,17 +64,17 @@ public class CSTableController extends FileTableController
 	{
 		super(filesTable, columnFunctions);
 	}
-
+	
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
 	{
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
-
+		
 		// selected folder has changed, and so fetch its files and display them.
 		if (node != null)
 		{
 			updateTable(((CombinedFolder) node.getUserObject()).getFilesList(false));
 		}
 	}
-
+	
 }

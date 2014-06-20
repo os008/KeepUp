@@ -64,14 +64,14 @@ public class MenuBar extends JMenuBar
 		// build edit menu
 		editMenu = new JMenu("Edit");
 		options = new JMenuItem("Options");
-		options.addActionListener(App.createFrameAction(new Options(), "Options"));
+		options.addActionListener(event -> App.showSubWindow(new Options(), "Options"));
 		editMenu.add(options);
 		add(editMenu);
 
 		// build help menu
 		helpMenu = new JMenu("Help");
 		about = new JMenuItem("About");
-		about.addActionListener(App.createFrameAction(new About(), "About"));
+		about.addActionListener(event -> App.showSubWindow(new About(), "About"));
 		helpMenu.add(about);
 		add(helpMenu);
 	}
