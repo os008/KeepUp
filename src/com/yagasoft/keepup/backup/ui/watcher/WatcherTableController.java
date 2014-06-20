@@ -21,7 +21,6 @@ import java.util.function.Function;
 
 import javax.swing.event.TreeSelectionEvent;
 
-import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
 import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.keepup.ui.browser.FileTable;
@@ -35,7 +34,7 @@ import com.yagasoft.overcast.base.container.File;
  */
 public class WatcherTableController extends FileTableController implements IWatchListener
 {
-	
+
 	/**
 	 * Instantiates a new watcher table controller.
 	 *
@@ -46,7 +45,7 @@ public class WatcherTableController extends FileTableController implements IWatc
 	{
 		this(filesTable, null);
 	}
-	
+
 	/**
 	 * Instantiates a new watcher table controller.
 	 *
@@ -55,19 +54,11 @@ public class WatcherTableController extends FileTableController implements IWatc
 	 * @param columnFunctions
 	 *            Column functions.
 	 */
-	@SuppressWarnings("unchecked")
-	public WatcherTableController(FileTable filesTable, Function<File<?>, Object>[] columnFunctions)
+	public WatcherTableController(FileTable filesTable, List<Function<File<?>, Object>> columnFunctions)
 	{
 		super(filesTable, columnFunctions);
-		
-		List<Function<File<?>, Object>> functions = new ArrayList<Function<File<?>, Object>>();
-		functions.add(file -> file);
-		functions.add(file -> file.getPath());
-		functions.add(file -> App.humanReadableSize(file.getSize()));
-		functions.add(file -> file);	// TODO represent the state
-		this.columnFunctions = functions.toArray(new Function[functions.size()]);
 	}
-	
+
 	/**
 	 * @see javax.swing.event.TreeSelectionListener#valueChanged(javax.swing.event.TreeSelectionEvent)
 	 */
@@ -76,7 +67,7 @@ public class WatcherTableController extends FileTableController implements IWatc
 	{
 		throw new UnsupportedOperationException("This table doesn't have a tree!");
 	}
-	
+
 	/**
 	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
 	 *      com.yagasoft.keepup.backup.watcher.State)
@@ -89,32 +80,32 @@ public class WatcherTableController extends FileTableController implements IWatc
 		{
 			return;
 		}
-		
+
 		Set<File<?>> files = new HashSet<File<?>>();
 		files.addAll(getAllFiles());
-		
+
 		switch (state)
 		{
 			case ADD:
 				files.add((File<?>) container);
 				break;
-			
+
 			case REMOVE_ALL:
 			case REMOVE:
 				files.remove(container);
 				break;
-			
+
 			// TODO implement state changes visually
 			case DELETE:
 				break;
-			
+
 			case MODIFY:
 				break;
-			
+
 			case SYNCED:
 				break;
 		}
-		
+
 		updateTable(new ArrayList<File<?>>(files));
 	}
 }

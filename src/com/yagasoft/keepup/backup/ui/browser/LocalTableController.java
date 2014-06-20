@@ -16,14 +16,12 @@ package com.yagasoft.keepup.backup.ui.browser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.swing.event.TreeSelectionEvent;
 
-import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.keepup.ui.browser.FileTable;
 import com.yagasoft.keepup.ui.browser.FileTableController;
@@ -56,16 +54,9 @@ public class LocalTableController extends FileTableController implements ITreeSe
 	 * @param columnFunctions
 	 *            Column functions.
 	 */
-	@SuppressWarnings("unchecked")
-	public LocalTableController(FileTable filesTable, Function<File<?>, Object>[] columnFunctions)
+	public LocalTableController(FileTable filesTable, List<Function<File<?>, Object>> columnFunctions)
 	{
 		super(filesTable, columnFunctions);
-		
-		List<Function<LocalFile, Object>> functions = new ArrayList<Function<LocalFile, Object>>();
-		functions.add(file -> file);
-		functions.add(file -> App.humanReadableSize(file.getSize()));
-		functions.add(file -> file);	// TODO represent the state
-		this.columnFunctions = functions.toArray(new Function[functions.size()]);
 	}
 	
 	/**

@@ -13,6 +13,8 @@
 package com.yagasoft.keepup;
 
 
+import java.awt.Point;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
@@ -30,10 +32,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.backup.scheduler.Scheduler;
 import com.yagasoft.keepup.backup.ui.BackupController;
@@ -48,6 +56,7 @@ import com.yagasoft.keepup.combinedstorage.ui.CombinedStoragePanel;
 import com.yagasoft.keepup.combinedstorage.ui.browser.CSBrowserPanel;
 import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTable;
 import com.yagasoft.keepup.combinedstorage.ui.browser.table.CSTableController;
+import com.yagasoft.keepup.ui.browser.FilePathRenderer;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTree;
 import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
@@ -71,7 +80,6 @@ import com.yagasoft.overcast.exception.CSPBuildException;
 import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
 import com.yagasoft.overcast.exception.TransferException;
-import com.yagasoft.overcast.implement.dropbox.Dropbox;
 import com.yagasoft.overcast.implement.google.Google;
 
 
@@ -208,27 +216,37 @@ public final class App
 		// add the menu bar.
 		mainWindow.setMenuBar(new MenuBar());
 
+		Map<Class<?>, TableCellRenderer> renderers = new HashMap<Class<?>, TableCellRenderer>();
+
 		// combined storage feature gui
 		csFoldersTree = new CSTree(ROOT.getNode());
+		renderers = new HashMap<Class<?>, TableCellRenderer>();		// use default renderers
 		csFilesTable = new CSTable(
 				new String[] { "Name", "Size", "CSP" }
 				, new float[] { 0.5f, 0.25f, 0.25f }
-				, new int[] { 1 });
+				, new int[] { 1 }
+				, renderers);
 		csBrowserPanel = new CSBrowserPanel(csFoldersTree, csFilesTable);
 		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
 		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
 
 		// backup feature GUI
 		localFoldersTree = new LocalTree();
+		renderers = new HashMap<Class<?>, TableCellRenderer>();		// use default renderers
 		localFilesTable = new LocalTable(
 				new String[] { "Name", "Size", "Status" }
 				, new float[] { 0.65f, 0.20f, 0.15f }
-				, new int[] { 1 });
+				, new int[] { 1 }
+				, renderers);
 		localBrowserPanel = new BrowserPanel(localFoldersTree, localFilesTable);
+
+		renderers = new HashMap<Class<?>, TableCellRenderer>();
+		renderers.put(File.class, new FilePathRenderer());		// render a file as its path
 		watchedFilesTable = new FileTable(
-				new String[] { "Name", "Path", "Size", "Status" }
-				, new float[] { 0.0f, 0.65f, 0.20f, 0.15f }
-				, new int[] { 2 });
+				new String[] { "Path", "Size", "Status" }
+				, new float[] { 0.65f, 0.20f, 0.15f }
+				, new int[] { 1 }
+				, renderers);
 		backupPanel = new BackupPanel(localBrowserPanel, watchedFilesTable);
 		mainWindow.addPanel("Backup", backupPanel);
 
@@ -254,17 +272,35 @@ public final class App
 	 */
 	public static void initControllers()
 	{
+		List<Function<File<?>, Object>> columnFunctions = new ArrayList<Function<File<?>, Object>>();
+
+		// combined storage tree and table
 		treeController = new CSTreeController(csFoldersTree);
-		tableController = new CSTableController(csFilesTable);
+		columnFunctions = new ArrayList<Function<File<?>, Object>>();
+		columnFunctions.add(file -> file);
+		columnFunctions.add(file -> humanReadableSize(file.getSize()));
+		columnFunctions.add(file -> file.getCsp());
+		tableController = new CSTableController(csFilesTable, columnFunctions);
 		treeController.addTreeSelectionListener(tableController);
 
-		localTableController = new LocalTableController(localFilesTable);
+		// local tree and table
+		columnFunctions = new ArrayList<Function<File<?>, Object>>();
+		columnFunctions.add(file -> file);
+		columnFunctions.add(file -> humanReadableSize(file.getSize()));
+		columnFunctions.add(file -> "STATE!");	// TODO represent the state
+		localTableController = new LocalTableController(localFilesTable, columnFunctions);
 		localFoldersTree.addSelectionListener(localTableController);
 
-		watchTableController = new WatcherTableController(watchedFilesTable);
+		// watcher table
+		columnFunctions = new ArrayList<Function<File<?>, Object>>();
+		columnFunctions.add(file -> file);
+		columnFunctions.add(file -> humanReadableSize(file.getSize()));
+		columnFunctions.add(file -> "STATE!");	// TODO represent the state
+		watchTableController = new WatcherTableController(watchedFilesTable, columnFunctions);
 		watcher = new Watcher();
 		watcher.addListener(watchTableController);
 
+		// backup panel
 		backupPanelController = new BackupController(backupPanel, localTableController, watchTableController);
 		backupPanelController.addListener(watcher);
 	}
@@ -290,24 +326,11 @@ public final class App
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
 
-//		executor.execute(() ->
-//		{
-//			try
-//			{
-//				addCSP(Google.getInstance("os1983@gmail.com"));
-//			}
-//			catch (AuthorisationException | CSPBuildException e)
-//			{
-//				Msg.showError(e.getMessage());
-//				e.printStackTrace();
-//			}
-//		});
-
 		executor.execute(() ->
 		{
 			try
 			{
-				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+				addCSP(Google.getInstance("os1983@gmail.com"));
 			}
 			catch (AuthorisationException | CSPBuildException e)
 			{
@@ -315,6 +338,19 @@ public final class App
 				e.printStackTrace();
 			}
 		});
+
+//		executor.execute(() ->
+//		{
+//			try
+//			{
+//				addCSP(Dropbox.getInstance("os008@hotmail.com", 65234));
+//			}
+//			catch (AuthorisationException | CSPBuildException e)
+//			{
+//				Msg.showError(e.getMessage());
+//				e.printStackTrace();
+//			}
+//		});
 
 		try
 		{
@@ -1235,6 +1271,50 @@ public final class App
 		{	// ... or search for the folder in the end node, might return null.
 			return result.findFolder(containerName);
 		}
+	}
+
+	/**
+	 * Creates an action to be taken that is related to a panel to be opened.
+	 * This action is a new frame to include the panel passed,
+	 * and disabling for the main window.
+	 *
+	 * @param panel
+	 *            the panel.
+	 * @return the action listener object
+	 */
+	public static ActionListener createFrameAction(JPanel panel, String title)
+	{
+		return event ->
+		{
+			// create a frame for the panel.
+			JFrame frame = new JFrame(title);
+
+			// open the frame relative to the main window.
+			Point mainWindowLocation = mainWindow.getFrame().getLocation();
+			frame.setLocation((int) mainWindowLocation.getX() + 50, (int) mainWindowLocation.getY() + 50);
+
+			// when the frame is closed, dispose of it and return focus to the main window.
+			frame.addWindowListener(new WindowAdapter()
+			{
+
+				@Override
+				public void windowClosing(WindowEvent e)
+				{
+					frame.dispose();
+					setMainWindowFocusable(true);
+				}
+			});
+
+			// add the passed panel to the frame.
+			frame.add(panel);
+			// show the frame.
+			frame.setVisible(true);
+			// fit the frame to panel.
+			frame.pack();
+
+			// disable the main window.
+			setMainWindowFocusable(false);
+		};
 	}
 
 	/**

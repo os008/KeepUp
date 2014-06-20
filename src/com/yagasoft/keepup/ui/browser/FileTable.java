@@ -4,9 +4,9 @@
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
  *
- *		Project/File: KeepUp/com.yagasoft.keepup.ui/FileTable.java
+ *		Project/File: KeepUp/com.yagasoft.keepup.ui.browser/FileTable.java
  *
- *			Modified: 27-May-2014 (20:17:49)
+ *			Modified: 20-Jun-2014 (19:01:44)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -19,6 +19,7 @@ import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.swing.JPanel;
@@ -28,6 +29,9 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+
+import com.yagasoft.keepup.ui.BetterTableModel;
 
 
 /**
@@ -37,36 +41,53 @@ import javax.swing.table.DefaultTableModel;
 public class FileTable extends JPanel
 {
 	
-	private static final long	serialVersionUID	= -8729490450147401081L;
+	private static final long					serialVersionUID	= -8729490450147401081L;
 	
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Files table fields.
 	// ======================================================================================
 	
 	/** Scroll pane files. */
-	protected JScrollPane		scrollPaneFiles;
+	protected JScrollPane						scrollPaneFiles;
 	
 	/** Table of the files. */
-	protected JTable			tableFiles;
+	protected JTable							tableFiles;
 	
 	/** Table model. */
-	protected DefaultTableModel	tableModel;
+	protected BetterTableModel					tableModel;
 	
 	/** Column names. */
-	protected String[]			columnNames;
+	protected String[]							columnNames;
 	
 	/** Table data. */
-	protected Object[][]		tableData;
+	protected Object[][]						tableData;
 	
-	protected int[]				rightAlignedColumns;
+	protected int[]								rightAlignedColumns;
 	
-	protected float[]			columnsWidthPercent;
+	protected float[]							columnsWidthPercent;
+	
+	protected Map<Class<?>, TableCellRenderer>	renderers;
 	
 	// ======================================================================================
 	// #endregion Files table fields.
 	// //////////////////////////////////////////////////////////////////////////////////////
 	
-	public FileTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
+	/**
+	 * Instantiates a new file table. All the parameters' contents should be in order of display.
+	 *
+	 * @param columnNames
+	 *            Column names.
+	 * @param columnsWidthPercent
+	 *            Columns width percent. Should sum to 1.0.
+	 * @param rightAlignedColumns
+	 *            Right aligned columns indexes.
+	 * @param renderers
+	 *            Renderer for each class saved in the table.
+	 *            For example, if the table has a progress bar,
+	 *            then pass a renderer than extends JProgressBar and Float.class as its key.
+	 */
+	public FileTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns
+			, Map<Class<?>, TableCellRenderer> renderers)
 	{
 		setLayout(new BorderLayout());
 		
@@ -74,9 +95,10 @@ public class FileTable extends JPanel
 		tableData = new String[0][columnNames.length];
 		this.columnsWidthPercent = columnsWidthPercent;
 		this.rightAlignedColumns = rightAlignedColumns;
+		this.renderers = renderers;
 		
 		// create model and table from model.
-		tableModel = new DefaultTableModel(tableData, columnNames);
+		tableModel = new BetterTableModel(tableData, columnNames);
 		tableFiles = new JTable(tableModel);
 		scrollPaneFiles = new JScrollPane(tableFiles);
 		formatTable();
@@ -122,6 +144,11 @@ public class FileTable extends JPanel
 			tableFiles.getColumnModel().getColumn(column).setCellRenderer(rightRenderer);
 		}
 		
+		for (Class<?> renderedClass : renderers.keySet())
+		{
+			tableFiles.setDefaultRenderer(renderedClass, renderers.get(renderedClass));
+		}
+		
 		// columns can't be selected.
 		tableFiles.setColumnSelectionAllowed(false);
 		tableFiles.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -153,7 +180,7 @@ public class FileTable extends JPanel
 	public void updateTable(Object[][] tableData)
 	{
 		this.tableData = tableData;
-		tableFiles.setModel(new DefaultTableModel(tableData, columnNames));
+		tableFiles.setModel(new BetterTableModel(tableData, columnNames));
 		tableFiles.revalidate();
 		
 		formatTable();
@@ -240,7 +267,7 @@ public class FileTable extends JPanel
 	/**
 	 * @return the tableModel
 	 */
-	public DefaultTableModel getTableModel()
+	public BetterTableModel getTableModel()
 	{
 		return tableModel;
 	}
@@ -249,7 +276,7 @@ public class FileTable extends JPanel
 	 * @param tableModel
 	 *            the tableModel to set
 	 */
-	public void setTableModel(DefaultTableModel tableModel)
+	public void setTableModel(BetterTableModel tableModel)
 	{
 		this.tableModel = tableModel;
 	}

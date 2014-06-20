@@ -1,17 +1,21 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.ui.browser/LocalTable.java
- * 
+ *
  *			Modified: 12-Jun-2014 (23:22:27)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.backup.ui.browser;
 
+
+import java.util.Map;
+
+import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.ui.browser.FileTable;
 
@@ -35,9 +39,10 @@ public class LocalTable extends FileTable
 	 * @param rightAlignedColumns
 	 *            Right aligned columns.
 	 */
-	public LocalTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
+	public LocalTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns
+			, Map<Class<?>, TableCellRenderer> renderers)
 	{
-		super(columnNames, columnsWidthPercent, rightAlignedColumns);
+		super(columnNames, columnsWidthPercent, rightAlignedColumns, renderers);
 	}
 	
 }

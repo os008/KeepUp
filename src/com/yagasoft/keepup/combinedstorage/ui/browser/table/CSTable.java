@@ -14,8 +14,10 @@ package com.yagasoft.keepup.combinedstorage.ui.browser.table;
 
 
 import java.awt.BorderLayout;
+import java.util.Map;
 
 import javax.swing.JTable;
+import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
 import com.yagasoft.keepup.ui.browser.FileTable;
@@ -23,45 +25,48 @@ import com.yagasoft.keepup.ui.browser.FileTable;
 
 public class CSTable extends FileTable
 {
-	
+
 	private static final long	serialVersionUID	= -8729490450147401081L;
-	
+
 	private FileToolBar			toolBarFiles;
-	
-	public CSTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns)
+
+	public CSTable(String[] columnNames, float[] columnsWidthPercent, int[] rightAlignedColumns
+			, Map<Class<?>, TableCellRenderer> renderers)
 	{
-		super(columnNames, columnsWidthPercent, rightAlignedColumns);
-		
+		super(columnNames, columnsWidthPercent, rightAlignedColumns, renderers);
+
 		toolBarFiles = new FileToolBar();
 		add(toolBarFiles, BorderLayout.NORTH);
+
+		formatTable();
 	}
-	
+
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region Getters and setters.
 	// ======================================================================================
-	
+
 	public FileToolBar getToolBarFiles()
 	{
 		return toolBarFiles;
 	}
-	
+
 	public void setToolBarFiles(FileToolBar toolBarFiles)
 	{
 		this.toolBarFiles = toolBarFiles;
 	}
-	
+
 	@Override
 	public JTable getTable()
 	{
 		return tableFiles;
 	}
-	
+
 	@Override
 	public void setTableFiles(JTable tableFiles)
 	{
 		this.tableFiles = tableFiles;
 	}
-	
+
 	// ======================================================================================
 	// #endregion Getters and setters.
 	// //////////////////////////////////////////////////////////////////////////////////////

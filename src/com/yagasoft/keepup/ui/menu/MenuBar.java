@@ -13,16 +13,9 @@
 package com.yagasoft.keepup.ui.menu;
 
 
-import java.awt.Point;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 
 import com.yagasoft.keepup.App;
 
@@ -71,57 +64,15 @@ public class MenuBar extends JMenuBar
 		// build edit menu
 		editMenu = new JMenu("Edit");
 		options = new JMenuItem("Options");
+		options.addActionListener(App.createFrameAction(new Options(), "Options"));
 		editMenu.add(options);
 		add(editMenu);
 
 		// build help menu
 		helpMenu = new JMenu("Help");
 		about = new JMenuItem("About");
-		about.addActionListener(createFrameAction(new About(), "About"));
+		about.addActionListener(App.createFrameAction(new About(), "About"));
 		helpMenu.add(about);
 		add(helpMenu);
-	}
-
-	/**
-	 * Creates an action to be taken when a menu item is pressed
-	 * that is related to a panel to be opened.
-	 *
-	 * @param panel
-	 *            the panel.
-	 * @return the action listener object
-	 */
-	private static ActionListener createFrameAction(JPanel panel, String title)
-	{
-		return event ->
-		{
-			// create a frame for the panel.
-			JFrame frame = new JFrame(title);
-
-			// open the frame relative to the main window.
-			Point mainWindowLocation = App.mainWindow.getFrame().getLocation();
-			frame.setLocation((int) mainWindowLocation.getX() + 50, (int) mainWindowLocation.getY() + 50);
-
-			// when the frame is closed, dispose of it and return focus to the main window.
-			frame.addWindowListener(new WindowAdapter()
-			{
-
-				@Override
-				public void windowClosing(WindowEvent e)
-				{
-					frame.dispose();
-					App.setMainWindowFocusable(true);
-				}
-			});
-
-			// add the passed panel to the frame.
-			frame.add(panel);
-			// show the frame.
-			frame.setVisible(true);
-			// fit the frame to panel.
-			frame.pack();
-
-			// disable the main window.
-			App.setMainWindowFocusable(false);
-		};
 	}
 }
