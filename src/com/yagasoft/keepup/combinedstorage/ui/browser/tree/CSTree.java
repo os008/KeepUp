@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/CSTree.java
  *
- *			Modified: 27-May-2014 (17:44:43)
+ *			Modified: 20-Jun-2014 (22:58:07)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -32,15 +32,16 @@ import com.yagasoft.keepup.ui.browser.FolderTree;
  */
 public class CSTree extends FolderTree<CombinedFolder>
 {
-	
+
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= -427791932709838315L;
-	
+
 	/** Folders tool bar. */
 	private FolderToolBar		toolBarFolders;
-	
+
+	/** Search bar. */
 	private SearchBar			searchBar;
-	
+
 	/**
 	 * Instantiates a new folders tree.
 	 *
@@ -50,61 +51,91 @@ public class CSTree extends FolderTree<CombinedFolder>
 	public CSTree(DefaultMutableTreeNode root)
 	{
 		super(root);
-		
+
 		toolBarFolders = new FolderToolBar();
 		add(toolBarFolders, BorderLayout.NORTH);
-		
+
 		searchBar = new SearchBar();
 		add(searchBar, BorderLayout.SOUTH);
 	}
-	
+
+	/**
+	 * Gets the search text.
+	 *
+	 * @return the search text
+	 */
 	public String getSearchText()
 	{
 		return searchBar.getSearchText();
 	}
-	
+
 	/**
-	 * Adds a search button listener.
+	 * Adds a search action listener.
 	 *
 	 * @param listener
 	 *            Listener.
 	 */
-	public void addSearchButtonListener(ActionListener listener)
+	public void addSearchListener(ActionListener listener)
 	{
-		searchBar.addButtonListener(listener);
+		searchBar.addSearchListener(listener);
 	}
-	
+
+	/**
+	 * The Class SearchBar.
+	 */
 	private class SearchBar extends JPanel
 	{
-		
+
+		/** Constant: SerialVersionUID. */
 		private static final long	serialVersionUID	= 6758133652665617832L;
+
+		/** Text field. */
 		private JTextField			textField;
+
+		/** Button search. */
 		private JButton				buttonSearch;
-		
+
+		/**
+		 * Instantiates a new search bar.
+		 */
 		public SearchBar()
 		{
 			initGUI();
 		}
-		
+
+		/**
+		 * Inits the gui.
+		 */
 		private void initGUI()
 		{
 			setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-			
+
 			textField = new JTextField();
 			add(textField);
-			
+
 			buttonSearch = new JButton("Search");
 			add(buttonSearch);
 		}
-		
+
+		/**
+		 * Gets the search text.
+		 *
+		 * @return the search text
+		 */
 		public String getSearchText()
 		{
 			return textField.getText();
 		}
-		
-		public void addButtonListener(ActionListener listener)
+
+		/**
+		 * Adds the search listener.
+		 *
+		 * @param listener Listener.
+		 */
+		public void addSearchListener(ActionListener listener)
 		{
 			buttonSearch.addActionListener(listener);
+			textField.addActionListener(listener);
 		}
 	}
 }

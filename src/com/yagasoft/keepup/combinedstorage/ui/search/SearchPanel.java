@@ -38,12 +38,12 @@ import com.yagasoft.overcast.base.container.File;
  */
 public class SearchPanel extends JPanel
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long		serialVersionUID	= -8003399638575844386L;
 	private FileTable				searchedFilesTable;
 	private SearchTableController	searchTableController;
-
+	
 	/**
 	 * Create the panel.
 	 */
@@ -52,14 +52,14 @@ public class SearchPanel extends JPanel
 		initGUI();
 		searchTableController.updateTable(result, Container.getPathComparator());
 	}
-
+	
 	/**
 	 * Initialises the panel.
 	 */
 	private void initGUI()
 	{
 		setLayout(new BorderLayout());
-
+		
 		// table view
 		Map<Class<?>, TableCellRenderer> renderers = new HashMap<Class<?>, TableCellRenderer>();
 		renderers.put(File.class, new FilePathRenderer());		// render a file as its path
@@ -68,29 +68,29 @@ public class SearchPanel extends JPanel
 				, new float[] { 0.5f, 0.25f, 0.25f }
 				, new int[] { 1 }
 				, renderers);
-
+		
 		// table controller
 		List<Function<File<?>, Object>> columnFunctions = new ArrayList<Function<File<?>, Object>>();
 		columnFunctions.add(file -> file);
 		columnFunctions.add(file -> App.humanReadableSize(file.getSize()));
 		columnFunctions.add(file -> file.getCsp());
 		searchTableController = new SearchTableController(searchedFilesTable, columnFunctions);
-
+		
 		// add a tool bar to the view
 		searchedFilesTable.addToolBar(new SearchToolBar(searchTableController));
 		
 		add(searchedFilesTable);
 	}
-
+	
 	/**
 	 * The Class SearchToolBar.
 	 */
 	private class SearchToolBar extends FileToolBar
 	{
-
+		
 		/** Constant: SerialVersionUID. */
 		private static final long	serialVersionUID	= -4050551200751478324L;
-
+		
 		/**
 		 * @param tableController
 		 */
@@ -102,18 +102,18 @@ public class SearchPanel extends JPanel
 			remove(0);
 		}
 	}
-
+	
 	private class SearchTableController extends FileTableController
 	{
-
+		
 		public SearchTableController(FileTable filesTable, List<Function<File<?>, Object>> columnFunctions)
 		{
 			super(filesTable, columnFunctions);
 		}
-
+		
 		@Override
 		public void valueChanged(TreeSelectionEvent e)
 		{}
-
+		
 	}
 }

@@ -6,15 +6,13 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage.ui.browser.tree/CSTreeController.java
  *
- *			Modified: 20-Jun-2014 (21:21:14)
+ *			Modified: 20-Jun-2014 (22:58:33)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
 package com.yagasoft.keepup.combinedstorage.ui.browser.tree;
 
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -37,7 +35,7 @@ import com.yagasoft.overcast.base.container.File;
 /**
  * The Class TreeController.
  */
-public class CSTreeController extends FolderTreeController<CombinedFolder> implements ContentListener, ActionListener
+public class CSTreeController extends FolderTreeController<CombinedFolder> implements ContentListener
 {
 
 	/**
@@ -49,7 +47,9 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	public CSTreeController(CSTree foldersTree)
 	{
 		super(foldersTree);
-		foldersTree.addSearchButtonListener(this);
+		// when the search is triggered, call the 'search' method.
+		foldersTree.addSearchListener(event -> search());
+		// get notified of changes in the root node, this will also be passed on to the root's children automatically.
 		((CombinedFolder) root.getUserObject()).addContentListener(this);
 	}
 
@@ -246,17 +246,16 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	}
 
 	/**
-	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 * Initiates the search action using the word inserted in the text field.
 	 */
-	@Override
-	public void actionPerformed(ActionEvent e)
+	public void search()
 	{
 		List<File<?>> result = new ArrayList<File<?>>();
 		String searchWord = ((CSTree) view).getSearchText();
 
 		for (Container<?> container : getSelectedFolder().findContainer(searchWord, true, true))
 		{
-			if (!container.isFolder())
+			if ( !container.isFolder())
 			{
 				result.add((File<?>) container);
 			}
