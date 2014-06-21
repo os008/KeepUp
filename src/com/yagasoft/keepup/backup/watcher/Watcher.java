@@ -191,7 +191,6 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	protected void notifyListeners(Container<?> container, State state)
 	{
 		Logger.info("WATCHER: container changed state: " + state + " => " + container.getPath());
-
 		listeners.parallelStream()
 				.forEach(listener -> listener.watchListChanged(container, state));
 	}
@@ -238,12 +237,12 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 					{
 						case ADD:
 						case MODIFY:
+						case DELETE:
 						case SYNCED:
 							setContainerState(container, state);
 							break;
 
-						case DELETE:
-							// TODO delete all revisions and delete empty folder.
+						// TODO delete all revisions and delete empty folder.
 						case REMOVE_ALL:
 						case REMOVE:
 							removeContainer(container, state);
@@ -312,15 +311,18 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 			{
 				try
 				{
-					Thread.sleep(1000);
+					Thread.sleep(1000);		// cool it for a second!
 
-					watckKey = watcher.take();		// this will pause the loop until the system notifies of a file-change.
+					watckKey = watcher.take();			// this will pause the loop until the system notifies of a file-change.
 					events = watckKey.pollEvents();		// what are the changes?
 
 					// go through all the changes.
 					eventsLoop:
 					for (WatchEvent<?> event : events)
 					{
+						System.out.println("WATCHER: " + event.kind() + " event! " + ((Path) watckKey.watchable())
+								.resolve(((WatchEvent<Path>) event).context()));
+
 						// don't need these events
 						if (event.kind() == StandardWatchEventKinds.OVERFLOW)
 						{

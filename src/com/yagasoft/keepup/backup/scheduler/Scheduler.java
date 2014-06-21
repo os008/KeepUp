@@ -38,22 +38,22 @@ import com.yagasoft.overcast.exception.OperationException;
  */
 public class Scheduler implements IWatchListener, ITransferProgressListener
 {
-	
+
 	/** Queue. */
 	protected Queue<Container<?>>	queue		= new LinkedList<Container<?>>();
-	
+
 	/** Uploading. */
 	protected List<Container<?>>	uploading	= new ArrayList<Container<?>>();
-	
+
 	/** Backup thread. */
 	protected BackupThread			backupThread;
-	
+
 	/** Timer. */
 	protected int					timer		= 20;
-	
+
 	/** Listeners. */
 	protected Set<ISyncListener>	listeners	= new HashSet<ISyncListener>();
-	
+
 	/**
 	 * Instantiates a new scheduler.
 	 */
@@ -63,11 +63,11 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		// TODO remove obsoletes in db and server, and revise empty folders.
 		// make sure the root folder for backup exists.
 		App.createFolder(App.ROOT, "keepup_backup");
-		
+
 		backupThread = new BackupThread();
 		startBackupLoop();
 	}
-	
+
 	/**
 	 * Start the backup loop.
 	 */
@@ -76,53 +76,57 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		Logger.info("SCHEDULER: starting backup loop.");
 		new Thread(backupThread).start();
 	}
-	
+
 	/**
 	 * Starts uploading.
 	 */
 	public void startUploading()
 	{
 		stopTimer();
-		
+
 		Container<?> container = null;
-		
+
 		// go through the queue
 		while ((container = queue.poll()) != null)
 		{
 			if ( !container.isFolder())
 			{
 				String parentPath = App.formRemoteBackupParent(container);
-				
+
 				// check if file already existsF
 				if (App.searchForFile(parentPath + "/" + calculateNewName(container)).isEmpty())
 				{
 					App.createFolder(parentPath.substring(0, parentPath.lastIndexOf('/'))
 							, parentPath.substring(parentPath.lastIndexOf('/') + 1, parentPath.length()));
-					
+
 					CombinedFolder parent = App.searchForFolder(parentPath);
-					
+
 					UploadJob<?, ?> uploadJob = App.uploadFile((LocalFile) container, parent, false);
-					
+
 					if (uploadJob != null)
 					{
 						uploadJob.addProgressListener(this);
-						
+
 						// move file to uploading list.
 						uploading.add(container);
 					}
 				}
+				else
+				{	// container already backed-up.
+					notifyListenersOfSync(container, calculateNewName(container));
+				}
 			}
-			
+
 			// TODO implement folder upload
 		}
-		
+
 		// emptied the queue, but nothing is uploading, reset timer and wait.
 		if (uploading.isEmpty())
 		{
 			resetTimer(timer);
 		}
 	}
-	
+
 	private String calculateNewName(Container<?> container)
 	{
 		try
@@ -135,13 +139,13 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 			Logger.except(e);
 			e.printStackTrace();
 		}
-		
+
 		// prepare the path hash to be the start of the filename on the server
 		String pathHash = App.getMD5(container.getPath());
 		// form the new filename as the path hash plus the modified date, this will keep revisions of the file.
 		return pathHash + container.getDate();
 	}
-	
+
 	/**
 	 * Reset timer.
 	 *
@@ -151,10 +155,10 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	public void resetTimer(int seconds)
 	{
 		Logger.info("Timer reset to " + seconds);
-		
+
 		backupThread.remainingTime = seconds;
 	}
-	
+
 	/**
 	 * Stop timer.
 	 */
@@ -162,7 +166,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		backupThread.remainingTime = Integer.MAX_VALUE;
 	}
-	
+
 	/**
 	 * Notify listeners that a container has been sync'd.
 	 *
@@ -172,11 +176,10 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	protected void notifyListenersOfSync(Container<?> container, String revision)
 	{
 		Logger.info("SCHEDULER: container sync'd: " + container.getPath());
-		
 		listeners.parallelStream()
 				.forEach(listener -> listener.containerSynced(container, revision));
 	}
-	
+
 	/**
 	 * Adds the listener.
 	 *
@@ -187,7 +190,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		listeners.add(listener);
 	}
-	
+
 	/**
 	 * Removes the listener.
 	 *
@@ -198,7 +201,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		listeners.remove(listener);
 	}
-	
+
 	/**
 	 * Watch list changed.
 	 *
@@ -220,23 +223,21 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				if ( !queue.contains(container) && !uploading.contains(container))
 				{
 					Logger.info("SCHEDULER: queueing " + container.getPath());
-					
 					queue.add(container);
 				}
 				break;
-			
+
 			case DELETE:
 			case REMOVE:
 			case REMOVE_ALL:
 			case SYNCED:
 				Logger.info("SCHEDULER: dequeueing " + container.getPath());
-				
 				queue.remove(container);
 				uploading.remove(container);
 				break;
 		}
 	}
-	
+
 	/**
 	 * @see com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.event.TransferEvent)
 	 */
@@ -245,7 +246,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		Container<?> container = event.getContainer();
 		Container<?> remoteContainer = event.getDestination();
-		
+
 		switch (event.getState())
 		{
 			case INITIALISED:
@@ -255,12 +256,12 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				{
 					event.getJob().cancelTransfer();
 				}
-				
+
 				break;
-			
+
 			case COMPLETED:
 				Logger.info("SCHEDULER: " + container + " has been backed-up");
-				
+
 				try
 				{
 					String newName = calculateNewName(container);
@@ -268,7 +269,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					remoteContainer.rename(newName);
 					// remove if everything went fine.
 					uploading.remove(container);
-					
+
 					// notify listeners of sync
 					notifyListenersOfSync(container, newName);
 				}
@@ -276,7 +277,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				{
 					Logger.except(e);
 					e.printStackTrace();
-					
+
 					try
 					{
 						// something went wrong, so delete the file.
@@ -287,10 +288,10 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 						Logger.except(e1);
 						e1.printStackTrace();
 					}
-					
+
 					queue.add(container);
 					uploading.remove(container);
-					
+
 					if (uploading.isEmpty())
 					{
 						// reset the timer to try again in 15 minutes.
@@ -298,25 +299,25 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 						return;
 					}
 				}
-				
+
 				// upload queue is empty, reset timer and wait.
 				if (uploading.isEmpty())
 				{
 					// reset the timer to try again in 15 minutes.
 					resetTimer(timer);
 				}
-				
+
 				// TODO notify listeners
 				break;
-			
+
 			case FAILED:
 			case CANCELLED:
 				Logger.info("SCHEDULER: " + container + " failed or cancelled its backup");
-				
+
 				// queue the file again
 				queue.add(container);
 				uploading.remove(container);
-				
+
 				if (uploading.isEmpty())
 				{
 					// reset the timer to try again in 15 minutes.
@@ -324,16 +325,16 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				}
 		}
 	}
-	
+
 	/**
 	 * The Class BackupThread.
 	 */
 	private class BackupThread implements Runnable
 	{
-		
+
 		/** Remaining time in seconds. */
 		public int	remainingTime	= timer;
-		
+
 		/**
 		 * @see java.lang.Runnable#run()
 		 */
@@ -351,7 +352,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				{
 					e.printStackTrace();
 				}
-				
+
 				// slept for 10 seconds, so deduct them from remaining time
 				// if queue is not empty only.
 				if ( !queue.isEmpty())
@@ -359,7 +360,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					remainingTime -= 10;
 					Logger.info("SCHEDULER: remaining secs => " + remainingTime);
 				}
-				
+
 				// count down expired, start uploading what's in the queue.
 				if (remainingTime <= 0)
 				{

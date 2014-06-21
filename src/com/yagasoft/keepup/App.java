@@ -557,8 +557,9 @@ public final class App
 	{
 		CombinedFolder parent = App.searchForFolder(parentPath);
 
-		if (parent != null)
+		if (parent == null)
 		{
+			Msg.showError("KEEPUP: " + parentPath + " doesn't exist to create " + name);
 			return;
 		}
 
@@ -573,6 +574,7 @@ public final class App
 					}
 					catch (CreationException e)
 					{
+						// if error is related to anything other than existence, then display
 						if ( !e.getMessage().contains("exists"))
 						{
 							Msg.showError(e.getMessage());
@@ -1289,7 +1291,7 @@ public final class App
 	 *
 	 * @param path
 	 *            Path.
-	 * @return combined folder
+	 * @return combined folder found, or not if not.
 	 */
 	public static CombinedFolder searchForFolder(String path)
 	{

@@ -305,7 +305,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 *
 	 * @param name
 	 *            Name to search for.
-	 * @return Combined folder found
+	 * @return Combined folder found, or null if not
 	 */
 	public synchronized CombinedFolder findFolder(String name)
 	{
