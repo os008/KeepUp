@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.backup.watcher;
+package com.yagasoft.keepup.backup;
 
 
 /**

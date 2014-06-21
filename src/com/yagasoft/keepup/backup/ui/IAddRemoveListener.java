@@ -15,7 +15,7 @@ package com.yagasoft.keepup.backup.ui;
 
 import java.util.List;
 
-import com.yagasoft.keepup.backup.watcher.State;
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.overcast.base.container.Container;
 
 

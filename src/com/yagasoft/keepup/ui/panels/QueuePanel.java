@@ -309,7 +309,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 
 		public CancelButton()
 		{
-			super(_keepup.class.getResource("images\\cancel.gif"));
+			super(_keepup.class.getResource("images/cancel.gif"));
 		}
 
 	}

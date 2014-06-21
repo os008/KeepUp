@@ -19,9 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
 import com.yagasoft.keepup.backup.ui.watcher.WatcherTableController;
-import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.overcast.base.container.Container;
 
 

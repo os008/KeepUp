@@ -15,6 +15,7 @@ package com.yagasoft.keepup.backup.watcher;
 
 import java.nio.file.WatchEvent;
 
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.overcast.base.container.Container;
 
 

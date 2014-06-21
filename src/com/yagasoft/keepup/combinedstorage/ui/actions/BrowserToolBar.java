@@ -28,9 +28,9 @@ import com.yagasoft.keepup._keepup;
  */
 public abstract class BrowserToolBar extends JToolBar implements ActionListener
 {
-	
+
 	private static final long	serialVersionUID	= 4610918332476400206L;
-	
+
 	/**
 	 * Create button.
 	 *
@@ -47,15 +47,15 @@ public abstract class BrowserToolBar extends JToolBar implements ActionListener
 	protected JButton createButton(String imageName, String actionCommand, String toolTipText, String altText)
 	{
 		// Look for the image.
-		String imgLocation = "images\\" + imageName + ".gif";
+		String imgLocation = "images/" + imageName + ".gif";
 		URL imageURL = _keepup.class.getResource(imgLocation);
-		
+
 		// Create and initialize the button.
 		JButton button = new JButton();
 		button.setActionCommand(actionCommand);
 		button.setToolTipText(toolTipText);
 		button.addActionListener(this);
-		
+
 		if (imageURL != null)
 		{	// image found
 			button.setIcon(new ImageIcon(imageURL, altText));
@@ -65,8 +65,8 @@ public abstract class BrowserToolBar extends JToolBar implements ActionListener
 			button.setText(altText);
 //			Logger.post("Resource not found: " + imgLocation);
 		}
-		
+
 		return button;
 	}
-	
+
 }

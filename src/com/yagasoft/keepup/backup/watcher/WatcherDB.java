@@ -15,6 +15,7 @@ package com.yagasoft.keepup.backup.watcher;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.DB;
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.scheduler.ISyncListener;
 import com.yagasoft.overcast.base.container.Container;
 
@@ -35,7 +36,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 
 	/**
 	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
-	 *      com.yagasoft.keepup.backup.watcher.State)
+	 *      com.yagasoft.keepup.backup.State)
 	 */
 	@Override
 	public void watchListChanged(Container<?> container, State state)

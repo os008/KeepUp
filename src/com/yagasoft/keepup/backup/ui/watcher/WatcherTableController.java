@@ -21,8 +21,8 @@ import java.util.function.Function;
 
 import javax.swing.event.TreeSelectionEvent;
 
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
-import com.yagasoft.keepup.backup.watcher.State;
 import com.yagasoft.keepup.ui.browser.FileTable;
 import com.yagasoft.keepup.ui.browser.FileTableController;
 import com.yagasoft.overcast.base.container.Container;
@@ -70,12 +70,12 @@ public class WatcherTableController extends FileTableController implements IWatc
 
 	/**
 	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
-	 *      com.yagasoft.keepup.backup.watcher.State)
+	 *      com.yagasoft.keepup.backup.State)
 	 */
 	@Override
 	public void watchListChanged(Container<?> container, State state)
 	{
-		// this will be removed in the future to support watching folders.
+		// TODO remove to support watching folders.
 		if (container.isFolder())
 		{
 			return;

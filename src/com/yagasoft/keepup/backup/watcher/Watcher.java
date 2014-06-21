@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.scheduler.ISyncListener;
 import com.yagasoft.keepup.backup.ui.IAddRemoveListener;
-import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.local.LocalFile;
@@ -55,11 +55,10 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	protected Set<IWatchListener>		listeners		= new HashSet<IWatchListener>();
 
 	/** Watcher service responsible for watching the folder. */
-	protected WatchService	watcher;
+	protected WatchService				watcher;
 
-	/**  Key! */
-	protected WatchKey		watckKey;
-
+	/** Key! */
+	protected WatchKey					watckKey;
 
 	/**
 	 * Instantiates a new watcher.
@@ -75,8 +74,10 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	/**
 	 * Sets the container state.
 	 *
-	 * @param container Container.
-	 * @param state State.
+	 * @param container
+	 *            Container.
+	 * @param state
+	 *            State.
 	 */
 	private void setContainerState(Container<?> container, State state)
 	{
@@ -85,7 +86,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 			Path path = Paths.get(container.getParent().getPath());
 
 			// register the path of the parent to be watched if it wasn't
-			if (!watchedPaths.containsKey(path))
+			if ( !watchedPaths.containsKey(path))
 			{
 				try
 				{
@@ -103,7 +104,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 			}
 		}
 
-		if ((state == State.REMOVE) || (state == State.DELETE))
+		if (state == State.REMOVE)
 		{
 			removeContainer(container, state);
 			return;
@@ -131,8 +132,10 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	/**
 	 * Removes the container.
 	 *
-	 * @param container            Container.
-	 * @param state State.
+	 * @param container
+	 *            Container.
+	 * @param state
+	 *            State.
 	 */
 	private void removeContainer(Container<?> container, State state)
 	{
@@ -167,7 +170,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 			}
 
 			// cancel the watch key and remove the path from the watch list
-			if (!keepKey)
+			if ( !keepKey)
 			{
 				watchedPaths.get(path).cancel();
 				watchedPaths.remove(path);
@@ -187,7 +190,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	 */
 	protected void notifyListeners(Container<?> container, State state)
 	{
-		Logger.info("container change state: " + state + " => " + container.getPath());
+		Logger.info("WATCHER: container changed state: " + state + " => " + container.getPath());
 
 		listeners.parallelStream()
 				.forEach(listener -> listener.watchListChanged(container, state));
@@ -218,10 +221,12 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	/**
 	 * Containers added removed.
 	 *
-	 * @param containers Containers.
-	 * @param state State.
+	 * @param containers
+	 *            Containers.
+	 * @param state
+	 *            State.
 	 * @see com.yagasoft.keepup.backup.ui.IAddRemoveListener#containersAddedRemoved(java.util.List,
-	 *      com.yagasoft.keepup.backup.watcher.State)
+	 *      com.yagasoft.keepup.backup.State)
 	 */
 	@Override
 	public void containersAddedRemoved(List<? extends Container<?>> containers, State state)
@@ -248,7 +253,8 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	}
 
 	/**
-	 * @see com.yagasoft.keepup.backup.scheduler.ISyncListener#containerSynced(com.yagasoft.overcast.base.container.Container, java.lang.String)
+	 * @see com.yagasoft.keepup.backup.scheduler.ISyncListener#containerSynced(com.yagasoft.overcast.base.container.Container,
+	 *      java.lang.String)
 	 */
 	@Override
 	public void containerSynced(Container<?> container, String revision)
@@ -263,8 +269,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	{
 		try
 		{
-			Logger.info("starting file watcher loop.");
-
+			Logger.info("WATCHER: starting file watcher loop ...");
 			watcher = FileSystems.getDefault().newWatchService();		// create a watch service.
 			new Thread(new WatchThread()).start();
 		}
@@ -275,6 +280,18 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 		}
 	}
 
+	public State getContainerState(Container<?> container)
+	{
+		if (container.isFolder())
+		{
+			return watchedFolders.getOrDefault(container, State.REMOVE);
+		}
+		else
+		{
+			return watchedFiles.getOrDefault(container, State.REMOVE);
+		}
+	}
+
 	/**
 	 * The Class WatchThread.
 	 */
@@ -282,7 +299,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	{
 
 		/** Events. */
-		List<WatchEvent<?>> events;
+		List<WatchEvent<?>>	events;
 
 		/**
 		 * @see java.lang.Runnable#run()
@@ -291,7 +308,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 		@Override
 		public void run()
 		{
-			while(true)
+			while (true)
 			{
 				try
 				{
@@ -305,8 +322,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 					for (WatchEvent<?> event : events)
 					{
 						// don't need these events
-						if (event.kind() == StandardWatchEventKinds.OVERFLOW
-								|| event.kind() == StandardWatchEventKinds.ENTRY_CREATE)
+						if (event.kind() == StandardWatchEventKinds.OVERFLOW)
 						{
 							continue;
 						}
@@ -316,8 +332,12 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 								.resolve(((WatchEvent<Path>) event).context());
 						State state = null;
 
-						// if the file modified then set state
-						if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY)
+						Logger.info("WATCHER: " + event.kind() + " event! " + path);
+
+						// if the file was created or modified then set state as modified
+						// when it's created, it just means it returned from a 'deleted' state
+						if ((event.kind() == StandardWatchEventKinds.ENTRY_MODIFY)
+							|| (event.kind() == StandardWatchEventKinds.ENTRY_CREATE))
 						{
 							state = State.MODIFY;
 						}
@@ -329,10 +349,8 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 
 						for (LocalFile file : watchedFiles.keySet())
 						{
-							if (Paths.get(file.getPath()).equals(path) && state != null)
+							if (Paths.get(file.getPath()).equals(path) && (state != null))
 							{
-								Logger.info("container modified: queueing " + path);
-
 								setContainerState(file, state);
 								break eventsLoop;
 							}
@@ -340,11 +358,11 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 					}
 
 					// if there's a problem with the watcher, exit.
-					if ( !watckKey.reset())
-					{
-						Msg.showError("There's a problem with the watcher loop.\nPlease, restart the program.");
-						break;
-					}
+//					if ( !watckKey.reset())
+//					{
+//						Msg.showError("There's a problem with the watcher loop.\nPlease, restart the program.");
+//						break;
+//					}
 				}
 				catch (InterruptedException e)
 				{
