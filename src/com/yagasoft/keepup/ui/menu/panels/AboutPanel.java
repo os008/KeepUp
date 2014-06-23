@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.ui.menu;
+package com.yagasoft.keepup.ui.menu.panels;
 
 
 import java.awt.BorderLayout;
@@ -35,7 +35,7 @@ import com.yagasoft.keepup.App;
 /**
  * The 'About' panel containing info about this software.
  */
-public class About extends JPanel
+public class AboutPanel extends JPanel
 {
 
 	/** Constant: SerialVersionUID. */
@@ -44,7 +44,7 @@ public class About extends JPanel
 	/**
 	 * Create the panel.
 	 */
-	public About()
+	public AboutPanel()
 	{
 
 		initGUI();

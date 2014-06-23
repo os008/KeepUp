@@ -1,12 +1,12 @@
-/*
+/* 
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- *
+ * 
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- *
+ * 
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/CombinedFolder.java
- *
- *			Modified: 13-Jun-2014 (18:38:20)
+ * 
+ *			Modified: 23-Jun-2014 (20:21:31)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -419,6 +419,20 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	{
 		contentListeners.parallelStream()
 				.forEach(listener -> listener.folderChanged(this, update, content));
+	}
+
+	/**
+	 * Clear csp folders.
+	 */
+	public void clearCspFolders()
+	{
+		for (CombinedFolder folder : subFolders.values())
+		{
+			notifyContentListeners(UpdateType.REMOVE, folder);
+		}
+		
+		cspFolders = new HashMap<String, RemoteFolder<?>>();
+		subFolders = new HashMap<String, CombinedFolder>();
 	}
 
 	/**

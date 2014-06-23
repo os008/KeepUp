@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.ui.browser;
+package com.yagasoft.keepup.ui.browser.table;
 
 
 import java.awt.BorderLayout;
@@ -31,8 +31,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
-import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
-import com.yagasoft.keepup.ui.BetterTableModel;
+import com.yagasoft.keepup.ui.toolbars.FileToolBar;
 
 
 /**

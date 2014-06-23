@@ -1,5 +1,5 @@
 
-package com.yagasoft.keepup.ui;
+package com.yagasoft.keepup.ui.browser.table;
 
 
 import java.awt.Color;

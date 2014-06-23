@@ -17,7 +17,7 @@ import java.util.Map;
 
 import javax.swing.table.TableCellRenderer;
 
-import com.yagasoft.keepup.ui.browser.FileTable;
+import com.yagasoft.keepup.ui.browser.table.FileTable;
 
 
 /**

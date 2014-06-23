@@ -16,15 +16,12 @@ package com.yagasoft.keepup.combinedstorage.ui.browser.tree;
 import java.awt.BorderLayout;
 import java.awt.event.ActionListener;
 
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
-import com.yagasoft.keepup.combinedstorage.ui.actions.FolderToolBar;
-import com.yagasoft.keepup.ui.browser.FolderTree;
+import com.yagasoft.keepup.ui.browser.tree.FolderTree;
+import com.yagasoft.keepup.ui.panels.SearchBar;
+import com.yagasoft.keepup.ui.toolbars.FolderToolBar;
 
 
 /**
@@ -78,64 +75,5 @@ public class CSTree extends FolderTree<CombinedFolder>
 	public void addSearchListener(ActionListener listener)
 	{
 		searchBar.addSearchListener(listener);
-	}
-
-	/**
-	 * The Class SearchBar.
-	 */
-	private class SearchBar extends JPanel
-	{
-
-		/** Constant: SerialVersionUID. */
-		private static final long	serialVersionUID	= 6758133652665617832L;
-
-		/** Text field. */
-		private JTextField			textField;
-
-		/** Button search. */
-		private JButton				buttonSearch;
-
-		/**
-		 * Instantiates a new search bar.
-		 */
-		public SearchBar()
-		{
-			initGUI();
-		}
-
-		/**
-		 * Inits the gui.
-		 */
-		private void initGUI()
-		{
-			setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-
-			textField = new JTextField();
-			add(textField);
-
-			buttonSearch = new JButton("Search");
-			add(buttonSearch);
-		}
-
-		/**
-		 * Gets the search text.
-		 *
-		 * @return the search text
-		 */
-		public String getSearchText()
-		{
-			return textField.getText();
-		}
-
-		/**
-		 * Adds the search listener.
-		 *
-		 * @param listener Listener.
-		 */
-		public void addSearchListener(ActionListener listener)
-		{
-			buttonSearch.addActionListener(listener);
-			textField.addActionListener(listener);
-		}
 	}
 }

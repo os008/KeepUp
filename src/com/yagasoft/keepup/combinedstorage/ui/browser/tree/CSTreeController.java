@@ -27,7 +27,7 @@ import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ContentListener;
 import com.yagasoft.keepup.combinedstorage.UpdateType;
 import com.yagasoft.keepup.combinedstorage.ui.search.SearchPanel;
-import com.yagasoft.keepup.ui.browser.FolderTreeController;
+import com.yagasoft.keepup.ui.browser.tree.FolderTreeController;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.File;
 

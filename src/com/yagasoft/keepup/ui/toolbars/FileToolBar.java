@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.ui.actions;
+package com.yagasoft.keepup.ui.toolbars;
 
 
 import java.awt.event.ActionEvent;
@@ -23,7 +23,7 @@ import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Browse;
 import com.yagasoft.keepup.dialogues.Msg;
-import com.yagasoft.keepup.ui.browser.FileTableController;
+import com.yagasoft.keepup.ui.browser.table.FileTableController;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
@@ -34,31 +34,6 @@ import com.yagasoft.overcast.base.container.local.LocalFile;
  */
 public class FileToolBar extends BrowserToolBar
 {
-	
-	/**
-	 * What actions can be done by buttons on that bar.
-	 */
-	protected enum Actions
-	{
-		
-		/** Download. */
-		DOWNLOAD,
-		
-		/** Upload. */
-		UPLOAD,
-		
-		REFRESH,
-		
-		COPY,
-		
-		MOVE,
-		
-		/** The rename. */
-		RENAME,
-		
-		/** Delete file. */
-		DELETE
-	}
 	
 	/** Constant: SerialVersionUID. */
 	private static final long		serialVersionUID	= 6667133528600925976L;

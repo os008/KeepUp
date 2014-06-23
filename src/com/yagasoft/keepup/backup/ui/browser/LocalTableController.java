@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 import javax.swing.event.TreeSelectionEvent;
 
 import com.yagasoft.keepup.dialogues.Msg;
-import com.yagasoft.keepup.ui.browser.FileTable;
-import com.yagasoft.keepup.ui.browser.FileTableController;
+import com.yagasoft.keepup.ui.browser.table.FileTable;
+import com.yagasoft.keepup.ui.browser.table.FileTableController;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 

@@ -13,11 +13,14 @@
 package com.yagasoft.keepup.ui.menu;
 
 
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
 import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.ui.menu.panels.AboutPanel;
+import com.yagasoft.keepup.ui.menu.panels.options.OptionsPanel;
 
 
 /**
@@ -64,14 +67,20 @@ public class MenuBar extends JMenuBar
 		// build edit menu
 		editMenu = new JMenu("Edit");
 		options = new JMenuItem("Options");
-		options.addActionListener(event -> App.showSubWindow(new Options(), "Options"));
+		options.addActionListener(event ->
+		{
+			OptionsPanel optionsPanel = new OptionsPanel();
+			JFrame frame = App.showSubWindow(optionsPanel, "Options");
+			optionsPanel.setFrame(frame);
+			optionsPanel.addListener(() -> App.resetCSPs());
+		});
 		editMenu.add(options);
 		add(editMenu);
 
 		// build help menu
 		helpMenu = new JMenu("Help");
 		about = new JMenuItem("About");
-		about.addActionListener(event -> App.showSubWindow(new About(), "About"));
+		about.addActionListener(event -> App.showSubWindow(new AboutPanel(), "About"));
 		helpMenu.add(about);
 		add(helpMenu);
 	}

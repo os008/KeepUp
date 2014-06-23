@@ -13,7 +13,6 @@
 package com.yagasoft.keepup.ui.panels;
 
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
@@ -22,16 +21,15 @@ import javax.swing.Action;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup._keepup;
-import com.yagasoft.keepup.ui.BetterTableModel;
-import com.yagasoft.keepup.ui.ButtonColumn;
+import com.yagasoft.keepup.ui.browser.table.BetterTableModel;
+import com.yagasoft.keepup.ui.browser.table.ButtonColumn;
+import com.yagasoft.keepup.ui.browser.table.renderers.ProgressRenderer;
 import com.yagasoft.logger.Logger;
 import com.yagasoft.overcast.base.container.transfer.TransferJob;
 import com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener;
@@ -269,33 +267,6 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				job.getCsp().cancelTransfer(job);
 				break;
 			}
-		}
-	}
-
-	/**
-	 * Defines how to handle the progress bar inside the table.
-	 */
-	private class ProgressRenderer extends JProgressBar implements TableCellRenderer
-	{
-
-		/** Constant: SerialVersionUID. */
-		private static final long	serialVersionUID	= -4106456853733016017L;
-
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value
-				, boolean isSelected, boolean hasFocus, int row, int col)
-		{
-			Float v = (Float) value;
-
-			// set the range.
-			setMinimum(0);
-			setMaximum(100);
-
-			setIndeterminate(false);	// the progress is always known!
-			setStringPainted(true);		// force display the percent info.
-			setValue((int) (v.floatValue() * 100));
-
-			return this;
 		}
 	}
 

@@ -21,14 +21,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 import javax.swing.JPanel;
-import javax.swing.event.TreeSelectionEvent;
 import javax.swing.table.TableCellRenderer;
 
 import com.yagasoft.keepup.App;
-import com.yagasoft.keepup.combinedstorage.ui.actions.FileToolBar;
-import com.yagasoft.keepup.ui.browser.FilePathRenderer;
-import com.yagasoft.keepup.ui.browser.FileTable;
-import com.yagasoft.keepup.ui.browser.FileTableController;
+import com.yagasoft.keepup.ui.browser.table.FileTable;
+import com.yagasoft.keepup.ui.browser.table.renderers.FilePathRenderer;
 import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.File;
 
@@ -80,39 +77,5 @@ public class SearchPanel extends JPanel
 		searchedFilesTable.addToolBar(new SearchToolBar(searchTableController));
 
 		add(searchedFilesTable);
-	}
-
-	/**
-	 * The Class SearchToolBar.
-	 */
-	private class SearchToolBar extends FileToolBar
-	{
-
-		/** Constant: SerialVersionUID. */
-		private static final long	serialVersionUID	= -4050551200751478324L;
-
-		/**
-		 * @param tableController
-		 */
-		public SearchToolBar(FileTableController tableController)
-		{
-			super(tableController);
-			remove(1);		// remove upload button
-			remove(1);		// remove refresh button
-		}
-	}
-
-	private class SearchTableController extends FileTableController
-	{
-
-		public SearchTableController(FileTable filesTable, List<Function<File<?>, Object>> columnFunctions)
-		{
-			super(filesTable, columnFunctions);
-		}
-
-		@Override
-		public void valueChanged(TreeSelectionEvent e)
-		{}
-
 	}
 }

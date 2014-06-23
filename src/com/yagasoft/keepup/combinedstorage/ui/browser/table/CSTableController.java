@@ -21,8 +21,8 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
-import com.yagasoft.keepup.ui.browser.FileTable;
-import com.yagasoft.keepup.ui.browser.FileTableController;
+import com.yagasoft.keepup.ui.browser.table.FileTable;
+import com.yagasoft.keepup.ui.browser.table.FileTableController;
 import com.yagasoft.overcast.base.container.File;
 
 

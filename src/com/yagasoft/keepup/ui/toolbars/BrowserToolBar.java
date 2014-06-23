@@ -10,7 +10,7 @@
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
-package com.yagasoft.keepup.combinedstorage.ui.actions;
+package com.yagasoft.keepup.ui.toolbars;
 
 
 import java.awt.event.ActionListener;
@@ -28,6 +28,39 @@ import com.yagasoft.keepup._keepup;
  */
 public abstract class BrowserToolBar extends JToolBar implements ActionListener
 {
+
+	/**
+	 * What actions can be done by buttons on that bar.
+	 */
+	protected enum Actions
+	{
+		CREATE,
+
+		/** Download. */
+		DOWNLOAD,
+
+		/** Upload. */
+		UPLOAD,
+
+		REFRESH,
+
+		COPY,
+
+		MOVE,
+
+		/** The rename. */
+		RENAME,
+
+		/** Delete file. */
+		DELETE,
+
+		/** Paste. */
+		PASTE,
+
+		BACKWARD,
+
+		FORWARD
+	}
 
 	private static final long	serialVersionUID	= 4610918332476400206L;
 
