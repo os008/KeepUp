@@ -1,11 +1,11 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.ui.menu.panels.options/OptionsPanel.java
- * 
+ *
  *			Modified: 23-Jun-2014 (21:17:05)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
@@ -17,6 +17,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,16 +35,16 @@ import com.yagasoft.keepup.CSPInfo;
  */
 public class OptionsPanel extends JPanel implements ActionListener
 {
-
+	
 	/** Constant: SerialVersionUID. */
 	private static final long		serialVersionUID	= -1146451184847401905L;
-
+	
 	/** Frame. */
 	private JFrame					frame;
-
+	
 	/** Csps. */
 	public static Set<CSPInfo>		csps;
-
+	
 	/** Tabbed pane. */
 	private JTabbedPane				tabbedPane;
 	
@@ -55,10 +56,10 @@ public class OptionsPanel extends JPanel implements ActionListener
 	
 	/** Button cancel. */
 	private JButton					buttonCancel;
-
+	
 	/** Listeners. */
 	private Set<IOptionsListener>	listeners			= new HashSet<IOptionsListener>();
-
+	
 	/**
 	 * Create the panel.
 	 */
@@ -67,31 +68,31 @@ public class OptionsPanel extends JPanel implements ActionListener
 		initGUI();
 		addPanels();
 	}
-
+	
 	/**
 	 * Inits the gui.
 	 */
 	private void initGUI()
 	{
 		setLayout(new BorderLayout(0, 0));
-
+		
 		tabbedPane = new JTabbedPane(SwingConstants.TOP);
 		add(tabbedPane, BorderLayout.CENTER);
-
+		
 		// buttons
 		JPanel buttonsPanel = new JPanel(new FlowLayout());
-
+		
 		buttonOk = new JButton("OK");
 		buttonOk.addActionListener(this);
 		buttonsPanel.add(buttonOk);
-
+		
 		buttonCancel = new JButton("Cancel");
 		buttonCancel.addActionListener(this);
 		buttonsPanel.add(buttonCancel);
-
+		
 		add(buttonsPanel, BorderLayout.SOUTH);
 	}
-
+	
 	/**
 	 * Adds the panels.
 	 */
@@ -100,7 +101,7 @@ public class OptionsPanel extends JPanel implements ActionListener
 		cspManagerPanel = new CSPManagerPanel(csps);
 		tabbedPane.addTab("CSP Manager", cspManagerPanel);
 	}
-
+	
 	/**
 	 * Sets the csp settings.
 	 */
@@ -108,7 +109,7 @@ public class OptionsPanel extends JPanel implements ActionListener
 	{
 		cspManagerPanel.setSettings();
 	}
-
+	
 	/**
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
@@ -117,28 +118,30 @@ public class OptionsPanel extends JPanel implements ActionListener
 	{
 		if (e.getSource() == buttonCancel)
 		{
-			frame.setVisible(false);
+			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 			clearListeners();
 		}
 		else if (e.getSource() == buttonOk)
 		{
 			setCSPSettings();
 			notifyListeners();
-			frame.setVisible(false);
+			frame.dispose();
+			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 			clearListeners();
 		}
 	}
-
+	
 	/**
 	 * Adds the listener.
 	 *
-	 * @param listener Listener.
+	 * @param listener
+	 *            Listener.
 	 */
 	public void addListener(IOptionsListener listener)
 	{
 		listeners.add(listener);
 	}
-
+	
 	/**
 	 * Notify listeners.
 	 */
@@ -147,17 +150,18 @@ public class OptionsPanel extends JPanel implements ActionListener
 		listeners.parallelStream()
 				.forEach(listener -> listener.optionsSet());
 	}
-
+	
 	/**
 	 * Removes the listener.
 	 *
-	 * @param listener Listener.
+	 * @param listener
+	 *            Listener.
 	 */
 	public void removeListener(IOptionsListener listener)
 	{
 		listeners.remove(listener);
 	}
-
+	
 	/**
 	 * Clear listeners.
 	 */
@@ -165,7 +169,7 @@ public class OptionsPanel extends JPanel implements ActionListener
 	{
 		listeners.clear();
 	}
-
+	
 	/**
 	 * Gets the frame.
 	 *
@@ -175,15 +179,16 @@ public class OptionsPanel extends JPanel implements ActionListener
 	{
 		return frame;
 	}
-
+	
 	/**
 	 * Sets the frame.
 	 *
-	 * @param frame            the frame to set
+	 * @param frame
+	 *            the frame to set
 	 */
 	public void setFrame(JFrame frame)
 	{
 		this.frame = frame;
 	}
-
+	
 }

@@ -114,6 +114,8 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 	@SuppressWarnings("unchecked")
 	public void updateNode(DefaultMutableTreeNode node, boolean recursively)
 	{
+		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
+		
 		if (recursively)
 		{
 			Enumeration<DefaultMutableTreeNode> nodes = node.children();
@@ -124,8 +126,6 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 				updateNode(childNode, recursively);
 			}
 		}
-
-		((CombinedFolder) node.getUserObject()).updateCombinedFolder(true);
 	}
 
 	/**

@@ -21,10 +21,10 @@ import com.yagasoft.logger.Logger;
  */
 public class _keepup
 {
-	
+
 	/** Enable debug-related logging throughout the program. */
 	public static final boolean	DEBUG	= true;
-	
+
 	/**
 	 * The main method.
 	 *
@@ -37,10 +37,10 @@ public class _keepup
 		{
 			Logger.showLogger();
 		}
-		
-		Logger.info("Started KeepUp.");
-		
+
+		Logger.info("KEEPUP: started!");
+
 		App.initApp();
 	}
-	
+
 }

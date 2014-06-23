@@ -87,7 +87,7 @@ public final class DB
 	 */
 	static
 	{
-		Logger.info("initialising DB ...");
+		Logger.info("KEEPUP: DB: initialising ...");
 
 		try
 		{
@@ -103,11 +103,11 @@ public final class DB
 
 			ready = true;
 
-			Logger.info("DB is ready.");
+			Logger.info("KEEPUP: DB: ready.");
 		}
 		catch (ClassNotFoundException | SQLException e)
 		{
-			Logger.error("Problem with the database!");
+			Logger.error("KEEPUP: DB: problem!");
 			Logger.except(e);
 			e.printStackTrace();
 		}
@@ -194,7 +194,7 @@ public final class DB
 		// if there's no such table, create.
 		if ( !result.next())
 		{
-			Logger.info("Creating table in DB: " + table);
+			Logger.info("KEEPUP: DB: creating table: " + table);
 
 			statement.executeUpdate(createStatement);
 			connection.commit();		// save changes to db file
@@ -243,7 +243,7 @@ public final class DB
 		}
 		catch (Exception e)
 		{
-			Logger.error("Failed to insert record: " + query);
+			Logger.error("KEEPUP: DB: failed to insert record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
 
@@ -283,7 +283,7 @@ public final class DB
 
 				query = "INSERT INTO " + table + " VALUES(" + values + ");";
 
-				Logger.info("Batch add: " + query);
+				Logger.info("KEEPUP: DB: batch add: " + query);
 
 				statement.addBatch(query);
 
@@ -292,14 +292,14 @@ public final class DB
 
 			connection.commit();		// save changes to db file
 
-			Logger.info("Executing batch ...");
+			Logger.info("KEEPUP: DB: executing batch ...");
 
 			// submit the batch, then check if any rows were affected.
 			return statement.executeBatch()[0] > 0;
 		}
 		catch (Exception e)
 		{
-			Logger.error("Failed to insert records into table: " + table);
+			Logger.error("KEEPUP: DB: failed to insert records into table: " + table);
 			Logger.except(e);
 			e.printStackTrace();
 
@@ -340,7 +340,7 @@ public final class DB
 		// execute UPDATE.
 		try
 		{
-			Logger.info(query);
+			Logger.info("KEEPUP: DB: update " + query);
 
 			// execute the statement using the values built, and store the success status.
 			success = statement.executeUpdate(query) > 0;
@@ -351,7 +351,7 @@ public final class DB
 		}
 		catch (Exception e)
 		{
-			Logger.error("Failed to update record: " + query);
+			Logger.error("KEEPUP: DB: failed to update record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
 
@@ -378,7 +378,7 @@ public final class DB
 		// execute DELETE.
 		try
 		{
-			Logger.info(query);
+			Logger.info("KEEPUP: DB: " + query);
 
 			// execute the statement using the values built, and store the success status.
 			success = statement.executeUpdate(query) > 0;
@@ -389,7 +389,7 @@ public final class DB
 		}
 		catch (Exception e)
 		{
-			Logger.error("Failed to delete record: " + query);
+			Logger.error("KEEPUP: DB: failed to delete record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
 
@@ -458,7 +458,7 @@ public final class DB
 		String query = "SELECT " + columnsString + " FROM " + table
 				+ (condition.length > 0 ? " WHERE " + condition[0] : "") + ";";
 
-		Logger.info(query);
+		Logger.info("KEEPUP: DB: " + query);
 
 		// execute SELECT.
 		try
@@ -489,7 +489,7 @@ public final class DB
 		}
 		catch (Exception e)
 		{
-			Logger.error("Couldn't fetch rows for: " + query);
+			Logger.error("KEEPUP: DB: couldn't fetch rows for: " + query);
 			Logger.except(e);
 			e.printStackTrace();
 
@@ -509,12 +509,12 @@ public final class DB
 				connection.commit();
 				connection.close();
 
-				Logger.info("Closed DB connection.");
+				Logger.info("KEEPUP: DB: closed DB connection.");
 			}
 		}
 		catch (SQLException e)
 		{
-			Logger.error("Failed to close DB connection!");
+			Logger.error("KEEPUP: DB: failed to close DB connection!");
 			Logger.except(e);
 			e.printStackTrace();
 		}

@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.ui.menu.panels.options/CSPPanel.java
- * 
+ *
  *			Modified: 23-Jun-2014 (21:17:17)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.yagasoft.keepup.CSPInfo;
+import com.yagasoft.keepup.dialogues.Msg;
 
 
 /**
@@ -127,6 +128,23 @@ public class CSPPanel extends JPanel
 		buttonResetGridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
 		buttonResetGridBagConstraints.gridx = 5;
 		buttonResetGridBagConstraints.gridy = 0;
+		buttonReset.addActionListener(event ->
+		{
+			if (cspInfo.getCspObject() != null)
+			{
+				try
+				{
+					checkBoxEnable.setSelected(false);
+					cspInfo.getCspObject().resetPermission();
+					checkBoxEnable.setSelected(true);
+				}
+				catch (Exception e)
+				{
+					Msg.showError(e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		});
 		add(buttonReset, buttonResetGridBagConstraints);
 	}
 	

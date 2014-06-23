@@ -96,7 +96,6 @@ public abstract class BrowserToolBar extends JToolBar implements ActionListener
 		else
 		{	// no image found
 			button.setText(altText);
-//			Logger.post("Resource not found: " + imgLocation);
 		}
 
 		return button;

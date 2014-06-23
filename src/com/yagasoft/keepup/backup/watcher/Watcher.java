@@ -98,6 +98,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 				}
 				catch (IOException e)
 				{
+					Logger.error("KEEPUP: WATCHER: failed to register for folder: " + path);
 					Logger.except(e);
 					e.printStackTrace();
 				}
@@ -190,7 +191,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	 */
 	protected void notifyListeners(Container<?> container, State state)
 	{
-		Logger.info("WATCHER: container CHANGED state: " + state + " => " + container.getPath());
+		Logger.info("KEEPUP: WATCHER: container CHANGED state: " + state + " => " + container.getPath());
 		listeners.parallelStream()
 				.forEach(listener -> listener.watchListChanged(container, state));
 	}
@@ -268,12 +269,13 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	{
 		try
 		{
-			Logger.info("WATCHER: starting file watcher loop ...");
+			Logger.info("KEEPUP: WATCHER: starting file watcher loop ...");
 			watcher = FileSystems.getDefault().newWatchService();		// create a watch service.
 			new Thread(new WatchThread()).start();
 		}
 		catch (IOException e)
 		{
+			Logger.error("KEEPUP: WATCHER: failed to get watch service");
 			Logger.except(e);
 			e.printStackTrace();
 		}
@@ -334,7 +336,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 								.resolve(((WatchEvent<Path>) event).context());
 						State state = null;
 
-						Logger.info("WATCHER: " + event.kind() + " event! " + path);
+						Logger.info("KEEPUP: WATCHER: " + event.kind() + " event! " + path);
 
 						// if the file was created or modified then set state as modified
 						// when it's created, it just means it returned from a 'deleted' state
@@ -368,6 +370,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 				}
 				catch (InterruptedException e)
 				{
+					Logger.error("KEEPUP: WATCHER: loop interrupted.");
 					Logger.except(e);
 					e.printStackTrace();
 				}

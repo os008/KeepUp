@@ -224,7 +224,7 @@ public final class App
 	 */
 	private static void initGUI()
 	{
-		Logger.info("GUI: initialising GUI components ...");
+		Logger.info("KEEPUP: GUI: INIT GUI components ...");
 
 		mainWindow = new MainWindow();
 
@@ -289,7 +289,7 @@ public final class App
 	 */
 	public static void initControllers()
 	{
-		Logger.info("GUI: initialising GUI controllers ...");
+		Logger.info("KEEPUP: GUI: INIT GUI controllers ...");
 
 		List<Function<File<?>, Object>> columnFunctions = new ArrayList<Function<File<?>, Object>>();
 
@@ -329,7 +329,7 @@ public final class App
 	{
 		if ( !DB.ready)
 		{
-			Logger.error("DB: problem with DB!");
+			Logger.error("KEEPUP: DB: problem!");
 			Msg.showErrorAndConfirm("Problem with DB! Closing application ...");
 			System.exit(1);
 		}
@@ -342,7 +342,7 @@ public final class App
 	 */
 	private static void initCSPs()
 	{
-		Logger.info("KEEPUP: initialising CSPs ...");
+		Logger.info("KEEPUP: CSPS: initialising ...");
 
 		// init CSPs in parallel.
 		ExecutorService executor = Executors.newCachedThreadPool();
@@ -423,7 +423,7 @@ public final class App
 	 */
 	public static void loadOptions()
 	{
-		Logger.info("KEEPUP: LOADING options ...");
+		Logger.info("KEEPUP: OPTIONS: load ...");
 
 		String[][] option;
 
@@ -476,7 +476,7 @@ public final class App
 		// #endregion set last directory.
 		//--------------------------------------------------------------------------------------
 
-		Logger.info("KEEPUP: DONE LOADING options.");
+		Logger.info("KEEPUP: OPTIONS: done load.");
 	}
 
 	/**
@@ -484,7 +484,7 @@ public final class App
 	 */
 	public static void saveOptions()
 	{
-		Logger.info("KEEPUP: SAVING options ...");
+		Logger.info("KEEPUP: OPTIONS: saving ...");
 
 		for (CSPInfo cspInfo : csps.values())
 		{
@@ -501,7 +501,7 @@ public final class App
 				, new String[] { "lastDirectory", "path", lastDirectory }
 				, new int[] { 0, 1 });
 
-		Logger.info("KEEPUP: DONE SAVING options.");
+		Logger.info("KEEPUP: OPTIONS: done saving.");
 
 //		try
 //		{
@@ -518,7 +518,7 @@ public final class App
 
 	public static void initBackup()
 	{
-		Logger.info("BACKUP: INIT system ...");
+		Logger.info("KEEPUP: BACKUP: init system ...");
 
 		scheduler = new Scheduler();
 		watcher.addListener(scheduler);
@@ -534,7 +534,7 @@ public final class App
 	 */
 	public static void updateFreeSpace()
 	{
-		Logger.info("KEEPUP: updating freespace ...");
+		Logger.info("KEEPUP: FREESPACE: updating ...");
 
 		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
 
@@ -784,7 +784,7 @@ public final class App
 		// no files, then no need to proceed.
 		if (files.isEmpty())
 		{
-			Logger.error("Nothing to download!");
+			Logger.error("KEEPUP: DOWNLOAD: nothing!");
 			Msg.showError("Please, choose a file first from the files list.");
 			return;
 		}
@@ -813,7 +813,7 @@ public final class App
 			// no space, then no need to proceed.
 			if (parent.getLocalFreeSpace() <= filesSize)
 			{
-				Logger.error("Not enough space!");
+				Logger.error("KEEPUP: DOWNLOAD: not enough space!");
 				Msg.showError("Please, free some space on local disk.");
 				return;
 			}
@@ -1291,7 +1291,7 @@ public final class App
 		// if no fit, then not enough space on any csp.
 		if (bestFit == null)
 		{
-			Logger.error("Not enough space!");
+			Logger.error("KEEPUP: CHOOSE CSP: not enough space!");
 			Msg.showError("Please, free some space on any CSP.");
 			return null;
 		}
@@ -1441,12 +1441,6 @@ public final class App
 				setMainWindowFocusable(true);
 			}
 
-			@Override
-			public void windowDeactivated(WindowEvent e)
-			{
-				frame.dispose();
-				setMainWindowFocusable(true);
-			}
 		});
 
 		// add the passed panel to the frame.

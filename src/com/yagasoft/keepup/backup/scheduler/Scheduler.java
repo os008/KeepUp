@@ -73,7 +73,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	 */
 	public void startBackupLoop()
 	{
-		Logger.info("SCHEDULER: starting backup loop.");
+		Logger.info("KEEPUP: SCHEDULER: starting backup loop.");
 		new Thread(backupThread).start();
 	}
 
@@ -154,7 +154,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	 */
 	public void resetTimer(int seconds)
 	{
-		Logger.info("Timer reset to " + seconds);
+		Logger.info("KEEPUP: SCHEDULER: timer reset to " + seconds);
 
 		backupThread.remainingTime = seconds;
 	}
@@ -175,7 +175,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	 */
 	protected void notifyListenersOfSync(Container<?> container, String revision)
 	{
-		Logger.info("SCHEDULER: container sync'd: " + container.getPath());
+		Logger.info("KEEPUP: SCHEDULER: container sync'd: " + container.getPath());
 		listeners.parallelStream()
 				.forEach(listener -> listener.containerSynced(container, revision));
 	}
@@ -222,7 +222,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				// make sure the container isn't queued.
 				if ( !queue.contains(container) && !uploading.contains(container))
 				{
-					Logger.info("SCHEDULER: queueing " + container.getPath());
+					Logger.info("KEEPUP: SCHEDULER: queueing " + container.getPath());
 					queue.add(container);
 				}
 				break;
@@ -231,7 +231,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 			case REMOVE:
 			case REMOVE_ALL:
 			case SYNCED:
-				Logger.info("SCHEDULER: dequeueing " + container.getPath());
+				Logger.info("KEEPUP: SCHEDULER: dequeueing " + container.getPath());
 				queue.remove(container);
 				uploading.remove(container);
 				break;
@@ -260,7 +260,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				break;
 
 			case COMPLETED:
-				Logger.info("SCHEDULER: " + container + " has been backed-up");
+				Logger.info("KEEPUP: SCHEDULER: " + container + " has been backed-up");
 
 				try
 				{
@@ -275,6 +275,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				}
 				catch (OperationException e)
 				{
+					Logger.error("KEEPUP: SCHEDULER: failed to rename file after upload");
 					Logger.except(e);
 					e.printStackTrace();
 
@@ -285,6 +286,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					}
 					catch (OperationException e1)
 					{
+						Logger.error("KEEPUP: SCHEDULER: failed to delete uploaded file after failed rename!");
 						Logger.except(e1);
 						e1.printStackTrace();
 					}
@@ -312,7 +314,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 
 			case FAILED:
 			case CANCELLED:
-				Logger.info("SCHEDULER: " + container + " failed or cancelled its backup");
+				Logger.info("KEEPUP: SCHEDULER: " + container + " failed or cancelled its backup");
 
 				// queue the file again
 				queue.add(container);
@@ -358,13 +360,13 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				if ( !queue.isEmpty())
 				{
 					remainingTime -= 10;
-					Logger.info("SCHEDULER: remaining secs => " + remainingTime);
+					Logger.info("KEEPUP: SCHEDULER: remaining secs => " + remainingTime);
 				}
 
 				// count down expired, start uploading what's in the queue.
 				if (remainingTime <= 0)
 				{
-					Logger.info("SCHEDULER: starting queue upload ...");
+					Logger.info("KEEPUP: SCHEDULER: starting queue upload ...");
 					startUploading();
 				}
 			}

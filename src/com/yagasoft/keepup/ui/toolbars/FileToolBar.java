@@ -103,11 +103,11 @@ public class FileToolBar extends BrowserToolBar
 			// no folder, so let the user choose either 'root', or stop.
 			if (remoteFolder == null)
 			{
-				Logger.error("Nothing to upload to!");
+				Logger.error("KEEPUP: FILE TOOLBAR: nothing to upload to!");
 				
 				if (Msg.askConfirmation("Upload to 'root'? This will choose the best fit from all CSPs."))
 				{
-					Logger.info("Uploading to root ...");
+					Logger.info("KEEPUP: FILE TOOLBAR: uploading to root ...");
 				}
 				else
 				{
@@ -120,7 +120,7 @@ public class FileToolBar extends BrowserToolBar
 			// no file, then no need to proceed.
 			if (files.size() == 0)
 			{
-				Logger.error("Nothing to upload!");
+				Logger.error("KEEPUP: FILE TOOLBAR: nothing to upload!");
 				Msg.showError("Please, choose a file first.");
 				return;
 			}
