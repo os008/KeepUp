@@ -46,10 +46,12 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			case ADD:
 				// make sure the path is in the database
 				DB.insertOrUpdate(DB.Table.backup_path, DB.backupPathColumns
-						, new String[] { container.getPath(), App.formRemoteBackupParent(container) });
+						, new String[] { container.getPath(), App.formRemoteBackupParent(container) }
+						, new int[] { 0 });
 				// set the path status.
 				DB.insertOrUpdate(DB.Table.backup_status, DB.backupStatusColumns
-						, new String[] { container.getPath(), State.MODIFY.toString() });
+						, new String[] { container.getPath(), State.MODIFY.toString() }
+						, new int[] { 0 });
 				break;
 
 			case SYNCED:
@@ -57,15 +59,16 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			case DELETE:
 				// set the path status.
 				DB.updateRecord(DB.Table.backup_status, DB.backupStatusColumns
-						, new String[] { container.getPath(), state.toString() });
+						, new String[] { container.getPath(), state.toString() }
+						, DB.backupStatusColumns[0] + " = '" + container.getPath() + "'");
 				break;
 
 			case REMOVE:
 			case REMOVE_ALL:
 				// delete all traces of this container from the DB.
-				DB.deleteRecord(DB.Table.backup_revisions, DB.backupRevisionsColumns[0] + " = " + container.getPath());
-				DB.deleteRecord(DB.Table.backup_status, DB.backupStatusColumns[0] + " = " + container.getPath());
-				DB.deleteRecord(DB.Table.backup_path, DB.backupPathColumns[0] + " = " + container.getPath());
+				DB.deleteRecord(DB.Table.backup_revisions, DB.backupRevisionsColumns[0] + " = '" + container.getPath() + "'");
+				DB.deleteRecord(DB.Table.backup_status, DB.backupStatusColumns[0] + " = '" + container.getPath() + "'");
+				DB.deleteRecord(DB.Table.backup_path, DB.backupPathColumns[0] + " = '" + container.getPath() + "'");
 				break;
 		}
 	}
@@ -78,6 +81,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 	public void containerSynced(Container<?> container, String revision)
 	{
 		// add the new revision to the DB.
-		DB.insertRecord(DB.Table.backup_revisions, new String[] { container.getPath(), revision });
+		DB.insertRecord(DB.Table.backup_revisions
+				, new String[] { container.getPath(), revision, container.getDate() + "" });
 	}
 }

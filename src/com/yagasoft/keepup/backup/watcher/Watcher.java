@@ -190,7 +190,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	 */
 	protected void notifyListeners(Container<?> container, State state)
 	{
-		Logger.info("WATCHER: container changed state: " + state + " => " + container.getPath());
+		Logger.info("WATCHER: container CHANGED state: " + state + " => " + container.getPath());
 		listeners.parallelStream()
 				.forEach(listener -> listener.watchListChanged(container, state));
 	}

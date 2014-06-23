@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/DB.java
  *
- *			Modified: 15-Jun-2014 (23:35:11)
+ *			Modified: 23-Jun-2014 (23:26:28)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -64,7 +64,7 @@ public final class DB
 	}
 
 	/** Options columns. */
-	public static String[]	optionsColumns			= new String[] { "option", "value" };
+	public static String[]	optionsColumns			= new String[] { "category", "option", "value" };
 
 	/** Backup path columns. The 'remote' is the remote parent, not full path. */
 	public static String[]	backupPathColumns		= new String[] { "path", "remote" };
@@ -122,7 +122,7 @@ public final class DB
 	private static void initTables() throws SQLException
 	{
 		// create the options table.
-		createTable(Table.options, optionsColumns, optionsColumns[0]);
+		createTable(Table.options, optionsColumns, "category, option");
 
 		// create the files path table.
 		createTable(Table.backup_path, backupPathColumns, backupPathColumns[0]);
@@ -406,9 +406,11 @@ public final class DB
 	 *            Columns.
 	 * @param values
 	 *            Values.
+	 * @param primaryKeysIndexes
+	 *            Primary keys indexes (zero-based), which will be used to form the condition.
 	 * @return true, if successful
 	 */
-	public static boolean insertOrUpdate(Table table, String[] columns, String[] values)
+	public static boolean insertOrUpdate(Table table, String[] columns, String[] values, int[] primaryKeysIndexes)
 	{
 		if (insertRecord(table, values))
 		{
@@ -416,7 +418,15 @@ public final class DB
 		}
 		else
 		{
-			return updateRecord(table, columns, values, columns[0] + " = " + values[0]);
+			String condition = "";
+
+			// form the condition
+			for (int i = 0; i < primaryKeysIndexes.length; i++)
+			{
+				condition += columns[i] + " = '" + values[i] + ((i + 1) < primaryKeysIndexes.length ? "' AND " : "'");
+			}
+
+			return updateRecord(table, columns, values, condition);
 		}
 	}
 
@@ -475,7 +485,7 @@ public final class DB
 			}
 
 			return resultList.toArray(
-					new String[resultList.size()][result.getMetaData().getColumnCount()]);
+					new String[resultList.size()][]);
 		}
 		catch (Exception e)
 		{
