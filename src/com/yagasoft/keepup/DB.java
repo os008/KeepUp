@@ -412,20 +412,24 @@ public final class DB
 	 */
 	public static boolean insertOrUpdate(Table table, String[] columns, String[] values, int[] primaryKeysIndexes)
 	{
-		if (insertRecord(table, values))
+		String condition = "";
+
+		// form the condition
+		for (int i = 0; i < primaryKeysIndexes.length; i++)
 		{
-			return true;
+			condition += columns[i] + " = '" + values[i] + ((i + 1) < primaryKeysIndexes.length ? "' AND " : "'");
+		}
+
+		// does the key already exist?
+		String[][] result = getRecord(table, columns, condition);
+
+		// if not, then insert, if it does exist then update its row
+		if (result == null || result.length <= 0)
+		{
+			return insertRecord(table, values);
 		}
 		else
 		{
-			String condition = "";
-
-			// form the condition
-			for (int i = 0; i < primaryKeysIndexes.length; i++)
-			{
-				condition += columns[i] + " = '" + values[i] + ((i + 1) < primaryKeysIndexes.length ? "' AND " : "'");
-			}
-
 			return updateRecord(table, columns, values, condition);
 		}
 	}
@@ -482,7 +486,7 @@ public final class DB
 
 				// add the row to the list
 				resultList.add(tempRow);
-				
+
 				// reset array
 				tempRow = new String[result.getMetaData().getColumnCount()];
 			}

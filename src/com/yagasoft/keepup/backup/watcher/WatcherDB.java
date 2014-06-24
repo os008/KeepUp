@@ -41,9 +41,9 @@ public class WatcherDB implements IWatchListener, ISyncListener
 	{
 		this.watcher = watcher;
 
+		syncRevisions();
 		initWatcherFromDB();
 		watcher.addListener(this);
-		syncRevisions();
 	}
 
 	/**
@@ -106,15 +106,18 @@ public class WatcherDB implements IWatchListener, ISyncListener
 				// get all the revisions related to this file in the parent
 				List<Container<?>> result = folder.findContainer(hashedName, true, false);
 
+				System.out.println("searched again " + result.size());
+
 				// if something was found
 				if ( !result.isEmpty())
 				{
 					// add them as a revision for this file to the DB.
 					for (Container<?> container : result)
 					{
-						DB.insertRecord(DB.Table.backup_revisions
+						DB.insertOrUpdate(DB.Table.backup_revisions, DB.backupRevisionsColumns
 								, new String[] { path[0], container.getName()
-										, container.getName().replace(hashedName, "") });
+										, container.getName().replace(hashedName, "") }
+								, new int[] { 0, 1 });
 					}
 				}
 			}
@@ -145,9 +148,9 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			case MODIFY:
 			case DELETE:
 				// set the path status.
-				DB.updateRecord(DB.Table.backup_status, DB.backupStatusColumns
+				DB.insertOrUpdate(DB.Table.backup_status, DB.backupStatusColumns
 						, new String[] { container.getPath(), state.toString() }
-						, DB.backupStatusColumns[0] + " = '" + container.getPath() + "'");
+						, new int[] { 0 });
 				break;
 
 			case REMOVE:
@@ -168,7 +171,8 @@ public class WatcherDB implements IWatchListener, ISyncListener
 	public void containerSynced(Container<?> container, String revision)
 	{
 		// add the new revision to the DB.
-		DB.insertRecord(DB.Table.backup_revisions
-				, new String[] { container.getPath(), revision, container.getDate() + "" });
+		DB.insertOrUpdate(DB.Table.backup_revisions, DB.backupRevisionsColumns
+				, new String[] { container.getPath(), revision, container.getDate() + "" }
+				, new int[] { 0, 1 });
 	}
 }

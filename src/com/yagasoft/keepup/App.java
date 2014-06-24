@@ -646,7 +646,7 @@ public final class App
 					try
 					{
 						// try to find the existing combinedfolder.
-						CombinedFolder result = threadedParent.findFolder(name);
+						CombinedFolder result = threadedParent.findFolder(name, false);
 
 						// if it doesn't exist, or the csp folder isn't added ...
 						if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
@@ -1398,8 +1398,7 @@ public final class App
 		while ((result != null) && !splitPath.isEmpty())
 		{
 			// search for the next node in this node.
-			result.updateCombinedFolder(true);
-			result = result.findFolder(splitPath.remove(0));
+			result = result.findFolder(splitPath.remove(0), true);
 		}
 
 		// if part of the path is not found ...
@@ -1409,7 +1408,7 @@ public final class App
 		}
 		else
 		{	// ... or search for the folder in the end node, might return null.
-			return result.findFolder(containerName);
+			return result.findFolder(containerName, true);
 		}
 	}
 

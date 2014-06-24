@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.combinedstorage/CombinedFolder.java
- * 
- *			Modified: 23-Jun-2014 (20:21:31)
+ *
+ *			Modified: 24-Jun-2014 (18:36:53)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -120,7 +123,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	public synchronized void addChild(RemoteFolder<?> folder)
 	{
 		// search for the child in this folder.
-		CombinedFolder combinedFolder = findFolder(folder.getName());
+		CombinedFolder combinedFolder = findFolder(folder.getName(), false);
 
 		// if you can't find it, create a new combinedfolder for it
 		if (combinedFolder == null)
@@ -149,7 +152,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 */
 	public synchronized void removeChild(RemoteFolder<?> folder)
 	{
-		CombinedFolder combinedFolder = findFolder(folder.getName());
+		CombinedFolder combinedFolder = findFolder(folder.getName(), false);
 
 		if (combinedFolder != null)
 		{
@@ -172,10 +175,12 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 */
 	public void updateCombinedFolder(final boolean online)
 	{
+		ExecutorService executor = Executors.newCachedThreadPool();
+
 		// go through the folders' list.
 		for (final RemoteFolder<?> folder : cspFolders.values())
 		{
-			new Thread(() ->
+			executor.execute(() ->
 			{
 				try
 				{
@@ -190,7 +195,20 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 				}
 
 				updateInfo(folder);
-			}).start();
+			});
+		}
+
+		// wait for them to finish.
+		executor.shutdown();
+
+		try
+		{
+			// TODO properly solve the deadlock here.
+			executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -303,15 +321,21 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	/**
 	 * Finds the {@link CombinedFolder} sub-folder with the same name as the one passed.
 	 *
-	 * @param name
-	 *            Name to search for.
+	 * @param name            Name to search for.
+	 * @param online update children from source before searching?
 	 * @return Combined folder found, or null if not
 	 */
-	public synchronized CombinedFolder findFolder(String name)
+	public CombinedFolder findFolder(String name, boolean online)
 	{
+		// if there are no sub-folders, then the contents might have never been loaded
+		if (subFolders.isEmpty() && online)
+		{
+			updateCombinedFolder(online);
+		}
+
 		// get the subfolder that match this name
 		return subFolders.values().parallelStream()
-				.filter(folder -> folder.getName().equals(name))	// keep only matches
+				.filter(folder -> folder.getName().equalsIgnoreCase(name))	// keep only matches
 				.findFirst()
 				.orElse(null);
 	}
@@ -326,7 +350,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 	 *            Recursive.
 	 * @return Container list
 	 */
-	public synchronized List<Container<?>> findContainer(String name, boolean partial, boolean recursive)
+	public List<Container<?>> findContainer(String name, boolean partial, boolean recursive)
 	{
 		return cspFolders.values().parallelStream()
 				// replace each folder with a stream containing its children that match the name
@@ -430,7 +454,7 @@ public class CombinedFolder implements Comparable<CombinedFolder>, IOperationLis
 		{
 			notifyContentListeners(UpdateType.REMOVE, folder);
 		}
-		
+
 		cspFolders = new HashMap<String, RemoteFolder<?>>();
 		subFolders = new HashMap<String, CombinedFolder>();
 	}
