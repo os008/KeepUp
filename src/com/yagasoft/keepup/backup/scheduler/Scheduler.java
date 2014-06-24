@@ -93,8 +93,8 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 			{
 				String parentPath = App.formRemoteBackupParent(container);
 
-				// check if file already existsF
-				if (App.searchForFile(parentPath + "/" + calculateNewName(container)).isEmpty())
+				// check if file already exists
+				if (App.searchForFile(parentPath + "/" + App.calculateHashedName(container)).isEmpty())
 				{
 					App.createFolder(parentPath.substring(0, parentPath.lastIndexOf('/'))
 							, parentPath.substring(parentPath.lastIndexOf('/') + 1, parentPath.length()));
@@ -113,7 +113,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				}
 				else
 				{	// container already backed-up.
-					notifyListenersOfSync(container, calculateNewName(container));
+					notifyListenersOfSync(container, App.calculateHashedName(container));
 				}
 			}
 
@@ -125,25 +125,6 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		{
 			resetTimer(timer);
 		}
-	}
-
-	private String calculateNewName(Container<?> container)
-	{
-		try
-		{
-			// refresh container's meta data (not done in real time)
-			container.updateFromSource();
-		}
-		catch (OperationException e)
-		{
-			Logger.except(e);
-			e.printStackTrace();
-		}
-
-		// prepare the path hash to be the start of the filename on the server
-		String pathHash = App.getMD5(container.getPath());
-		// form the new filename as the path hash plus the modified date, this will keep revisions of the file.
-		return pathHash + container.getDate();
 	}
 
 	/**
@@ -264,7 +245,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 
 				try
 				{
-					String newName = calculateNewName(container);
+					String newName = App.calculateHashedName(container);
 					// rename to new revision name.
 					remoteContainer.rename(newName);
 					// remove if everything went fine.

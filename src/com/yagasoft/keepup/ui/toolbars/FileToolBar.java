@@ -17,8 +17,6 @@ import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.JButton;
-
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Browse;
@@ -57,28 +55,22 @@ public class FileToolBar extends BrowserToolBar
 	 */
 	private void initBar()
 	{
-		JButton button = null;
-		
-		button = createButton("download", Actions.DOWNLOAD + "", "Download selected files.", "Download");
-		add(button);
-		
-		button = createButton("upload", Actions.UPLOAD + "", "Upload files to selected folder.", "Upload");
-		add(button);
-		
-		button = createButton("refresh", Actions.REFRESH + "", "Refresh contents of selected folder.", "Refresh");
-		add(button);
-		
-		button = createButton("copy", Actions.COPY + "", "copy selected file.", "Copy");
-		add(button);
-		
-		button = createButton("move", Actions.MOVE + "", "move selected file.", "Move");
-		add(button);
-		
-		button = createButton("rename", Actions.RENAME + "", "rename selected file.", "Rename");
-		add(button);
-		
-		button = createButton("delete", Actions.DELETE + "", "Delete selected file.", "Delete");
-		add(button);
+		addButtons();
+	}
+	
+	/**
+	 * Adds the buttons to the bar.
+	 */
+	protected void addButtons()
+	{
+		addButton(Action.DOWNLOAD, createButton("download", Action.DOWNLOAD + "", "Download selected files.", "Download"));
+		addButton(Action.UPLOAD, createButton("upload", Action.UPLOAD + "", "Upload files to selected folder.", "Upload"));
+		addButton(Action.REFRESH, createButton("refresh", Action.REFRESH + ""
+				, "Refresh contents of selected folder.", "Refresh"));
+		addButton(Action.COPY, createButton("copy", Action.COPY + "", "copy selected file.", "Copy"));
+		addButton(Action.MOVE, createButton("move", Action.MOVE + "", "move selected file.", "Move"));
+		addButton(Action.RENAME, createButton("rename", Action.RENAME + "", "rename selected file.", "Rename"));
+		addButton(Action.DELETE, createButton("delete", Action.DELETE + "", "Delete selected file.", "Delete"));
 	}
 	
 	/**
@@ -91,12 +83,12 @@ public class FileToolBar extends BrowserToolBar
 		
 		// Handle each button.
 		
-		if (Actions.DOWNLOAD.toString().equals(cmd))
+		if (Action.DOWNLOAD.toString().equals(cmd))
 		{
 			App.downloadFiles(tableController.getSelectedFiles());
 		}
 		
-		if (Actions.UPLOAD.toString().equals(cmd))
+		if (Action.UPLOAD.toString().equals(cmd))
 		{
 			CombinedFolder remoteFolder = App.getSelectedFolder();
 			
@@ -128,22 +120,22 @@ public class FileToolBar extends BrowserToolBar
 			App.uploadFiles(files, remoteFolder);
 		}
 		
-		if (Actions.REFRESH.toString().equals(cmd))
+		if (Action.REFRESH.toString().equals(cmd))
 		{
 			App.updateTable();
 		}
 		
-		if (Actions.COPY.toString().equals(cmd))
+		if (Action.COPY.toString().equals(cmd))
 		{
 			App.copyFiles(tableController.getSelectedFiles());
 		}
 		
-		if (Actions.MOVE.toString().equals(cmd))
+		if (Action.MOVE.toString().equals(cmd))
 		{
 			App.moveFiles(tableController.getSelectedFiles());
 		}
 		
-		if (Actions.RENAME.toString().equals(cmd))
+		if (Action.RENAME.toString().equals(cmd))
 		{
 			String newName = Msg.getInput("Please enter a new name for the file:");
 			
@@ -156,7 +148,7 @@ public class FileToolBar extends BrowserToolBar
 			App.renameFile(tableController.getSelectedFiles(), newName);
 		}
 		
-		if (Actions.DELETE.toString().equals(cmd))
+		if (Action.DELETE.toString().equals(cmd))
 		{
 			List<File<?>> selectedFiles = tableController.getSelectedFiles();
 			String filesNames = "";

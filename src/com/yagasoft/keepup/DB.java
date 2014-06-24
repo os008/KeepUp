@@ -482,6 +482,9 @@ public final class DB
 
 				// add the row to the list
 				resultList.add(tempRow);
+				
+				// reset array
+				tempRow = new String[result.getMetaData().getColumnCount()];
 			}
 
 			return resultList.toArray(

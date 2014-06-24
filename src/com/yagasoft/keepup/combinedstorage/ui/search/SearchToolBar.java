@@ -35,7 +35,8 @@ public class SearchToolBar extends FileToolBar
 	public SearchToolBar(FileTableController tableController)
 	{
 		super(tableController);
-		remove(1);		// remove upload button
-		remove(1);		// remove refresh button
+		
+		removeButton(Action.UPLOAD);
+		removeButton(Action.REFRESH);
 	}
 }

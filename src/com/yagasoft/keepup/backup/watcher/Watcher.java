@@ -79,7 +79,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	 * @param state
 	 *            State.
 	 */
-	private void setContainerState(Container<?> container, State state)
+	public void setContainerState(Container<?> container, State state)
 	{
 		if (state == State.ADD)
 		{

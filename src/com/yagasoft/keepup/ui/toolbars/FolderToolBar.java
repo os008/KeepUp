@@ -15,8 +15,6 @@ package com.yagasoft.keepup.ui.toolbars;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.JButton;
-
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Msg;
@@ -52,28 +50,13 @@ public class FolderToolBar extends BrowserToolBar
 	 */
 	protected void addButtons()
 	{
-		JButton button = null;
-
-		button = createButton("backward", Actions.BACKWARD + "", "Go to previous folder.", "Backward");
-		add(button);
-
-		button = createButton("forward", Actions.FORWARD + "", "Go to next folder.", "Forward");
-		add(button);
-
-		button = createButton("create", Actions.CREATE + "", "Create a folder.", "Create");
-		add(button);
-
-		button = createButton("refresh", Actions.REFRESH + "", "Refresh folders list.", "Refresh");
-		add(button);
-
-		button = createButton("rename", Actions.RENAME + "", "rename selected file.", "Rename");
-		add(button);
-
-		button = createButton("delete", Actions.DELETE + "", "Delete selected folder.", "Delete");
-		add(button);
-
-		button = createButton("paste", Actions.PASTE + "", "Paste into selected folder.", "Paste");
-		add(button);
+		addButton(Action.BACKWARD, createButton("backward", Action.BACKWARD + "", "Go to previous folder.", "Backward"));
+		addButton(Action.FORWARD, createButton("forward", Action.FORWARD + "", "Go to next folder.", "Forward"));
+		addButton(Action.CREATE, createButton("create", Action.CREATE + "", "Create a folder.", "Create"));
+		addButton(Action.REFRESH, createButton("refresh", Action.REFRESH + "", "Refresh folders list.", "Refresh"));
+		addButton(Action.RENAME, createButton("rename", Action.RENAME + "", "rename selected file.", "Rename"));
+		addButton(Action.DELETE, createButton("delete", Action.DELETE + "", "Delete selected folder.", "Delete"));
+		addButton(Action.PASTE, createButton("paste", Action.PASTE + "", "Paste into selected folder.", "Paste"));
 	}
 
 	/**

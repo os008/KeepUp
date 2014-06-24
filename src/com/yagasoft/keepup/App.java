@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup/App.java
  *
- *			Modified: 23-Jun-2014 (20:03:14)
+ *			Modified: 24-Jun-2014 (16:45:32)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -46,6 +46,7 @@ import com.yagasoft.keepup.backup.ui.browser.LocalTableController;
 import com.yagasoft.keepup.backup.ui.browser.LocalTree;
 import com.yagasoft.keepup.backup.ui.watcher.WatcherTableController;
 import com.yagasoft.keepup.backup.watcher.Watcher;
+import com.yagasoft.keepup.backup.watcher.WatcherDB;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ui.CombinedStoragePanel;
 import com.yagasoft.keepup.combinedstorage.ui.browser.CSBrowserPanel;
@@ -523,6 +524,8 @@ public final class App
 		scheduler = new Scheduler();
 		watcher.addListener(scheduler);
 		scheduler.addListener(watcher);
+		WatcherDB watcherDB = new WatcherDB(watcher);
+		scheduler.addListener(watcherDB);
 	}
 
 	// ======================================================================================
@@ -1352,7 +1355,7 @@ public final class App
 	 *
 	 * @param path
 	 *            Path.
-	 * @return List of files with the same path in all CSPs.
+	 * @return List of files with the same path in all CSPs, or empty list if it doesn't exist.
 	 */
 	public static List<RemoteFile<?>> searchForFile(String path)
 	{
@@ -1380,7 +1383,7 @@ public final class App
 	 *
 	 * @param path
 	 *            Path.
-	 * @return combined folder found, or not if not.
+	 * @return combined folder found, or null if not.
 	 */
 	public static CombinedFolder searchForFolder(String path)
 	{
@@ -1539,12 +1542,71 @@ public final class App
 	}
 
 	/**
+	 * Calculate hashed name for a file to be uploaded to the server as a revision in the backup system.
+	 *
+	 * @param container
+	 *            Container.
+	 * @return hashed name
+	 */
+	public static String calculateHashedName(Container<?> container)
+	{
+		try
+		{
+			// refresh container's meta data (not done in real time)
+			container.updateFromSource();
+		}
+		catch (OperationException e)
+		{
+			Logger.except(e);
+			e.printStackTrace();
+		}
+
+		// prepare the path hash to be the start of the filename on the server
+		String pathHash = App.getMD5(container.getPath());
+		// form the new filename as the path hash plus the modified date, this will keep revisions of the file.
+		return pathHash + container.getDate();
+	}
+
+	/**
 	 * Form the path to the parent, using a prefix, and removing ':' and '\'
 	 * because they are windows based and unsupported.
 	 */
 	public static String formRemoteBackupParent(Container<?> container)
 	{
 		return "/keepup_backup/" + container.getParent().getPath().replace(":", "").replace("\\", "/");
+	}
+
+	/**
+	 * Gets the {@link State} from a string for backup system.
+	 *
+	 * @param stateString
+	 *            State string.
+	 * @return the state
+	 */
+	public static State getState(String stateString)
+	{
+		switch (stateString)
+		{
+			case "ADD":
+				return State.ADD;
+
+			case "MODIFY":
+				return State.MODIFY;
+
+			case "DELETE":
+				return State.DELETE;
+
+			case "SYNCED":
+				return State.SYNCED;
+
+			case "REMOVE_ALL":
+				return State.REMOVE_ALL;
+
+			case "REMOVE":
+				return State.REMOVE;
+		}
+
+		return null;
 	}
 
 	/**
