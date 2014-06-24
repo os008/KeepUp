@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.ui/BackupPanel.java
- * 
+ *
  *			Modified: 12-Jun-2014 (23:22:00)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
@@ -21,8 +21,8 @@ import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
 
+import com.yagasoft.keepup.backup.ui.watcher.WatcherPanel;
 import com.yagasoft.keepup.ui.browser.BrowserPanel;
-import com.yagasoft.keepup.ui.browser.table.FileTable;
 
 
 /**
@@ -53,7 +53,7 @@ public class BackupPanel extends JPanel
 	protected JButton			removeAllButton;
 	
 	/** Table. */
-	protected FileTable			table;
+	protected WatcherPanel		tablePanel;
 	
 	/**
 	 * Create the panel.
@@ -63,10 +63,10 @@ public class BackupPanel extends JPanel
 	 * @param table
 	 *            Table.
 	 */
-	public BackupPanel(BrowserPanel browserPanel, FileTable table)
+	public BackupPanel(BrowserPanel browserPanel, WatcherPanel tablePanel)
 	{
 		this.browserPanel = browserPanel;
-		this.table = table;
+		this.tablePanel = tablePanel;
 		
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new MigLayout("", "[50px]",
@@ -95,7 +95,7 @@ public class BackupPanel extends JPanel
 		
 		add(buttonPanel);
 		
-		add(table);
+		add(tablePanel);
 	}
 	
 	/**

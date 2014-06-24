@@ -351,6 +351,11 @@ public final class DB
 		}
 		catch (Exception e)
 		{
+			if (e.getMessage().contains("no transaction is active"))
+			{
+				return success;
+			}
+
 			Logger.error("KEEPUP: DB: failed to update record: " + query);
 			Logger.except(e);
 			e.printStackTrace();

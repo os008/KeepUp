@@ -44,48 +44,48 @@ import com.yagasoft.overcast.base.container.transfer.event.TransferState;
  */
 public class QueuePanel extends JPanel implements ITransferProgressListener
 {
-	
+
 	/** Constant: SerialVersionUID. */
 	private static final long	serialVersionUID	= -7487540524979826459L;
-	
+
 	/** Table queue. */
 	private JTable				tableQueue;
-	
+
 	/** Scroll pane queue. */
 	private JScrollPane			scrollPaneQueue;
-	
+
 	/**
 	 * Create the panel.
 	 */
 	public QueuePanel()
 	{
-		
+
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		tableQueue = new JTable(new BetterTableModel(
 				new String[] { "File", "Destination", "CSP", "Direction", "Status", "Progress", "Cancel" }, 0));
 		scrollPaneQueue = new JScrollPane(tableQueue);
 		add(scrollPaneQueue);
-		
+
 		tableQueue.setDefaultRenderer(Float.class, new ProgressRenderer());
-		
+
 		// --------------------------------------------------------------------------------------
 		// #region Cancel button.
-		
+
 		Action action = new AbstractAction()
 		{
-			
+
 			private static final long	serialVersionUID	= 5104056154903292487L;
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				JTable table = (JTable) e.getSource();
 				int modelRow = Integer.valueOf(e.getActionCommand());		// get row clicked.
-				
+
 				// get the status string in that row.
 				String status = (String) ((BetterTableModel) tableQueue.getModel()).getValueAt(
 						modelRow, tableQueue.getColumnModel().getColumnIndex("Status"));
-				
+
 				// if it's in progress, then cancel the job.
 				if ( !(status.toLowerCase().contains("failed")))
 				{
@@ -93,7 +93,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 							modelRow, tableQueue.getColumnModel().getColumnIndex("File"));
 					cancelTransfer(job);
 				}
-				
+
 				// if it's failed or initialised, remove. Those two aren't removed automatically anyway.
 				if (status.toLowerCase().contains("failed") || status.toLowerCase().contains("queued"))
 				{
@@ -101,15 +101,15 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 				}
 			}
 		};
-		
+
 		ButtonColumn buttonColumn = new ButtonColumn(tableQueue, action, tableQueue.getColumnModel().getColumnIndex("Cancel"));
 		tableQueue.setCellEditor(buttonColumn);
-		
+
 		// #endregion Cancel button.
 		// --------------------------------------------------------------------------------------
-		
+
 	}
-	
+
 	/**
 	 * Adds the transfer job.
 	 *
@@ -120,12 +120,12 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	 */
 	public void addTransferJob(TransferJob<?> job, String direction)
 	{
-		((BetterTableModel) tableQueue.getModel())
-				.addRow(
-				new Object[] {
-						job, job.getParent().getPath(), job.getCsp(), direction, "Queued ...", new Float(0), new CancelButton() });
+		((BetterTableModel) tableQueue.getModel()).addRow(
+				new Object[] { job, job.getParent().getPath()
+						, job.getCsp(), direction, "Queued ..."
+						, new Float(0), new CancelButton() });
 	}
-	
+
 	/**
 	 * @see com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.event.TransferEvent)
 	 */
@@ -135,23 +135,24 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		Logger.info("KEEPUP: QUEUE: progress " + event.getContainer().getPath()
 				+ ": " + event.getState() + " => " + event.getProgress());
-		
+
 		// get the data in the table.
 		Vector rows = ((BetterTableModel) tableQueue.getModel()).getDataVector();
-		
+
 		String statusString = null;
-		
+		boolean downloadJob = event.getJob().isDownloadJob();
+
 		switch (event.getState())
 		{
 			case INITIALISED:
 			case IN_PROGRESS:
 				statusString = event.getState() == TransferState.IN_PROGRESS ? "In progress ..." : "Initialised ...";
-				
+
 				// go through the rows searching for the matching row ...
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-					
+
 					// if the file at that row has the same path ...
 					if (row.contains(event.getJob()))
 					{
@@ -162,60 +163,68 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					}
 				}
 				break;
-			
+
 			case FAILED:
 				statusString = "FAILED!";
-				
+
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-					
+
 					if (row.contains(event.getJob()))
 					{
 						setStatus(i, statusString);
-						App.updateTable();		// redraw the table after fetching file list.
+
+						if (!downloadJob)
+						{
+							App.updateTable();		// redraw the table after fetching file list.
+						}
 						break;
 					}
 				}
-				
+
 				break;
-			
+
 			case COMPLETED:
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-					
+
 					if (row.contains(event.getJob()))
 					{
 						if (rows.size() == 1)
 						{
 							App.updateFreeSpace();	// update free space display
-							App.updateTable();
+
+							if (!downloadJob)
+							{
+								App.updateTable();
+							}
 						}
-						
+
 						((BetterTableModel) tableQueue.getModel()).removeRow(i);
 						break;
 					}
 				}
-				
+
 				break;
-			
+
 			case CANCELLED:
 				for (int i = 0; i < rows.size(); i++)
 				{
 					Vector row = (Vector) rows.get(i);
-					
+
 					if (row.contains(event.getJob()))
 					{
 						((BetterTableModel) tableQueue.getModel()).removeRow(i);
 						break;
 					}
 				}
-				
+
 				break;
 		}
 	}
-	
+
 	/**
 	 * Updates the progress of the progress bar for passed row.<br />
 	 * This only updates the attached data value for that cell; the bar is updated by an event automatically.
@@ -230,7 +239,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 		((BetterTableModel) tableQueue.getModel()).setValueAt(new Float(progress), row, tableQueue.getColumnModel()
 				.getColumnIndex("Progress"));
 	}
-	
+
 	/**
 	 * Updates the status of the file in the queue.<br />
 	 *
@@ -243,7 +252,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		((BetterTableModel) tableQueue.getModel()).setValueAt(status, row, tableQueue.getColumnModel().getColumnIndex("Status"));
 	}
-	
+
 	/**
 	 * Cancel transfer related to the job passed.
 	 *
@@ -255,12 +264,12 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 	{
 		// get the data in the table.
 		Vector rows = ((BetterTableModel) tableQueue.getModel()).getDataVector();
-		
+
 		// look for the job in the queue
 		for (int i = 0; i < rows.size(); i++)
 		{
 			Vector row = (Vector) rows.get(i);
-			
+
 			// if found, then fetch the csp and invoke cancel
 			if (row.contains(job))
 			{
@@ -269,20 +278,20 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 			}
 		}
 	}
-	
+
 	/**
 	 * How the button will appear in the cancel column.
 	 */
 	private class CancelButton extends ImageIcon
 	{
-		
+
 		private static final long	serialVersionUID	= 2710162133669731329L;
-		
+
 		public CancelButton()
 		{
 			super(_keepup.class.getResource("images/cancel.gif"));
 		}
-		
+
 	}
-	
+
 }

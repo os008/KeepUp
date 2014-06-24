@@ -1,5 +1,5 @@
 
-package com.yagasoft.keepup.backup.ui;
+package com.yagasoft.keepup.ui.browser.table.renderers;
 
 
 import java.awt.Component;

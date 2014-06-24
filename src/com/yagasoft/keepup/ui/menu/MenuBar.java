@@ -13,6 +13,8 @@
 package com.yagasoft.keepup.ui.menu;
 
 
+import java.awt.event.WindowEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -41,6 +43,9 @@ public class MenuBar extends JMenuBar
 	/** Help menu. */
 	private JMenu				helpMenu;
 
+	/** Exit. */
+	private JMenuItem			exit;
+
 	/** Options. */
 	private JMenuItem			options;
 
@@ -62,6 +67,10 @@ public class MenuBar extends JMenuBar
 	{
 		// build file menu
 		fileMenu = new JMenu("File");
+		exit = new JMenuItem("Exit");
+		exit.addActionListener(event -> App.mainWindow.getFrame()
+				.dispatchEvent(new WindowEvent(App.mainWindow.getFrame(), WindowEvent.WINDOW_CLOSING)));
+		fileMenu.add(exit);
 		add(fileMenu);
 
 		// build edit menu

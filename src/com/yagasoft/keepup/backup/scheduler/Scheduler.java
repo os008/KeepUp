@@ -49,7 +49,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	protected BackupThread			backupThread;
 
 	/** Timer. */
-	protected int					timer		= 20;
+	protected int					timer		= 60;
 
 	/** Listeners. */
 	protected Set<ISyncListener>	listeners	= new HashSet<ISyncListener>();

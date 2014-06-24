@@ -106,8 +106,6 @@ public class WatcherDB implements IWatchListener, ISyncListener
 				// get all the revisions related to this file in the parent
 				List<Container<?>> result = folder.findContainer(hashedName, true, false);
 
-				System.out.println("searched again " + result.size());
-
 				// if something was found
 				if ( !result.isEmpty())
 				{

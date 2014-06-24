@@ -322,9 +322,6 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 					eventsLoop:
 					for (WatchEvent<?> event : events)
 					{
-						System.out.println("WATCHER: " + event.kind() + " event! " + ((Path) watckKey.watchable())
-								.resolve(((WatchEvent<Path>) event).context()));
-
 						// don't need these events
 						if (event.kind() == StandardWatchEventKinds.OVERFLOW)
 						{
