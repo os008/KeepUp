@@ -62,7 +62,7 @@ public class SearchPanel extends JPanel
 		renderers.put(File.class, new FilePathRenderer());		// render a file as its path
 		searchedFilesTable = new FileTable(
 				new String[] { "Path", "Size", "CSP" }
-				, new float[] { 0.5f, 0.25f, 0.25f }
+				, new float[] { 1f, 65f, 80f }
 				, new int[] { 1 }
 				, renderers);
 

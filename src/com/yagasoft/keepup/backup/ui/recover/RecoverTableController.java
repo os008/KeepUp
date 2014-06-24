@@ -51,6 +51,8 @@ public class RecoverTableController extends FileTableController
 	 */
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
-	{}
+	{
+		throw new UnsupportedOperationException("This table doesn't have a tree!");
+	}
 	
 }

@@ -6,7 +6,7 @@
  * 
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.ui.browser/LocalTableController.java
  * 
- *			Modified: 12-Jun-2014 (23:22:42)
+ *			Modified: 25-Jun-2014 (01:13:10)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -22,9 +22,12 @@ import java.util.stream.Collectors;
 
 import javax.swing.event.TreeSelectionEvent;
 
+import com.yagasoft.keepup.backup.State;
+import com.yagasoft.keepup.backup.watcher.IWatchListener;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.keepup.ui.browser.table.FileTable;
 import com.yagasoft.keepup.ui.browser.table.FileTableController;
+import com.yagasoft.overcast.base.container.Container;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
 
@@ -32,7 +35,7 @@ import com.yagasoft.overcast.base.container.local.LocalFile;
 /**
  * The Class LocalTableController.
  */
-public class LocalTableController extends FileTableController implements ITreeSelectionListener
+public class LocalTableController extends FileTableController implements ITreeSelectionListener, IWatchListener
 {
 	
 	/**
@@ -84,6 +87,23 @@ public class LocalTableController extends FileTableController implements ITreeSe
 	 */
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
-	{}
+	{
+		throw new UnsupportedOperationException("This table doesn't have a tree!");
+	}
+	
+	/**
+	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
+	 *      com.yagasoft.keepup.backup.State)
+	 */
+	@Override
+	public void watchListChanged(Container<?> container, State state)
+	{
+		if (container.isFolder())
+		{
+			return;
+		}
+		
+		updateTable(getAllFiles());
+	}
 	
 }

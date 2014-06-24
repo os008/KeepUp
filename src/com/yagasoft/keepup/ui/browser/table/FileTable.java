@@ -192,10 +192,30 @@ public class FileTable extends JPanel
 	 */
 	public void adjustColumns(int width)
 	{
+		int totalWidth = getWidth();
+
 		for (int i = 0; i < columnNames.length; i++)
 		{
-			tableFiles.getColumnModel().getColumn(i).setPreferredWidth((int) (getWidth() * columnsWidthPercent[i]));
-			tableFiles.getColumnModel().getColumn(i).setMinWidth((int) (getWidth() * columnsWidthPercent[i]));
+			// if it's greater than one, then it's not a percent, but a fixed width
+			if (columnsWidthPercent[i] > 1)
+			{
+				int columnwidth = (int) columnsWidthPercent[i];
+				totalWidth -= columnwidth;
+				tableFiles.getColumnModel().getColumn(i).setPreferredWidth(columnwidth);
+				tableFiles.getColumnModel().getColumn(i).setMinWidth(columnwidth);
+			}
+		}
+
+		// go another time for percentages
+		for (int i = 0; i < columnNames.length; i++)
+		{
+			// fit it at a % of the remaining size
+			if (columnsWidthPercent[i] <= 1)
+			{
+				int columnwidth = (int) (totalWidth * columnsWidthPercent[i]);
+				tableFiles.getColumnModel().getColumn(i).setPreferredWidth(columnwidth);
+				tableFiles.getColumnModel().getColumn(i).setMinWidth(columnwidth);
+			}
 		}
 	}
 

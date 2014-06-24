@@ -6,7 +6,7 @@
  *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.scheduler/Scheduler.java
  *
- *			Modified: 13-Jun-2014 (23:18:03)
+ *			Modified: 25-Jun-2014 (01:05:40)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -38,22 +38,22 @@ import com.yagasoft.overcast.exception.OperationException;
  */
 public class Scheduler implements IWatchListener, ITransferProgressListener
 {
-
+	
 	/** Queue. */
 	protected Queue<Container<?>>	queue		= new LinkedList<Container<?>>();
-
+	
 	/** Uploading. */
 	protected List<Container<?>>	uploading	= new ArrayList<Container<?>>();
-
+	
 	/** Backup thread. */
 	protected BackupThread			backupThread;
-
+	
 	/** Timer. */
 	protected int					timer		= 60;
-
+	
 	/** Listeners. */
 	protected Set<ISyncListener>	listeners	= new HashSet<ISyncListener>();
-
+	
 	/**
 	 * Instantiates a new scheduler.
 	 */
@@ -63,11 +63,11 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		// TODO remove obsoletes in db and server, and revise empty folders.
 		// make sure the root folder for backup exists.
 		App.createFolder(App.ROOT, "keepup_backup");
-
+		
 		backupThread = new BackupThread();
 		startBackupLoop();
 	}
-
+	
 	/**
 	 * Start the backup loop.
 	 */
@@ -76,37 +76,45 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		Logger.info("KEEPUP: SCHEDULER: starting backup loop.");
 		new Thread(backupThread).start();
 	}
-
+	
+	/**
+	 * Stop backup loop. Might be used when resetting backup system.
+	 */
+	public void stopBackupLoop()
+	{
+		backupThread.stop = true;
+	}
+	
 	/**
 	 * Starts uploading.
 	 */
 	public void startUploading()
 	{
 		stopTimer();
-
+		
 		Container<?> container = null;
-
+		
 		// go through the queue
 		while ((container = queue.poll()) != null)
 		{
 			if ( !container.isFolder())
 			{
 				String parentPath = App.formRemoteBackupParent(container);
-
+				
 				// check if file already exists
 				if (App.searchForFile(parentPath + "/" + App.calculateHashedName(container)).isEmpty())
 				{
 					App.createFolder(parentPath.substring(0, parentPath.lastIndexOf('/'))
 							, parentPath.substring(parentPath.lastIndexOf('/') + 1, parentPath.length()));
-
+					
 					CombinedFolder parent = App.searchForFolder(parentPath);
-
+					
 					UploadJob<?, ?> uploadJob = App.uploadFile((LocalFile) container, parent, false);
-
+					
 					if (uploadJob != null)
 					{
 						uploadJob.addProgressListener(this);
-
+						
 						// move file to uploading list.
 						uploading.add(container);
 					}
@@ -116,17 +124,17 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					notifyListenersOfSync(container, App.calculateHashedName(container));
 				}
 			}
-
+			
 			// TODO implement folder upload
 		}
-
+		
 		// emptied the queue, but nothing is uploading, reset timer and wait.
 		if (uploading.isEmpty())
 		{
 			resetTimer(timer);
 		}
 	}
-
+	
 	/**
 	 * Reset timer.
 	 *
@@ -136,10 +144,10 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	public void resetTimer(int seconds)
 	{
 		Logger.info("KEEPUP: SCHEDULER: timer reset to " + seconds);
-
+		
 		backupThread.remainingTime = seconds;
 	}
-
+	
 	/**
 	 * Stop timer.
 	 */
@@ -147,7 +155,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		backupThread.remainingTime = Integer.MAX_VALUE;
 	}
-
+	
 	/**
 	 * Notify listeners that a container has been sync'd.
 	 *
@@ -160,7 +168,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		listeners.parallelStream()
 				.forEach(listener -> listener.containerSynced(container, revision));
 	}
-
+	
 	/**
 	 * Adds the listener.
 	 *
@@ -171,7 +179,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		listeners.add(listener);
 	}
-
+	
 	/**
 	 * Removes the listener.
 	 *
@@ -182,7 +190,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		listeners.remove(listener);
 	}
-
+	
 	/**
 	 * Watch list changed.
 	 *
@@ -207,7 +215,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					queue.add(container);
 				}
 				break;
-
+			
 			case DELETE:
 			case REMOVE:
 			case REMOVE_ALL:
@@ -218,7 +226,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				break;
 		}
 	}
-
+	
 	/**
 	 * @see com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener#transferProgressChanged(com.yagasoft.overcast.base.container.transfer.event.TransferEvent)
 	 */
@@ -227,7 +235,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 	{
 		Container<?> container = event.getContainer();
 		Container<?> remoteContainer = event.getDestination();
-
+		
 		switch (event.getState())
 		{
 			case INITIALISED:
@@ -237,12 +245,12 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				{
 					event.getJob().cancelTransfer();
 				}
-
+				
 				break;
-
+			
 			case COMPLETED:
 				Logger.info("KEEPUP: SCHEDULER: " + container + " has been backed-up");
-
+				
 				try
 				{
 					String newName = App.calculateHashedName(container);
@@ -250,7 +258,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					remoteContainer.rename(newName);
 					// remove if everything went fine.
 					uploading.remove(container);
-
+					
 					// notify listeners of sync
 					notifyListenersOfSync(container, newName);
 				}
@@ -259,7 +267,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					Logger.error("KEEPUP: SCHEDULER: failed to rename file after upload");
 					Logger.except(e);
 					e.printStackTrace();
-
+					
 					try
 					{
 						// something went wrong, so delete the file.
@@ -271,10 +279,10 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 						Logger.except(e1);
 						e1.printStackTrace();
 					}
-
+					
 					queue.add(container);
 					uploading.remove(container);
-
+					
 					if (uploading.isEmpty())
 					{
 						// reset the timer to try again in 15 minutes.
@@ -282,25 +290,25 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 						return;
 					}
 				}
-
+				
 				// upload queue is empty, reset timer and wait.
 				if (uploading.isEmpty())
 				{
 					// reset the timer to try again in 15 minutes.
 					resetTimer(timer);
 				}
-
+				
 				// TODO notify listeners
 				break;
-
+			
 			case FAILED:
 			case CANCELLED:
 				Logger.info("KEEPUP: SCHEDULER: " + container + " failed or cancelled its backup");
-
+				
 				// queue the file again
 				queue.add(container);
 				uploading.remove(container);
-
+				
 				if (uploading.isEmpty())
 				{
 					// reset the timer to try again in 15 minutes.
@@ -308,16 +316,17 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				}
 		}
 	}
-
+	
 	/**
 	 * The Class BackupThread.
 	 */
 	private class BackupThread implements Runnable
 	{
-
+		
 		/** Remaining time in seconds. */
-		public int	remainingTime	= timer;
-
+		public int		remainingTime	= timer;
+		public boolean	stop			= false;
+		
 		/**
 		 * @see java.lang.Runnable#run()
 		 */
@@ -325,7 +334,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		public void run()
 		{
 			// loop forever and start backup when timer runs out
-			while (true)
+			while ( !stop)
 			{
 				try
 				{
@@ -335,7 +344,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				{
 					e.printStackTrace();
 				}
-
+				
 				// slept for 10 seconds, so deduct them from remaining time
 				// if queue is not empty only.
 				if ( !queue.isEmpty())
@@ -343,7 +352,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 					remainingTime -= 10;
 					Logger.info("KEEPUP: SCHEDULER: remaining secs => " + remainingTime);
 				}
-
+				
 				// count down expired, start uploading what's in the queue.
 				if (remainingTime <= 0)
 				{

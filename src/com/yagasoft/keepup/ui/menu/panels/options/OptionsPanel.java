@@ -118,16 +118,16 @@ public class OptionsPanel extends JPanel implements ActionListener
 	{
 		if (e.getSource() == buttonCancel)
 		{
-			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 			clearListeners();
+			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 		}
 		else if (e.getSource() == buttonOk)
 		{
 			setCSPSettings();
 			notifyListeners();
+			clearListeners();
 			frame.dispose();
 			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-			clearListeners();
 		}
 	}
 	

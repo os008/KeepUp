@@ -81,7 +81,7 @@ public class MenuBar extends JMenuBar
 			OptionsPanel optionsPanel = new OptionsPanel();
 			JFrame frame = App.showSubWindow(optionsPanel, "Options");
 			optionsPanel.setFrame(frame);
-			optionsPanel.addListener(() -> App.resetCSPs());
+			optionsPanel.addListener(() -> new Thread(() -> App.resetCSPs()).start());
 		});
 		editMenu.add(options);
 		add(editMenu);

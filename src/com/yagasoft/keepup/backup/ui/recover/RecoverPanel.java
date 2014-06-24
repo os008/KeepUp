@@ -96,7 +96,7 @@ public class RecoverPanel extends JPanel
 		add(buttonRestore, BorderLayout.SOUTH);
 
 		fileTable = new FileTable(new String[] { "Revision", "Date" }
-				, new float[] { 0.7f, 0.3f }
+				, new float[] { 1f, 140f }
 				, new int[] { 1 }
 				, null);
 
