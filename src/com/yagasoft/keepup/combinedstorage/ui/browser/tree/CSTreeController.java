@@ -205,7 +205,8 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 
 		while (nodes.hasMoreElements())
 		{
-			((CombinedFolder) nodes.nextElement().getUserObject()).updateCombinedFolder(true);
+			CombinedFolder folder = (CombinedFolder) nodes.nextElement().getUserObject();
+			new Thread(() -> folder.updateCombinedFolder(true)).start();
 		}
 	}
 
