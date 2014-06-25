@@ -27,9 +27,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.DB;
 import com.yagasoft.keepup.DB.Table;
+import com.yagasoft.keepup.Operation;
+import com.yagasoft.keepup.Transfer;
 import com.yagasoft.keepup.ui.browser.table.FileTable;
 import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
@@ -142,12 +143,12 @@ public class RecoverPanel extends JPanel
 				try
 				{
 					LocalFile existingFile = new LocalFile(recoveringFile.getPath());
-					App.deleteFiles(Collections.singletonList(existingFile));
+					Operation.deleteFiles(Collections.singletonList(existingFile));
 
 					Thread.sleep(2000);
 
 					LocalFile recoveredFile = new LocalFile(recoveringFile.getParent().getPath() + "/" + selectedFile.getName());
-					App.renameFile(Collections.singletonList(recoveredFile), recoveringFile.getName());
+					Operation.renameFile(Collections.singletonList(recoveredFile), recoveringFile.getName());
 
 					String[][] dates = DB.getRecord(Table.backup_revisions
 							, new String[] { "date" }
@@ -168,7 +169,7 @@ public class RecoverPanel extends JPanel
 		// start a download thread and close the window.
 		new Thread(() ->
 		{
-			App.downloadFile(selectedFile, downloadListener
+			Transfer.downloadFile(selectedFile, downloadListener
 					, (LocalFolder) recoveringFile.getParent());
 		}).start();
 

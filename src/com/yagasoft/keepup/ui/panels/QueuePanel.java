@@ -25,7 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.GUI;
 import com.yagasoft.keepup._keepup;
 import com.yagasoft.keepup.ui.browser.table.BetterTableModel;
 import com.yagasoft.keepup.ui.browser.table.ButtonColumn;
@@ -177,7 +177,7 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 
 						if (!downloadJob)
 						{
-							App.updateTable();		// redraw the table after fetching file list.
+							GUI.updateTable();		// redraw the table after fetching file list.
 						}
 						break;
 					}
@@ -194,11 +194,11 @@ public class QueuePanel extends JPanel implements ITransferProgressListener
 					{
 						if (rows.size() == 1)
 						{
-							App.updateFreeSpace();	// update free space display
+							GUI.updateFreeSpace();	// update free space display
 
 							if (!downloadJob)
 							{
-								App.updateTable();
+								GUI.updateTable();
 							}
 						}
 

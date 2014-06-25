@@ -19,7 +19,7 @@ import java.util.HashMap;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.Util;
 
 
 // TODO add a progress bar to the status bar.
@@ -66,11 +66,11 @@ public class StatusBar extends JPanel
 		
 		for (String csp : csps.keySet())
 		{
-			text += csp + " => " + App.humanReadableSize(csps.get(csp)) + " | ";
+			text += csp + " => " + Util.humanReadableSize(csps.get(csp)) + " | ";
 			total += csps.get(csp);
 		}
 		
-		text += "Total => " + App.humanReadableSize(total);
+		text += "Total => " + Util.humanReadableSize(total);
 		
 		labelFreeSpaceValues.setText(text);
 	}

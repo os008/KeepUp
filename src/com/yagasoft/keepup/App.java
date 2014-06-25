@@ -13,22 +13,10 @@
 package com.yagasoft.keepup;
 
 
-import java.awt.Frame;
 import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.Point;
-import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,17 +24,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.tree.TreePath;
 
 import com.yagasoft.keepup.DB.Table;
-import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.scheduler.Scheduler;
 import com.yagasoft.keepup.backup.ui.BackupController;
 import com.yagasoft.keepup.backup.ui.BackupPanel;
@@ -67,28 +51,14 @@ import com.yagasoft.keepup.combinedstorage.ui.browser.tree.CSTreeController;
 import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.keepup.ui.MainWindow;
 import com.yagasoft.keepup.ui.browser.BrowserPanel;
-import com.yagasoft.keepup.ui.browser.table.renderers.FilePathRenderer;
-import com.yagasoft.keepup.ui.browser.table.renderers.StateRenderer;
-import com.yagasoft.keepup.ui.menu.MenuBar;
 import com.yagasoft.keepup.ui.menu.panels.options.OptionsPanel;
-import com.yagasoft.keepup.ui.toolbars.FileToolBar;
 import com.yagasoft.logger.Logger;
-import com.yagasoft.overcast.base.container.Container;
-import com.yagasoft.overcast.base.container.File;
 import com.yagasoft.overcast.base.container.local.LocalFile;
-import com.yagasoft.overcast.base.container.local.LocalFolder;
 import com.yagasoft.overcast.base.container.operation.Operation;
-import com.yagasoft.overcast.base.container.operation.OperationState;
 import com.yagasoft.overcast.base.container.remote.RemoteFile;
-import com.yagasoft.overcast.base.container.remote.RemoteFolder;
-import com.yagasoft.overcast.base.container.transfer.TransferJob;
-import com.yagasoft.overcast.base.container.transfer.UploadJob;
-import com.yagasoft.overcast.base.container.transfer.event.ITransferProgressListener;
 import com.yagasoft.overcast.base.csp.CSP;
 import com.yagasoft.overcast.exception.CSPBuildException;
-import com.yagasoft.overcast.exception.CreationException;
 import com.yagasoft.overcast.exception.OperationException;
-import com.yagasoft.overcast.exception.TransferException;
 
 
 /**
@@ -196,7 +166,7 @@ public final class App
 	// --------------------------------------------------------------------------------------
 
 	/** Array of files in copied or moved to memory. */
-	private static List<RemoteFile<?>>			filesInHand;
+	static List<RemoteFile<?>>			filesInHand;
 
 	/**
 	 * FileActions that can be performed on the one "in hand".
@@ -208,9 +178,9 @@ public final class App
 	}
 
 	/** File action to be performed on filesInHand. */
-	private static FileActions	fileAction;
+	static FileActions	fileAction;
 
-	private static Watcher		watcher;
+	static Watcher		watcher;
 
 	private static Scheduler	scheduler;
 
@@ -231,145 +201,12 @@ public final class App
 	 */
 	public static void initApp()
 	{
-		initGUI();
-		initControllers();
-		initDB();
+		GUI.initGUI();
+		GUI.initControllers();
+		DB.initDB();
 		loadOptions();
 		initCSPs();
 		initBackup();
-	}
-
-	/**
-	 * Constructs the main window of the combined storage app, and sets it to be displayed.
-	 */
-	private static void initGUI()
-	{
-		Logger.info("KEEPUP: GUI: INIT GUI components ...");
-
-		mainWindow = new MainWindow();
-		mainFrame = mainWindow.getFrame();
-		mainFrame.setIconImage(appIcon);
-
-		// add the menu bar.
-		mainWindow.setMenuBar(new MenuBar());
-
-		Map<Class<?>, TableCellRenderer> renderers = new HashMap<Class<?>, TableCellRenderer>();
-
-		// combined storage feature gui
-		csFoldersTree = new CSTree(ROOT.getNode());
-		renderers = new HashMap<Class<?>, TableCellRenderer>();		// use default renderers
-		csFilesTable = new CSTable(
-				new String[] { "Name", "Size", "CSP" }
-				, new float[] { 1f, 65f, 80f }
-				, new int[] { 1 }
-				, renderers);
-		csBrowserPanel = new CSBrowserPanel(csFoldersTree, csFilesTable);
-		combinedStoragePanel = new CombinedStoragePanel(csBrowserPanel);
-		mainWindow.addPanel("Combined Storage", combinedStoragePanel);
-
-		// backup feature GUI
-		localFoldersTree = new LocalTree();
-		renderers = new HashMap<Class<?>, TableCellRenderer>();		// use default renderers
-		renderers.put(State.class, new StateRenderer());		// render the states as icons
-		localFilesTable = new LocalTable(
-				new String[] { "Name", "Size", "Status" }
-				, new float[] { 1f, 65f, 50f }
-				, new int[] { 1 }
-				, renderers);
-		localBrowserPanel = new BrowserPanel(localFoldersTree, localFilesTable);
-
-		renderers = new HashMap<Class<?>, TableCellRenderer>();
-		renderers.put(File.class, new FilePathRenderer());		// render a file as its path
-		renderers.put(State.class, new StateRenderer());		// render the states as icons
-		watchedFilesPanel = new WatcherPanel(
-				new String[] { "Path", "Size", "Status" }
-				, new float[] { 1f, 65f, 50f }
-				, new int[] { 1 }
-				, renderers);
-		backupPanel = new BackupPanel(localBrowserPanel, watchedFilesPanel);
-		mainWindow.addPanel("Backup", backupPanel);
-
-		// save options and close DB when application is closing.
-		mainFrame.addWindowListener(new WindowAdapter()
-		{
-
-			@Override
-			public void windowIconified(WindowEvent e)
-			{
-				super.windowIconified(e);
-
-				minimiseToTray();
-			}
-
-			@Override
-			public void windowClosing(WindowEvent e)
-			{
-				super.windowClosing(e);
-
-				saveOptions();
-				DB.closeDB();
-			}
-		});
-
-		combinedStoragePanel.getBrowserPanel().resetDivider((mainFrame.getWidth() / 3) + 22);
-
-		mainFrame.setVisible(true);
-
-		Logger.info("KEEPUP: GUI: FINISHED init GUI.");
-	}
-
-	/**
-	 * Inits the view controllers.
-	 */
-	public static void initControllers()
-	{
-		Logger.info("KEEPUP: GUI: INIT GUI controllers ...");
-
-		List<Function<File<?>, Object>> columnFunctions = new ArrayList<Function<File<?>, Object>>();
-
-		// combined storage tree and table
-		csTreeController = new CSTreeController(csFoldersTree);
-		columnFunctions = new ArrayList<Function<File<?>, Object>>();
-		columnFunctions.add(file -> file);
-		columnFunctions.add(file -> humanReadableSize(file.getSize()));
-		columnFunctions.add(file -> file.getCsp());
-		csTableController = new CSTableController(csFilesTable, columnFunctions);
-		csTreeController.addTreeSelectionListener(csTableController);
-		csFilesTable.addToolBar(new FileToolBar(csTableController));
-
-		watcher = new Watcher();
-		// local tree and table
-		columnFunctions = new ArrayList<Function<File<?>, Object>>();
-		columnFunctions.add(file -> file);
-		columnFunctions.add(file -> humanReadableSize(file.getSize()));
-		columnFunctions.add(file -> watcher.getContainerState(file));
-		localTableController = new LocalTableController(localFilesTable, columnFunctions);
-		localFoldersTree.addSelectionListener(localTableController);
-		watcher.addListener(localTableController);
-
-		// watcher table
-		columnFunctions = new ArrayList<Function<File<?>, Object>>();
-		columnFunctions.add(file -> file);
-		columnFunctions.add(file -> humanReadableSize(file.getSize()));
-		columnFunctions.add(file -> watcher.getContainerState(file));
-		watchTableController = new WatcherTableController(watchedFilesPanel, columnFunctions);
-		watcher.addListener(watchTableController);
-
-		// backup panel
-		backupPanelController = new BackupController(backupPanel, localTableController, watchTableController);
-		backupPanelController.addListener(watcher);
-
-		Logger.info("KEEPUP: GUI: FINISHED init controllers.");
-	}
-
-	private static void initDB()
-	{
-		if ( !DB.ready)
-		{
-			Logger.error("KEEPUP: DB: problem!");
-			Msg.showErrorAndConfirm("Problem with DB! Closing application ...");
-			System.exit(1);
-		}
 	}
 
 	/**
@@ -418,8 +255,8 @@ public final class App
 			// -- caused problems with showing expansion icon of children before finishing loading
 			if (executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS))
 			{
-				updateFreeSpace();
-				initTree();
+				GUI.updateFreeSpace();
+				GUI.initTree();
 
 				// show the root as expanded at the start.
 				csFoldersTree.expandPathToNode(ROOT.getNode());
@@ -438,23 +275,24 @@ public final class App
 	}
 
 	/**
-	 * Initialises the folders tree's root by using the in-memory folder list.
+	 * Adds a csp, and initialise its tree.
+	 *
+	 * @param csp
+	 *            csp.
 	 */
-	public static void initTree()
+	public static void initCSP(final CSP<?, ?, ?> csp)
 	{
-		// get each CSP list if available.
-		enabledCsps.values().parallelStream()
-				.forEach(csp ->
-				{
-					try
-					{
-						csp.buildFileTree(false);
-					}
-					catch (OperationException | CreationException e)
-					{
-						e.printStackTrace();
-					}
-				});
+		try
+		{
+			csp.initTree();
+			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.ADD);
+			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.REMOVE);
+			ROOT.addCspFolder(csp.getRemoteFileTree());
+		}
+		catch (OperationException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -573,687 +411,9 @@ public final class App
 	// #endregion Initialisation.
 	// //////////////////////////////////////////////////////////////////////////////////////
 
-	/**
-	 * Update free space, and display it.
-	 */
-	public static void updateFreeSpace()
-	{
-		Logger.info("KEEPUP: FREESPACE: updating ...");
-
-		HashMap<String, Long> freeSpace = new HashMap<String, Long>();
-
-		enabledCsps.values().stream()
-				.forEach(csp ->
-				{
-					try
-					{
-						freeSpace.put(csp.getName(), new Long(csp.calculateRemoteFreeSpace()));
-					}
-					catch (OperationException e)
-					{
-						e.printStackTrace();
-					}
-				});
-
-		mainWindow.getStatusBar().updateFreeSpace(freeSpace);
-	}
-
-	/**
-	 * Refresh tree by going through the folders already loaded, and making sure they're up to date.
-	 * It does NOT load the tree from scratch.
-	 */
-	public static void refreshTree()
-	{
-		csTreeController.updateTree();
-	}
-
-	public static void navigateBackward()
-	{
-		csTreeController.navigateBackward();
-	}
-
-	public static void navigateForward()
-	{
-		csTreeController.navigateForward();
-	}
-
-	// //////////////////////////////////////////////////////////////////////////////////////
-	// #region Folders operations.
-	// ======================================================================================
-
-	/**
-	 * Creates the folder.
-	 *
-	 * @param parentPath
-	 *            parent path.
-	 * @param name
-	 *            Name.
-	 */
-	public static void createFolder(String parentPath, String name)
-	{
-		CombinedFolder parent = App.searchForFolder(parentPath);
-
-		if (parent == null)
-		{
-			Msg.showError("KEEPUP: " + parentPath + " doesn't exist to create " + name);
-			return;
-		}
-
-		enabledCsps.values().parallelStream()
-				.forEach(csp ->
-				{
-					try
-					{
-						RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
-						newFolder.setName(name);
-						newFolder.create(parentPath, null);
-					}
-					catch (CreationException e)
-					{
-						// if error is related to anything other than existence, then display
-						if ( !e.getMessage().contains("exists"))
-						{
-							Msg.showError(e.getMessage());
-							e.printStackTrace();
-						}
-					}
-				});
-	}
-
-	/**
-	 * Creates the folder.
-	 *
-	 * @param parent
-	 *            Parent.
-	 * @param name
-	 *            Name.
-	 */
-	public static void createFolder(CombinedFolder parent, String name)
-	{
-		// no parent, then choose root.
-		if (parent == null)
-		{
-			parent = ROOT;
-		}
-
-		HashSet<RemoteFolder<?>> newFolders = new HashSet<RemoteFolder<?>>();
-
-		final CombinedFolder threadedParent = parent;
-
-		// go over the csps list, and create a folder in memory for each.
-		enabledCsps.values().parallelStream()
-				.forEach(csp ->
-				{
-					try
-					{
-						// try to find the existing combinedfolder.
-						CombinedFolder result = threadedParent.findFolder(name, false);
-
-						// if it doesn't exist, or the csp folder isn't added ...
-						if ((result == null) || !result.getCspFolders().containsKey(csp.getName()))
-						{
-							// create the csp folder.
-							RemoteFolder<?> newFolder = csp.getAbstractFactory().createFolder();
-							newFolder.setName(name);
-							newFolders.add(newFolder);
-							newFolder.create(threadedParent.getPath(), null);
-						}
-					}
-					catch (CreationException e)
-					{
-						if ( !e.getMessage().contains("exists"))
-						{
-							Msg.showError(e.getMessage());
-							e.printStackTrace();
-						}
-					}
-				});
-	}
-
-	/**
-	 * Rename folder.
-	 *
-	 * @param folder
-	 *            Folder.
-	 * @param newName
-	 *            New name.
-	 */
-	public static void renameFolder(final CombinedFolder folder, final String newName)
-	{
-		for (final RemoteFolder<?> remoteFolder : folder.getCspFolders().values())
-		{
-			new Thread(() ->
-			{
-				try
-				{
-					remoteFolder.rename(newName
-							, event ->
-							{
-								if (event.getState() == OperationState.FAILED)
-								{
-									Msg.showError("Failed to rename folder: " + event.getContainer().getName());
-								}
-							});
-				}
-				catch (OperationException e)
-				{
-					e.printStackTrace();
-					Msg.showError(e.getMessage());
-				}
-			}).start();
-		}
-	}
-
-	/**
-	 * Delete folder.
-	 *
-	 * @param folder
-	 *            Folder.
-	 */
-	@SuppressWarnings("incomplete-switch")
-	public static void deleteFolder(CombinedFolder folder)
-	{
-		for (final RemoteFolder<?> remoteFolder : folder.getCspFolders().values())
-		{
-			new Thread(() ->
-			{
-				try
-				{
-					remoteFolder.delete(event ->
-					{
-						switch (event.getState())
-						{
-							case FAILED:
-								Msg.showError("Failed to delete: '" + event.getContainer().getPath() + "'.");
-								break;
-						}
-					});
-				}
-				catch (OperationException e)
-				{
-					e.printStackTrace();
-					Msg.showError(e.getMessage());
-				}
-
-			}).start();
-		}
-	}
-
-	/**
-	 * Gets the selected folder.
-	 *
-	 * @return the selected folder
-	 */
-	public static CombinedFolder getSelectedFolder()
-	{
-		return csTreeController.getSelectedFolder();
-	}
-
-	// ======================================================================================
-	// #endregion Folders operations.
-	// //////////////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Updates the selected folder. It grabs the files in the folder, and then passes them to
-	 * {@link CSBrowserPanel#updateTable(File[])}.
-	 */
-	public static void updateTable()
-	{
-		CombinedFolder folder = getSelectedFolder();
-
-		if (folder != null)
-		{
-			folder.updateCombinedFolder(true);
-			csTableController.updateTable(folder.getFilesList(false));
-		}
-		else
-		{
-			ROOT.updateCombinedFolder(true);
-			csTableController.updateTable(ROOT.getFilesList(false));
-		}
-	}
-
-	// //////////////////////////////////////////////////////////////////////////////////////
-	// #region Files operations.
-	// ======================================================================================
-
-	public static void downloadFile(File<?> file, LocalFolder... destination)
-	{
-		downloadFiles(Collections.singletonList(file), null, destination);
-	}
-
-	public static void downloadFile(File<?> file, ITransferProgressListener listener, LocalFolder... destination)
-	{
-		downloadFiles(Collections.singletonList(file), listener, destination);
-	}
-
-	public static void downloadFiles(List<File<?>> files, LocalFolder... destination)
-	{
-		downloadFiles(files, null, destination);
-	}
-
-	/**
-	 * Download selected files to the selected folder.
-	 *
-	 * @param files
-	 *            Files list.
-	 */
-	public static void downloadFiles(List<File<?>> files, ITransferProgressListener listener, LocalFolder... destination)
-	{
-		// no files, then no need to proceed.
-		if (files.isEmpty())
-		{
-			Logger.error("KEEPUP: DOWNLOAD: nothing!");
-			Msg.showError("Please, choose a file first from the files list.");
-			return;
-		}
-
-		if (files.get(0).isLocal())
-		{
-			return;
-		}
-
-		try
-		{
-			// prepare folder object ...
-			LocalFolder parent = (destination.length > 0) ? destination[0] : new LocalFolder(getLastDirectory());
-
-			// --------------------------------------------------------------------------------------
-			// #region Make sure there's enough space.
-
-			Long filesSize = 0L;
-
-			for (File<?> file : files)
-			{
-				filesSize += file.getSize();
-			}
-
-			// no space, then no need to proceed.
-			if (parent.getLocalFreeSpace() <= filesSize)
-			{
-				Logger.error("KEEPUP: DOWNLOAD: not enough space!");
-				Msg.showError("Please, free some space on local disk.");
-				return;
-			}
-
-			// #endregion Make sure there's enough space.
-			// --------------------------------------------------------------------------------------
-
-			// ... download all files passed to that folder.
-			for (RemoteFile<?> file : convertListToRemote(files))
-			{
-				if ( !parent.searchByName(file.getName(), false, false).isEmpty())
-				{
-					if ( !Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
-					{
-						continue;
-					}
-				}
-
-				TransferJob<?> job = file.getCsp().download(file, parent, true, mainWindow.getQueuePanel());
-				mainWindow.getQueuePanel().addTransferJob(job, "Download");
-
-				if (listener != null)
-				{
-					job.addProgressListener(listener);
-				}
-			}
-		}
-		catch (TransferException | OperationException e)
-		{
-			e.printStackTrace();
-			Msg.showError(e.getMessage());
-		}
-	}
-
-	/**
-	 * Upload selected file to the selected folder.
-	 *
-	 * @param file
-	 *            File.
-	 * @param parent
-	 *            Parent remote folder.
-	 * @param overwrite
-	 *            Overwrite? If nothing passed, then the user will be asked if exists.
-	 * @return Upload job
-	 */
-	public static UploadJob<?, ?> uploadFile(LocalFile file, CombinedFolder parent, boolean... overwrite)
-	{
-		List<LocalFile> fileList = new ArrayList<LocalFile>();
-		fileList.add(file);
-
-		List<UploadJob<?, ?>> uploadJobs = uploadFiles(fileList, parent, overwrite);
-
-		if ((uploadJobs != null) && !uploadJobs.isEmpty())
-		{
-			return uploadJobs.get(0);
-		}
-		else
-		{
-			return null;
-		}
-	}
-
-	/**
-	 * Upload selected files to the selected folder.
-	 *
-	 * @param files
-	 *            Files.
-	 * @param parent
-	 *            Parent remote folder.
-	 * @param overwrite
-	 *            Overwrite? If nothing passed, then the user will be asked if exists.
-	 * @return List
-	 */
-	public static List<UploadJob<?, ?>> uploadFiles(List<LocalFile> files, CombinedFolder parent, boolean... overwrite)
-	{
-		// choose best fitting to upload to its root.
-		if (parent == null)
-		{
-			parent = ROOT;
-		}
-
-		List<UploadJob<?, ?>> uploadJobs = new ArrayList<UploadJob<?, ?>>();
-
-		// choose best fitting to upload to.
-		RemoteFolder<?> parentRemoteFolder;
-		CSP<?, ?, ?> csp;
-
-		try
-		{
-			if ((csp = chooseCsp(files)) == null)
-			{
-				return null;
-			}
-
-			parentRemoteFolder = parent.getCspFolders().get(csp.getName());
-		}
-		catch (OperationException e)
-		{
-			e.printStackTrace();
-			Msg.showError(e.getMessage());
-			return uploadJobs;
-		}
-
-		try
-		{
-			// upload each file to the folder.
-			outerLoop:
-			for (LocalFile file : files)
-			{
-				// check if file exists on any of the CSPs
-				List<Container<?>> existingContainers = parent.findContainer(file.getName(), false, false);
-
-				// found something
-				if ( !existingContainers.isEmpty())
-				{
-					// check each container returned
-					for (Container<?> container : existingContainers)
-					{
-						// if it's a file and has the same name
-						if ( !container.isFolder() && (container.getName() == file.getName()))
-						{
-							// ask to overwrite
-							if (((overwrite.length <= 0) && !Msg.askQuestion("Overwrite: '" + file.getPath() + "'?"))
-									|| ((overwrite.length > 0) && !overwrite[0]))
-							{
-								continue outerLoop;		// skip file.
-							}
-							else
-							{	// overwrite
-								container.delete();
-							}
-						}
-					}
-				}
-
-				// create the remote folder before uploading to it at the csp.
-				if (parentRemoteFolder == null)
-				{
-					parentRemoteFolder = csp.getAbstractFactory().createFolder();
-					parentRemoteFolder.setName(parent.getName());
-					parentRemoteFolder.create(
-							parent.getPath().substring(0, (parent.getPath().lastIndexOf("/" + parent.getName())))
-							, event -> {});
-				}
-
-				UploadJob<?, ?> uploadJob = parentRemoteFolder.getCsp()
-						.upload(file, parentRemoteFolder, true, mainWindow.getQueuePanel());
-
-				// add file job to the gui queue.
-				mainWindow.getQueuePanel().addTransferJob(uploadJob, "Upload");
-
-				uploadJobs.add(uploadJob);
-			}
-		}
-		catch (TransferException | CreationException | OperationException e)
-		{
-			e.printStackTrace();
-			Msg.showError(e.getMessage());
-		}
-
-		return uploadJobs;
-	}
-
-	/**
-	 * Rename file.
-	 *
-	 * @param files
-	 *            Files.
-	 * @param newName
-	 *            New name.
-	 */
-	public static void renameFile(final List<File<?>> files, final String newName)
-	{
-		if (files.isEmpty())
-		{
-			return;
-		}
-
-		new Thread(() ->
-		{
-			try
-			{
-				files.get(0).rename(newName);
-
-				if ( !files.get(0).isLocal())
-				{
-					updateTable();
-				}
-			}
-			catch (OperationException e)
-			{
-				e.printStackTrace();
-				Msg.showError("Failed to rename file: " + files.get(0).getName() + " => " + e.getMessage());
-			}
-		}).start();
-	}
-
-	/**
-	 * Copy files and hold their reference in memory.
-	 *
-	 * @param files
-	 *            Files.
-	 */
-	public static void copyFiles(List<File<?>> files)
-	{
-		if (files.isEmpty() || files.get(0).isLocal())
-		{
-			return;
-		}
-
-		filesInHand = convertListToRemote(files);
-		fileAction = FileActions.COPY;
-	}
-
-	/**
-	 * Move files and hold their reference in memory.
-	 *
-	 * @param files
-	 *            Files.
-	 */
-	public static void moveFiles(List<File<?>> files)
-	{
-		if (files.isEmpty() || files.get(0).isLocal())
-		{
-			return;
-		}
-
-		filesInHand = convertListToRemote(files);
-		fileAction = FileActions.MOVE;
-	}
-
-	/**
-	 * Paste files.
-	 *
-	 * @param folder
-	 *            Folder.
-	 */
-	public static void pasteFiles(CombinedFolder folder)
-	{
-		for (RemoteFile<?> file : filesInHand)
-		{
-			RemoteFolder<?> remoteFolder = folder.getCspFolders().get(file.getCsp().getName());
-
-			// create the remote folder before uploading to it at the csp.
-			if (remoteFolder == null)
-			{
-				try
-				{
-					remoteFolder = file.getCsp().getAbstractFactory().createFolder();
-					remoteFolder.setName(folder.getName());
-					remoteFolder.create(
-							folder.getPath().substring(0, (folder.getPath().lastIndexOf("/" + folder.getName())))
-							, event -> {});
-				}
-				catch (CreationException e)
-				{
-					e.printStackTrace();
-					Msg.showError(e.getMessage());
-					continue;
-				}
-
-			}
-
-			// make sure the user wants to overwrite if necessary.
-			if (remoteFolder.searchById(file.getId(), false) != null)
-			{
-				if ( !Msg.askConfirmation("Overwrite: " + file.getName() + " in " + folder.getPath()))
-				{
-					return;
-				}
-			}
-
-			try
-			{
-				switch (fileAction)
-				{
-					case COPY:
-						file.copy(remoteFolder, true);
-						updateTable();
-						break;
-
-					case MOVE:
-						file.move(remoteFolder, true);
-						updateTable();
-						break;
-				}
-			}
-			catch (OperationException e)
-			{
-				e.printStackTrace();
-				Msg.showError("Failed to copy/move file: " + file.getName() + " => " + e.getMessage());
-			}
-		}
-	}
-
-	/**
-	 * Delete passed files.
-	 *
-	 * @param files
-	 *            the files.
-	 */
-	public static void deleteFiles(List<File<?>> files)
-	{
-		if (files.isEmpty())
-		{
-			return;
-		}
-
-		for (final File<?> file : files)
-		{
-			new Thread(() ->
-			{
-				try
-				{
-					file.delete();
-
-					if ( !file.isLocal())
-					{
-						updateTable();
-					}
-				}
-				catch (OperationException e)
-				{
-					e.printStackTrace();
-					Msg.showError("Failed to delete file: " + file.getName() + " => " + e.getMessage());
-				}
-			}).start();
-		}
-	}
-
-	/**
-	 * Combine the files in all the available CSPs into a single list.
-	 *
-	 * @param update
-	 *            update from source, or read from memory?
-	 * @return the root files
-	 */
-	public static List<RemoteFile<?>> getFilesList(CombinedFolder folder, boolean update)
-	{
-		return folder.getFilesList(update);
-	}
-
-	/**
-	 * Gets the selected files.
-	 *
-	 * @return the selected files
-	 */
-	public static List<RemoteFile<?>> convertListToRemote(List<File<?>> files)
-	{
-		return files.parallelStream()
-				.map(file -> (RemoteFile<?>) file)
-				.collect(Collectors.toList());
-	}
-
-	// ======================================================================================
-	// #endregion Files operations.
-	// //////////////////////////////////////////////////////////////////////////////////////
-
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// #region CSP operations.
 	// ======================================================================================
-
-	/**
-	 * Adds a csp, and initialise its tree.
-	 *
-	 * @param csp
-	 *            csp.
-	 */
-	public static void initCSP(final CSP<?, ?, ?> csp)
-	{
-		try
-		{
-			csp.initTree();
-			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.ADD);
-			csp.getRemoteFileTree().addOperationListener(ROOT, Operation.REMOVE);
-			ROOT.addCspFolder(csp.getRemoteFileTree());
-		}
-		catch (OperationException e)
-		{
-			e.printStackTrace();
-		}
-	}
 
 	/**
 	 * Resets all CSPs by
@@ -1420,6 +580,18 @@ public final class App
 	// //////////////////////////////////////////////////////////////////////////////////////
 
 	/**
+	 * Combine the files in all the available CSPs into a single list.
+	 *
+	 * @param update
+	 *            update from source, or read from memory?
+	 * @return the root files
+	 */
+	public static List<RemoteFile<?>> getFilesList(CombinedFolder folder, boolean update)
+	{
+		return folder.getFilesList(update);
+	}
+
+	/**
 	 * Search for file in all CSPs using the path passed.
 	 *
 	 * @param path
@@ -1479,262 +651,6 @@ public final class App
 		{	// ... or search for the folder in the end node, might return null.
 			return result.findFolder(containerName, true);
 		}
-	}
-
-	/**
-	 * Creates an action to be taken that is related to a panel to be opened.
-	 * This action is a new frame to include the panel passed,
-	 * and disabling for the main window.
-	 *
-	 * @param panel
-	 *            the panel.
-	 * @param title
-	 *            Title of the frame.
-	 * @return
-	 */
-	public static JFrame showSubWindow(JPanel panel, String title)
-	{
-		// create a frame for the panel.
-		JFrame frame = new JFrame(title);
-
-		// open the frame relative to the main window.
-		Point mainWindowLocation = mainFrame.getLocation();
-		frame.setLocation((int) mainWindowLocation.getX() + 50, (int) mainWindowLocation.getY() + 50);
-
-		// when the frame is closed, dispose of it and return focus to the main window.
-		frame.addWindowListener(new WindowAdapter()
-		{
-
-			@Override
-			public void windowClosing(WindowEvent e)
-			{
-				super.windowClosing(e);
-
-				frame.dispose();
-				setMainWindowFocusable(true);
-			}
-
-		});
-
-		// add the passed panel to the frame.
-		frame.add(panel);
-		// show the frame.
-		frame.setVisible(true);
-		// fit the frame to panel.
-		frame.pack();
-
-		// disable the main window.
-		setMainWindowFocusable(false);
-
-		return frame;
-	}
-
-	/**
-	 * Set the focus state of the main window.
-	 * This is used when a window is opened on top of this main window
-	 * to force the user to finish working with it first.
-	 *
-	 * @param focusable
-	 *            true for allowing focus using the mouse click.
-	 */
-	public static void setMainWindowFocusable(boolean focusable)
-	{
-		mainFrame.setFocusableWindowState(focusable);
-		mainFrame.setEnabled(focusable);
-
-		// bring it to front.
-		if (focusable)
-		{
-			mainFrame.setVisible(true);
-		}
-	}
-
-	/**
-	 * Minimises the app to the system tray.
-	 */
-	public static void minimiseToTray()
-	{
-		if ( !SystemTray.isSupported())
-		{
-			return;
-		}
-
-		try
-		{
-			systemTray = SystemTray.getSystemTray();
-
-			PopupMenu trayMenu = new PopupMenu();
-			MenuItem menuItem;
-			menuItem = new MenuItem("Restore");
-			menuItem.addActionListener(event -> restoreWindow());
-			trayMenu.add(menuItem);
-
-			trayIcon = new TrayIcon(appIcon, "KeepUp", trayMenu);
-
-			trayIcon.addMouseListener(new MouseAdapter()
-			{
-
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					super.mouseClicked(e);
-
-					if (e.getClickCount() >= 2)
-					{
-						restoreWindow();
-					}
-				}
-			});
-
-			systemTray.add(trayIcon);
-
-			mainFrame.setVisible(false);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Restores the app from the system tray, and brings it to the front.
-	 */
-	public static void restoreWindow()
-	{
-		mainFrame.setVisible(true);
-		mainFrame.setExtendedState(Frame.NORMAL);
-		mainFrame.toFront();
-		systemTray.remove(trayIcon);
-	}
-
-	/**
-	 * Human readable size conversion.<br/>
-	 * <br />
-	 * Credit: 'aioobe' at 'StackOverFlow.com'
-	 *
-	 * @param bytes
-	 *            Size in bytes.
-	 * @return Human readable size.
-	 */
-	public static String humanReadableSize(long bytes)
-	{
-		int unit = 1024;
-
-		if (bytes < unit)
-		{
-			return bytes + " B";
-		}
-
-		int exp = (int) (Math.log(bytes) / Math.log(unit));
-		String pre = ("KMGTPE").charAt(exp - 1) + ("i");
-
-		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-	}
-
-	/**
-	 * Gets the MD5 corresponding to the passed string.
-	 *
-	 * <p>
-	 * Credit: Javin Paul<br />
-	 * (at http://javarevisited.blogspot.com/2013/03/generate-md5-hash-in-java-string-byte-array-example-tutorial.html)
-	 * </p>
-	 *
-	 * @param string
-	 *            String.
-	 * @return the MD5 in hexadecimal
-	 */
-	public static String getMD5(String string)
-	{
-		try
-		{
-			byte[] bytesOfMessage = string.getBytes("UTF-8");
-
-			MessageDigest md5 = MessageDigest.getInstance("MD5");
-			byte[] hash = md5.digest(bytesOfMessage);
-
-			// converting byte array to Hexadecimal String
-			StringBuilder sb = new StringBuilder(2 * hash.length);
-
-			for (byte b : hash)
-			{
-				sb.append(String.format("%02x", b & 0xff));
-			}
-
-			return sb.toString();
-		}
-		catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
-		{
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	/**
-	 * Calculate hashed name for a file to be uploaded to the server as a revision in the backup system.
-	 *
-	 * @param container
-	 *            Container.
-	 * @return hashed name
-	 */
-	public static String calculateHashedName(Container<?> container)
-	{
-		try
-		{
-			// refresh container's meta data (not done in real time)
-			container.updateFromSource();
-		}
-		catch (OperationException e)
-		{
-			Logger.except(e);
-			e.printStackTrace();
-		}
-
-		// prepare the path hash to be the start of the filename on the server
-		String pathHash = App.getMD5(container.getPath());
-		// form the new filename as the path hash plus the modified date, this will keep revisions of the file.
-		return pathHash + container.getDate();
-	}
-
-	/**
-	 * Form the path to the parent, using a prefix, and removing ':' and '\'
-	 * because they are windows based and unsupported.
-	 */
-	public static String formRemoteBackupParent(Container<?> container)
-	{
-		return "/keepup_backup/" + container.getParent().getPath().replace(":", "").replace("\\", "/");
-	}
-
-	/**
-	 * Gets the {@link State} from a string for backup system.
-	 *
-	 * @param stateString
-	 *            State string.
-	 * @return the state
-	 */
-	public static State getState(String stateString)
-	{
-		switch (stateString)
-		{
-			case "ADD":
-				return State.ADD;
-
-			case "MODIFY":
-				return State.MODIFY;
-
-			case "DELETE":
-				return State.DELETE;
-
-			case "SYNCED":
-				return State.SYNCED;
-
-			case "REMOVE_ALL":
-				return State.REMOVE_ALL;
-
-			case "REMOVE":
-				return State.REMOVE;
-		}
-
-		return null;
 	}
 
 	/**

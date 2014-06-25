@@ -17,7 +17,9 @@ import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.List;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.GUI;
+import com.yagasoft.keepup.Operation;
+import com.yagasoft.keepup.Transfer;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Browse;
 import com.yagasoft.keepup.dialogues.Msg;
@@ -85,12 +87,12 @@ public class FileToolBar extends BrowserToolBar
 		
 		if (Action.DOWNLOAD.toString().equals(cmd))
 		{
-			App.downloadFiles(tableController.getSelectedFiles());
+			Transfer.downloadFiles(tableController.getSelectedFiles());
 		}
 		
 		if (Action.UPLOAD.toString().equals(cmd))
 		{
-			CombinedFolder remoteFolder = App.getSelectedFolder();
+			CombinedFolder remoteFolder = GUI.getSelectedFolder();
 			
 			// no folder, so let the user choose either 'root', or stop.
 			if (remoteFolder == null)
@@ -117,22 +119,22 @@ public class FileToolBar extends BrowserToolBar
 				return;
 			}
 			
-			App.uploadFiles(files, remoteFolder);
+			Transfer.uploadFiles(files, remoteFolder);
 		}
 		
 		if (Action.REFRESH.toString().equals(cmd))
 		{
-			App.updateTable();
+			GUI.updateTable();
 		}
 		
 		if (Action.COPY.toString().equals(cmd))
 		{
-			App.copyFiles(tableController.getSelectedFiles());
+			Operation.copyFiles(tableController.getSelectedFiles());
 		}
 		
 		if (Action.MOVE.toString().equals(cmd))
 		{
-			App.moveFiles(tableController.getSelectedFiles());
+			Operation.moveFiles(tableController.getSelectedFiles());
 		}
 		
 		if (Action.RENAME.toString().equals(cmd))
@@ -145,7 +147,7 @@ public class FileToolBar extends BrowserToolBar
 				return;
 			}
 			
-			App.renameFile(tableController.getSelectedFiles(), newName);
+			Operation.renameFile(tableController.getSelectedFiles(), newName);
 		}
 		
 		if (Action.DELETE.toString().equals(cmd))
@@ -166,7 +168,7 @@ public class FileToolBar extends BrowserToolBar
 			
 			if (Msg.askConfirmation("Are you sure you want to delete the following files:\n" + filesNames))
 			{
-				App.deleteFiles(selectedFiles);
+				Operation.deleteFiles(selectedFiles);
 			}
 		}
 	}

@@ -18,6 +18,7 @@ import java.util.List;
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.DB;
 import com.yagasoft.keepup.DB.Table;
+import com.yagasoft.keepup.Util;
 import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.scheduler.ISyncListener;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
@@ -31,21 +32,21 @@ import com.yagasoft.overcast.exception.AccessException;
  */
 public class WatcherDB implements IWatchListener, ISyncListener
 {
-
+	
 	protected Watcher	watcher;
-
+	
 	/**
 	 * Instantiates a new watcher db.
 	 */
 	public WatcherDB(Watcher watcher)
 	{
 		this.watcher = watcher;
-
+		
 		syncRevisions();
 		initWatcherFromDB();
 		watcher.addListener(this);
 	}
-
+	
 	/**
 	 * Reads the file states from the DB and passes them to the watcher.
 	 */
@@ -53,15 +54,15 @@ public class WatcherDB implements IWatchListener, ISyncListener
 	{
 		// get all paths stored in DB
 		String[][] paths = DB.getRecord(Table.backup_status, DB.backupStatusColumns);
-
+		
 		// go through them and add them to the watcher
 		for (String[] path : paths)
 		{
 			LocalFile file = new LocalFile(path[0]);
-
+			
 			// add them initially as ADD to inform the GUI to add them to table
 			watcher.setContainerState(file, State.ADD);
-
+			
 			try
 			{
 				// check existence and set to 'DELETE' if they don't exist locally.
@@ -81,7 +82,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			}
 		}
 	}
-
+	
 	/**
 	 * Removes the obsolete revisions from the server and DB.
 	 */
@@ -89,23 +90,23 @@ public class WatcherDB implements IWatchListener, ISyncListener
 	{
 		// get all paths from the DB, local file and remove parent
 		String[][] paths = DB.getRecord(Table.backup_path, DB.backupPathColumns);
-
+		
 		for (String[] path : paths)
 		{
 			DB.deleteRecord(Table.backup_revisions, "path = '" + path[0] + "'");
-
+			
 			// get the current revision name
-			String hashedName = App.getMD5(path[0]);
-
+			String hashedName = Util.getMD5(path[0]);
+			
 			// search for parent on server
 			CombinedFolder folder = App.searchForFolder(path[1]);
-
+			
 			// if found
 			if (folder != null)
 			{
 				// get all the revisions related to this file in the parent
 				List<Container<?>> result = folder.findContainer(hashedName, true, false);
-
+				
 				// if something was found
 				if ( !result.isEmpty())
 				{
@@ -121,7 +122,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			}
 		}
 	}
-
+	
 	/**
 	 * @see com.yagasoft.keepup.backup.watcher.IWatchListener#watchListChanged(com.yagasoft.overcast.base.container.Container,
 	 *      com.yagasoft.keepup.backup.State)
@@ -134,14 +135,14 @@ public class WatcherDB implements IWatchListener, ISyncListener
 			case ADD:
 				// make sure the path is in the database
 				DB.insertOrUpdate(DB.Table.backup_path, DB.backupPathColumns
-						, new String[] { container.getPath(), App.formRemoteBackupParent(container) }
+						, new String[] { container.getPath(), Util.formRemoteBackupParent(container) }
 						, new int[] { 0 });
 				// set the path status.
 				DB.insertOrUpdate(DB.Table.backup_status, DB.backupStatusColumns
 						, new String[] { container.getPath(), State.MODIFY.toString() }
 						, new int[] { 0 });
 				break;
-
+			
 			case SYNCED:
 			case MODIFY:
 			case DELETE:
@@ -150,7 +151,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 						, new String[] { container.getPath(), state.toString() }
 						, new int[] { 0 });
 				break;
-
+			
 			case REMOVE:
 			case REMOVE_ALL:
 				// delete all traces of this container from the DB.
@@ -160,7 +161,7 @@ public class WatcherDB implements IWatchListener, ISyncListener
 				break;
 		}
 	}
-
+	
 	/**
 	 * @see com.yagasoft.keepup.backup.scheduler.ISyncListener#containerSynced(com.yagasoft.overcast.base.container.Container,
 	 *      java.lang.String)

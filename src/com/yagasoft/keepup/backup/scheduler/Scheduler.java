@@ -21,6 +21,9 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.Operation;
+import com.yagasoft.keepup.Transfer;
+import com.yagasoft.keepup.Util;
 import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
@@ -62,7 +65,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		// TODO load the tree of the folder below.
 		// TODO remove obsoletes in db and server, and revise empty folders.
 		// make sure the root folder for backup exists.
-		App.createFolder(App.ROOT, "keepup_backup");
+		Operation.createFolder(App.ROOT, "keepup_backup");
 		
 		backupThread = new BackupThread();
 		startBackupLoop();
@@ -99,17 +102,17 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 		{
 			if ( !container.isFolder())
 			{
-				String parentPath = App.formRemoteBackupParent(container);
+				String parentPath = Util.formRemoteBackupParent(container);
 				
 				// check if file already exists
-				if (App.searchForFile(parentPath + "/" + App.calculateHashedName(container)).isEmpty())
+				if (App.searchForFile(parentPath + "/" + Util.calculateHashedName(container)).isEmpty())
 				{
-					App.createFolder(parentPath.substring(0, parentPath.lastIndexOf('/'))
+					Operation.createFolder(parentPath.substring(0, parentPath.lastIndexOf('/'))
 							, parentPath.substring(parentPath.lastIndexOf('/') + 1, parentPath.length()));
 					
 					CombinedFolder parent = App.searchForFolder(parentPath);
 					
-					UploadJob<?, ?> uploadJob = App.uploadFile((LocalFile) container, parent, false);
+					UploadJob<?, ?> uploadJob = Transfer.uploadFile((LocalFile) container, parent, false);
 					
 					if (uploadJob != null)
 					{
@@ -121,7 +124,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				}
 				else
 				{	// container already backed-up.
-					notifyListenersOfSync(container, App.calculateHashedName(container));
+					notifyListenersOfSync(container, Util.calculateHashedName(container));
 				}
 			}
 			
@@ -253,7 +256,7 @@ public class Scheduler implements IWatchListener, ITransferProgressListener
 				
 				try
 				{
-					String newName = App.calculateHashedName(container);
+					String newName = Util.calculateHashedName(container);
 					// rename to new revision name.
 					remoteContainer.rename(newName);
 					// remove if everything went fine.

@@ -26,6 +26,7 @@ import javax.swing.event.TreeSelectionEvent;
 import com.yagasoft.keepup.App;
 import com.yagasoft.keepup.DB;
 import com.yagasoft.keepup.DB.Table;
+import com.yagasoft.keepup.GUI;
 import com.yagasoft.keepup.backup.State;
 import com.yagasoft.keepup.backup.ui.recover.RecoverPanel;
 import com.yagasoft.keepup.backup.watcher.IWatchListener;
@@ -155,6 +156,6 @@ public class WatcherTableController extends FileTableController implements IWatc
 		}
 
 		RecoverPanel panel = new RecoverPanel(file, result);
-		panel.setFrame(App.showSubWindow(panel, "Revisions of file " + file.getPath()));
+		panel.setFrame(GUI.showSubWindow(panel, "Revisions of file " + file.getPath()));
 	}
 }

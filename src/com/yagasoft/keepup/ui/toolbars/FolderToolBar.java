@@ -15,7 +15,8 @@ package com.yagasoft.keepup.ui.toolbars;
 
 import java.awt.event.ActionEvent;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.GUI;
+import com.yagasoft.keepup.Operation;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.dialogues.Msg;
 
@@ -81,12 +82,12 @@ public class FolderToolBar extends BrowserToolBar
 					return;
 				}
 
-				App.createFolder(App.getSelectedFolder(), folderName);
+				Operation.createFolder(GUI.getSelectedFolder(), folderName);
 				break;
 			}
 
 			case "REFRESH":
-				App.refreshTree();
+				GUI.refreshTree();
 				break;
 
 			case "RENAME":
@@ -99,32 +100,32 @@ public class FolderToolBar extends BrowserToolBar
 					return;
 				}
 
-				App.renameFolder(App.getSelectedFolder(), newName);
+				Operation.renameFolder(GUI.getSelectedFolder(), newName);
 				break;
 			}
 
 			case "DELETE":
 			{
-				CombinedFolder selectedFolder = App.getSelectedFolder();
+				CombinedFolder selectedFolder = GUI.getSelectedFolder();
 
 				if (Msg.askConfirmation("Are you sure you want to delete '" + selectedFolder.getPath() + "'?"))
 				{
-					App.deleteFolder(selectedFolder);
+					Operation.deleteFolder(selectedFolder);
 				}
 
 				break;
 			}
 
 			case "PASTE":
-				App.pasteFiles(App.getSelectedFolder());
+				Operation.pasteFiles(GUI.getSelectedFolder());
 				break;
 
 			case "BACKWARD":
-				App.navigateBackward();
+				GUI.navigateBackward();
 				break;
 
 			case "FORWARD":
-				App.navigateForward();
+				GUI.navigateForward();
 				break;
 		}
 	}

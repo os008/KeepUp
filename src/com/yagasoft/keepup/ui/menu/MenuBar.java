@@ -21,6 +21,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
 import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.GUI;
 import com.yagasoft.keepup.ui.menu.panels.AboutPanel;
 import com.yagasoft.keepup.ui.menu.panels.options.OptionsPanel;
 
@@ -79,7 +80,7 @@ public class MenuBar extends JMenuBar
 		options.addActionListener(event ->
 		{
 			OptionsPanel optionsPanel = new OptionsPanel();
-			JFrame frame = App.showSubWindow(optionsPanel, "Options");
+			JFrame frame = GUI.showSubWindow(optionsPanel, "Options");
 			optionsPanel.setFrame(frame);
 			optionsPanel.addListener(() -> new Thread(() -> App.resetCSPs()).start());
 		});
@@ -89,7 +90,7 @@ public class MenuBar extends JMenuBar
 		// build help menu
 		helpMenu = new JMenu("Help");
 		about = new JMenuItem("About");
-		about.addActionListener(event -> App.showSubWindow(new AboutPanel(), "About"));
+		about.addActionListener(event -> GUI.showSubWindow(new AboutPanel(), "About"));
 		helpMenu.add(about);
 		add(helpMenu);
 	}

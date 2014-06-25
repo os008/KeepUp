@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.yagasoft.keepup.dialogues.Msg;
 import com.yagasoft.logger.Logger;
 
 
@@ -30,51 +31,51 @@ import com.yagasoft.logger.Logger;
  */
 public final class DB
 {
-
+	
 	/**
 	 * A connection to the database, which can be used to control it.
 	 */
 	private static Connection	connection;
-
+	
 	/**
 	 * Used to send an SQL statement to the {@link Database#connection}.
 	 */
 	private static Statement	statement;
-
+	
 	/** Flag to be tested on program startup. */
 	public static boolean		ready;
-
+	
 	/**
 	 * Table names as an enumeration.
 	 */
 	public static enum Table
 	{
-
+		
 		/** Options. */
 		options,
-
+		
 		/** Backup path. */
 		backup_path,
-
+		
 		/** Backup status. */
 		backup_status,
-
+		
 		/** Backup revisions. */
 		backup_revisions
 	}
-
+	
 	/** Options columns. */
 	public static String[]	optionsColumns			= new String[] { "category", "option", "value" };
-
+	
 	/** Backup path columns. The 'remote' is the remote parent, not full path. */
 	public static String[]	backupPathColumns		= new String[] { "path", "remote" };
-
+	
 	/** Backup status columns. */
 	public static String[]	backupStatusColumns		= new String[] { "path", "status" };
-
+	
 	/** Backup revisions columns. */
 	public static String[]	backupRevisionsColumns	= new String[] { "path", "revision", "date" };
-
+	
 	/**
 	 * <p>
 	 * Creates an SQLite database file and connection. Only creates a connection if the file already exists.
@@ -88,21 +89,21 @@ public final class DB
 	static
 	{
 		Logger.info("KEEPUP: DB: initialising ...");
-
+		
 		try
 		{
 			Class.forName("org.sqlite.JDBC");		// initialise SQLite JDBC.
-
+			
 			connection = DriverManager.getConnection("jdbc:sqlite:"
 					+ System.getProperty("user.dir") + "/var/db.dat");		// load/create database file.
 			connection.setAutoCommit(false);		// make bulk operations run faster.
-
+			
 			statement = connection.createStatement();		// used to pass queries to db.
-
+			
 			initTables();
-
+			
 			ready = true;
-
+			
 			Logger.info("KEEPUP: DB: ready.");
 		}
 		catch (ClassNotFoundException | SQLException e)
@@ -112,7 +113,17 @@ public final class DB
 			e.printStackTrace();
 		}
 	}
-
+	
+	static void initDB()
+	{
+		if ( !ready)
+		{
+			Logger.error("KEEPUP: DB: problem!");
+			Msg.showErrorAndConfirm("Problem with DB! Closing application ...");
+			System.exit(1);
+		}
+	}
+	
 	/**
 	 * Initialises the tables.
 	 *
@@ -123,19 +134,19 @@ public final class DB
 	{
 		// create the options table.
 		createTable(Table.options, optionsColumns, "category, option");
-
+		
 		// create the files path table.
 		createTable(Table.backup_path, backupPathColumns, backupPathColumns[0]);
-
+		
 		// create the files status table.
 		createTable(Table.backup_status, backupStatusColumns
 				, backupStatusColumns[0], "(path) REFERENCES backup_path(path)");
-
+		
 		// create the files revisions table.
 		createTable(Table.backup_revisions, backupRevisionsColumns
 				, "path, revision", "(path) REFERENCES backup_path(path)");
 	}
-
+	
 	/**
 	 * Creates a new table in the database, or makes sure the table is already
 	 * created.
@@ -158,7 +169,7 @@ public final class DB
 	{
 		// String to form the columns portion of the SQL statement.
 		String columns = "";
-
+		
 		if (columnsArray != null)
 		{
 			// form the columns.
@@ -167,40 +178,40 @@ public final class DB
 				columns += columnsArray[i] + " TEXT" + ((i + 1) < columnsArray.length ? ", " : "");
 			}
 		}
-
+		
 		// String to form the foreign keys portion of the SQL statement.
 		String foreignKeys = "";
-
+		
 		if (foreignKeysArray.length > 0)
 		{
 			foreignKeys = ", FOREIGN KEY ";
-
+			
 			// form the columns.
 			for (int i = 0; i < foreignKeysArray.length; i++)
 			{
 				foreignKeys += foreignKeysArray[i] + ((i + 1) < foreignKeysArray.length ? ", " : "");
 			}
 		}
-
+		
 		String createStatement = "CREATE TABLE " + table + "(" + columns + ", PRIMARY KEY (" + primaryKey + ")"
 				+ foreignKeys + ")";
-
+		
 		// read meta-data of the database.
 		DatabaseMetaData dbMetaData = connection.getMetaData();
-
+		
 		// reads database tables.
 		ResultSet result = dbMetaData.getTables(null, null, table.toString(), null);
-
+		
 		// if there's no such table, create.
 		if ( !result.next())
 		{
 			Logger.info("KEEPUP: DB: creating table: " + table);
-
+			
 			statement.executeUpdate(createStatement);
 			connection.commit();		// save changes to db file
 		}
 	}
-
+	
 	/**
 	 * Uses the 'INSERT' statement to add a new row into the database under the
 	 * table passed.<br />
@@ -217,28 +228,28 @@ public final class DB
 	{
 		// flag for the success of the insertion operation.
 		boolean success = false;
-
+		
 		// String to form the 'VALUES' portion of the SQL statement.
 		String formattedValues = "'";
-
+		
 		// form 'VALUES'.
 		for (int i = 0; i < values.length; i++)
 		{
 			formattedValues += values[i] + ((i + 1) < values.length ? "', '" : "'");
 		}
-
+		
 		String query = "INSERT INTO " + table + " VALUES(" + formattedValues + ");";
-
+		
 		// execute INSERT.
 		try
 		{
 			Logger.info(query);
-
+			
 			// execute the statement using the values built, and store the success status.
 			success = statement.executeUpdate(query) > 0;
-
+			
 			connection.commit();	// make sure data is saved lest a crash occurs and data is lost.
-
+			
 			return success;
 		}
 		catch (Exception e)
@@ -246,11 +257,11 @@ public final class DB
 			Logger.error("KEEPUP: DB: failed to insert record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
-
+			
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Uses the 'INSERT' statement to add new rows into the database under the
 	 * table passed.<br />
@@ -270,9 +281,9 @@ public final class DB
 		{
 			// String to form the 'VALUES' portion of the SQL statement.
 			String values = "'";
-
+			
 			String query;
-
+			
 			// form 'VALUES'.
 			for (String[] element : array)
 			{
@@ -280,20 +291,20 @@ public final class DB
 				{
 					values += element[i] + ((i + 1) < element.length ? "', '" : "'");
 				}
-
+				
 				query = "INSERT INTO " + table + " VALUES(" + values + ");";
-
+				
 				Logger.info("KEEPUP: DB: batch add: " + query);
-
+				
 				statement.addBatch(query);
-
+				
 				values = "'";
 			}
-
+			
 			connection.commit();		// save changes to db file
-
+			
 			Logger.info("KEEPUP: DB: executing batch ...");
-
+			
 			// submit the batch, then check if any rows were affected.
 			return statement.executeBatch()[0] > 0;
 		}
@@ -302,11 +313,11 @@ public final class DB
 			Logger.error("KEEPUP: DB: failed to insert records into table: " + table);
 			Logger.except(e);
 			e.printStackTrace();
-
+			
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Update record.
 	 *
@@ -324,29 +335,29 @@ public final class DB
 	{
 		// flag for the success of the insertion operation.
 		boolean success = false;
-
+		
 		// String to form the 'SET' portion of the SQL statement.
 		String formattedValues = "";
-
+		
 		// form 'SET'.
 		for (int i = 0; i < columns.length; i++)
 		{
 			formattedValues += columns[i] + " = '" + values[i] + ((i + 1) < values.length ? "', " : "'");
 		}
-
+		
 		String query = "UPDATE " + table + " SET " + formattedValues
 				+ (condition.length > 0 ? " WHERE " + condition[0] : "") + ";";
-
+		
 		// execute UPDATE.
 		try
 		{
 			Logger.info("KEEPUP: DB: update " + query);
-
+			
 			// execute the statement using the values built, and store the success status.
 			success = statement.executeUpdate(query) > 0;
-
+			
 			connection.commit();	// make sure data is saved lest a crash occurs and data is lost.
-
+			
 			return success;
 		}
 		catch (Exception e)
@@ -355,15 +366,15 @@ public final class DB
 			{
 				return success;
 			}
-
+			
 			Logger.error("KEEPUP: DB: failed to update record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
-
+			
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Delete record.
 	 *
@@ -377,19 +388,19 @@ public final class DB
 	{
 		// flag for the success of the insertion operation.
 		boolean success = false;
-
+		
 		String query = "DELETE FROM " + table + " WHERE " + condition + ";";
-
+		
 		// execute DELETE.
 		try
 		{
 			Logger.info("KEEPUP: DB: " + query);
-
+			
 			// execute the statement using the values built, and store the success status.
 			success = statement.executeUpdate(query) > 0;
-
+			
 			connection.commit();	// make sure data is saved lest a crash occurs and data is lost.
-
+			
 			return success;
 		}
 		catch (Exception e)
@@ -397,11 +408,11 @@ public final class DB
 			Logger.error("KEEPUP: DB: failed to delete record: " + query);
 			Logger.except(e);
 			e.printStackTrace();
-
+			
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Insert or update a record.
 	 *
@@ -418,18 +429,18 @@ public final class DB
 	public static boolean insertOrUpdate(Table table, String[] columns, String[] values, int[] primaryKeysIndexes)
 	{
 		String condition = "";
-
+		
 		// form the condition
 		for (int i = 0; i < primaryKeysIndexes.length; i++)
 		{
 			condition += columns[i] + " = '" + values[i] + ((i + 1) < primaryKeysIndexes.length ? "' AND " : "'");
 		}
-
+		
 		// does the key already exist?
 		String[][] result = getRecord(table, columns, condition);
-
+		
 		// if not, then insert, if it does exist then update its row
-		if (result == null || result.length <= 0)
+		if ((result == null) || (result.length <= 0))
 		{
 			return insertRecord(table, values);
 		}
@@ -438,7 +449,7 @@ public final class DB
 			return updateRecord(table, columns, values, condition);
 		}
 	}
-
+	
 	/**
 	 * Uses 'SELECT' SQL statement to query the database for rows matching the
 	 * criteria.
@@ -457,29 +468,29 @@ public final class DB
 	{
 		// used to form the columns criteria.
 		String columnsString = "";
-
+		
 		// form the columns criteria.
 		for (int i = 0; i < columns.length; i++)
 		{
 			columnsString += columns[i] + ((i + 1) < columns.length ? ", " : "");
 		}
-
+		
 		String query = "SELECT " + columnsString + " FROM " + table
 				+ (condition.length > 0 ? " WHERE " + condition[0] : "") + ";";
-
+		
 		Logger.info("KEEPUP: DB: " + query);
-
+		
 		// execute SELECT.
 		try
 		{
 			// execute the statement, and assign the result.
 			ResultSet result = statement.executeQuery(query);
-
+			
 			// list to store rows returned
 			List<String[]> resultList = new ArrayList<String[]>();
 			// array to form the row
 			String[] tempRow = new String[result.getMetaData().getColumnCount()];
-
+			
 			// fetch each row and add it to the list
 			while (result.next())
 			{
@@ -488,14 +499,14 @@ public final class DB
 				{
 					tempRow[i] = result.getString(i + 1);		// columns start at '1', not '0'!
 				}
-
+				
 				// add the row to the list
 				resultList.add(tempRow);
-
+				
 				// reset array
 				tempRow = new String[result.getMetaData().getColumnCount()];
 			}
-
+			
 			return resultList.toArray(
 					new String[resultList.size()][]);
 		}
@@ -504,11 +515,11 @@ public final class DB
 			Logger.error("KEEPUP: DB: couldn't fetch rows for: " + query);
 			Logger.except(e);
 			e.printStackTrace();
-
+			
 			return null;
 		}
 	}
-
+	
 	/**
 	 * Close db.
 	 */
@@ -520,7 +531,7 @@ public final class DB
 			{
 				connection.commit();
 				connection.close();
-
+				
 				Logger.info("KEEPUP: DB: closed DB connection.");
 			}
 		}
@@ -531,11 +542,11 @@ public final class DB
 			e.printStackTrace();
 		}
 	}
-
+	
 	/**
 	 * Singleton.
 	 */
 	private DB()
 	{}
-
+	
 }

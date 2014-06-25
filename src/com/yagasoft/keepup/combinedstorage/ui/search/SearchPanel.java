@@ -23,7 +23,7 @@ import java.util.function.Function;
 import javax.swing.JPanel;
 import javax.swing.table.TableCellRenderer;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.Util;
 import com.yagasoft.keepup.ui.browser.table.FileTable;
 import com.yagasoft.keepup.ui.browser.table.renderers.FilePathRenderer;
 import com.yagasoft.overcast.base.container.Container;
@@ -69,7 +69,7 @@ public class SearchPanel extends JPanel
 		// table controller
 		List<Function<File<?>, Object>> columnFunctions = new ArrayList<Function<File<?>, Object>>();
 		columnFunctions.add(file -> file);
-		columnFunctions.add(file -> App.humanReadableSize(file.getSize()));
+		columnFunctions.add(file -> Util.humanReadableSize(file.getSize()));
 		columnFunctions.add(file -> file.getCsp());
 		searchTableController = new SearchTableController(searchedFilesTable, columnFunctions);
 

@@ -22,7 +22,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
-import com.yagasoft.keepup.App;
+import com.yagasoft.keepup.GUI;
 import com.yagasoft.keepup.combinedstorage.CombinedFolder;
 import com.yagasoft.keepup.combinedstorage.ContentListener;
 import com.yagasoft.keepup.combinedstorage.UpdateType;
@@ -262,7 +262,7 @@ public class CSTreeController extends FolderTreeController<CombinedFolder> imple
 			}
 		}
 
-		App.showSubWindow(new SearchPanel(result), "Result search for " + searchWord + " in " + getSelectedFolder());
+		GUI.showSubWindow(new SearchPanel(result), "Result search for " + searchWord + " in " + getSelectedFolder());
 	}
 
 }

@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright (C) 2011-2014 by Ahmed Osama el-Sawalhy
- * 
+ *
  *		The Modified MIT Licence (GPL v3 compatible)
  * 			Licence terms are in a separate file (LICENCE.md)
- * 
+ *
  *		Project/File: KeepUp/com.yagasoft.keepup.backup.watcher/Watcher.java
- * 
- *			Modified: 25-Jun-2014 (01:20:29)
+ *
+ *			Modified: 25-Jun-2014 (04:46:52)
  *			   Using: Eclipse J-EE / JDK 8 / Windows 8.1 x64
  */
 
@@ -302,7 +302,8 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 	/**
 	 * Gets the container state.
 	 *
-	 * @param container Container.
+	 * @param container
+	 *            Container.
 	 * @return the container state
 	 */
 	public State getContainerState(Container<?> container)
@@ -315,6 +316,26 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 		{
 			return watchedFiles.getOrDefault(container, State.REMOVE);
 		}
+	}
+	
+	/**
+	 * Gets the container state by path.
+	 *
+	 * @param path
+	 *            Path.
+	 * @return the container state
+	 */
+	public State getContainerState(String path)
+	{
+		for (LocalFile file : watchedFiles.keySet())
+		{
+			if (file.getPath().equalsIgnoreCase(path))
+			{
+				return watchedFiles.get(file);
+			}
+		}
+		
+		return State.REMOVE;
 	}
 	
 	/**
@@ -337,13 +358,13 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 			{
 				try
 				{
-					Thread.sleep(1000);		// cool it for a second!
-					
 					watckKey = watcher.take();			// this will pause the loop until the system notifies of a file-change.
 					events = watckKey.pollEvents();		// what are the changes?
 					
+					// get the file path of the file changed.
+					Path path = null;
+					
 					// go through all the changes.
-					eventsLoop:
 					for (WatchEvent<?> event : events)
 					{
 						// don't need these events
@@ -352,8 +373,7 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 							continue;
 						}
 						
-						// get the file path of the file changed.
-						Path path = ((Path) watckKey.watchable())
+						path = ((Path) watckKey.watchable())
 								.resolve(((WatchEvent<Path>) event).context());
 						State state = null;
 						
@@ -377,17 +397,17 @@ public class Watcher implements IAddRemoveListener, ISyncListener
 							if (Paths.get(file.getPath()).equals(path) && (state != null))
 							{
 								setContainerState(file, state);
-								break eventsLoop;
+								break;
 							}
 						}
 					}
 					
-					// if there's a problem with the watcher, exit.
-//					if ( !watckKey.reset())
-//					{
-//						Msg.showError("There's a problem with the watcher loop.\nPlease, restart the program.");
-//						break;
-//					}
+					// reset the key to receive further events from this folder. Returns false on failure.
+					if ( !watckKey.reset())
+					{
+						Logger.error("KEEPUP: WATCHER: problem with watchkey for " + path
+								+ ". Won't receive any more events from this folder.");
+					}
 				}
 				catch (InterruptedException e)
 				{
