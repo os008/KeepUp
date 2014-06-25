@@ -12,17 +12,22 @@ A program which combines the storage of multiple CSPs into a single seamless vie
 	  + Queues.
 	  + Automatic choice of CSP for upload.
     + Combined and seamless folder tree.
-  + Backup to combined CSPs.
+  + Search.
+  + Backup to combined CSPs with real-time local file monitoring.
 
 ### Instructions:
 
-###### CSP:
+###### Dependencies:
 
-    +	To be filled later ...
+    +	Java 8
+	+	Overcast - Google: https://github.com/os008/Overcast_Google
+	+	Overcast - Dropbox: https://github.com/os008/Overcast_Dropbox
+	+	Logger: https://github.com/os008/Logger
+	+	SQLite: https://bitbucket.org/xerial/sqlite-jdbc
 
-### Developers' notes:
+### Notes:
 
-  + You have to manually download the libraries and import them into your project, for now.
+  + You have to manually download the libraries and import them into your project.
 
 
 <br>
