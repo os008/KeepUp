@@ -1,6 +1,8 @@
 KeepUp v2.11.0130
 =================
 
+(No longer maintained!)
+
 A program which combines the storage of multiple CSPs into a single seamless view, and includes a backup feature.
 
 ### Features:
